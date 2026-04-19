@@ -468,11 +468,9 @@
 
       <div class="form-secao">Épocas no Clube</div>
       <div class="form-group">
-        <div class="pill-group" id="jEpocasPills"></div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <input type="text" class="form-control" id="jEpocaAdd" placeholder="Ex: 2024/25" style="max-width:160px">
-          <button class="btn btn-secondary btn-sm" onclick="adicionarEpocaJogador()">+ Adicionar</button>
-        </div>
+        <div class="form-hint" style="margin-bottom:8px">Selecciona as épocas em que o jogador representou o Rio Ave</div>
+        <div class="pill-group" id="jEpocasCheckboxes"></div>
+        <p id="jEpocasSemDados" style="font-size:13px;color:var(--cinza-texto);display:none">Sem épocas criadas. Cria épocas primeiro no separador <strong>Épocas</strong>.</p>
       </div>
 
     </div>
@@ -860,8 +858,7 @@ function limparFormJogador() {
   document.querySelectorAll('input[name="jpe"]').forEach(r => r.checked = false);
   jFotoBase64 = null;
   document.getElementById('jFotoPreview').innerHTML = '<div class="foto-initials" id="jFotoInitials">?</div>';
-  jEpocasTemp = []; renderizarEpocasJogador();
-}
+  jEpocasTemp = []; renderizarEpocasJogador();}
 
 function atualizarInitialsJogador() {
   const nome = document.getElementById('jNome').value;
@@ -895,20 +892,27 @@ function removerFotoJogador() {
 }
 
 function renderizarEpocasJogador() {
-  const cont = document.getElementById('jEpocasPills');
-  cont.innerHTML = jEpocasTemp.map(e => `
-    <span class="badge badge-verde" style="gap:6px">${e}
-      <button onclick="removerEpocaJogador('${e}')" style="background:none;border:none;cursor:pointer;color:var(--verde);font-size:11px;padding:0;line-height:1">✕</button>
+  const cont = document.getElementById('jEpocasCheckboxes');
+  const semDados = document.getElementById('jEpocasSemDados');
+  if (!todasEpocas.length) {
+    cont.innerHTML = '';
+    semDados.style.display = 'block';
+    return;
+  }
+  semDados.style.display = 'none';
+  cont.innerHTML = todasEpocas.map(e => `
+    <span>
+      <input type="checkbox" id="jep-${e.id}" value="${e.nome}" class="pill-input"
+        ${jEpocasTemp.includes(e.nome) ? 'checked' : ''}
+        onchange="toggleEpocaJogador('${e.nome}', this.checked)">
+      <label for="jep-${e.id}" class="pill-label">${e.nome}</label>
     </span>`).join('');
 }
 
-function adicionarEpocaJogador() {
-  const v = document.getElementById('jEpocaAdd').value.trim();
-  if (v && !jEpocasTemp.includes(v)) { jEpocasTemp.push(v); jEpocasTemp.sort().reverse(); renderizarEpocasJogador(); }
-  document.getElementById('jEpocaAdd').value = '';
+function toggleEpocaJogador(nome, checked) {
+  if (checked && !jEpocasTemp.includes(nome)) jEpocasTemp.push(nome);
+  if (!checked) jEpocasTemp = jEpocasTemp.filter(e => e !== nome);
 }
-
-function removerEpocaJogador(e) { jEpocasTemp = jEpocasTemp.filter(ep=>ep!==e); renderizarEpocasJogador(); }
 
 async function guardarJogador() {
   const nome = document.getElementById('jNome').value.trim();
