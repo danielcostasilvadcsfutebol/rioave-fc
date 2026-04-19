@@ -1,7 +1,7 @@
 /* js/supabase.js — Camada de dados Supabase
    Substitui o SUPABASE_URL e SUPABASE_ANON_KEY pelos teus valores */
 
-const SUPABASE_URL = 'https://ivcjqicybwlwpkdoxsb.supabase.co';
+const SUPABASE_URL = 'https://ivcjqicyibwlwpkdoxsb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2Y2pxaWN5aWJ3bHdwa2RveHNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2MjgyODYsImV4cCI6MjA5MjIwNDI4Nn0.vCrIZG4OPS89cN2gByLPV-YkjhxMgLpS-f0fjNwb0UE';
 
 const headers = () => ({
