@@ -309,9 +309,9 @@
     <div class="header-titulo">Rio Ave <span>FC</span></div>
   </a>
   <nav class="header-nav">
-    <button class="nav-link ativo" onclick="navegarPara('dashboard',this)">Dashboard</button>
-    <button class="nav-link" onclick="navegarPara('jogos',this)">Jogos</button>
-    <button class="nav-link" onclick="navegarPara('jogadores',this)">Jogadores</button>
+    <button class="nav-link ativo" id="nav-dashboard" onclick="navegarPara('dashboard')">Dashboard</button>
+    <button class="nav-link" id="nav-jogos" onclick="navegarPara('jogos')">Jogos</button>
+    <button class="nav-link" id="nav-jogadores" onclick="navegarPara('jogadores')">Jogadores</button>
   </nav>
 </header>
 
@@ -574,14 +574,15 @@ function atualizarHero() {
 }
 
 /* ---- NAVEGAÇÃO ---- */
-function navegarPara(sec, link) {
-  ['dashboard','jogos','jogadores'].forEach(s => {
-    const el = document.getElementById(`sec-${s}`);
-    if (el) el.style.display = s===sec ? 'block' : 'none';
-  });
-  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('ativo'));
-  if (link) link.classList.add('ativo');
-  const hero = document.getElementById('hero');
+function navegarPara(sec) {
+  var secs = ['dashboard','jogos','jogadores'];
+  for (var i=0; i<secs.length; i++) {
+    var el = document.getElementById('sec-'+secs[i]);
+    if (el) el.style.display = secs[i]===sec ? 'block' : 'none';
+    var btn = document.getElementById('nav-'+secs[i]);
+    if (btn) btn.classList.toggle('ativo', secs[i]===sec);
+  }
+  var hero = document.getElementById('hero');
   if (hero) hero.style.display = sec==='dashboard' ? 'block' : 'none';
   window.scrollTo(0,0);
 }
