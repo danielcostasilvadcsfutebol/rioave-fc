@@ -1742,6 +1742,8 @@ function atualizarCampoJornada() {
     input.placeholder = 'Ex: Fase de grupos, 1/16, Quartos...';
   }
 }
+
+function atualizarLabelsAdversario(nome) {
   ['labelAdvEventos','labelAdversarioStats'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = nome || 'Adversário';
