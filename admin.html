@@ -1443,14 +1443,67 @@ function selecionarSlotCampo(slotIdx) {
 /* suplentes */
 function renderizarSuplentes() {
   const cont = document.getElementById('listaSuplentes');
-  cont.innerHTML = suplentesTemp.map((s,i) => `
-    <div style="display:flex;gap:8px;align-items:center">
-      <select class="form-control" onchange="suplentesTemp[${i}].jogador_id=this.value;suplentesTemp[${i}].nome=this.options[this.selectedIndex].text">
-        <option value="">Selecionar jogador...</option>
-        ${todosJogadores.map(j=>`<option value="${j.id}" ${s.jogador_id===j.id?'selected':''}>${j.nome}</option>`).join('')}
-      </select>
-      <button class="btn-remover-row" onclick="removerSuplente(${i})">✕</button>
-    </div>`).join('');
+  if (!cont) return;
+  cont.innerHTML = '';
+  suplentesTemp.forEach((s, i) => {
+    const lista = jogadoresDaEpoca().sort((a,b) => a.nome.localeCompare(b.nome, 'pt'));
+    const sel = lista.find(j => j.id === s.jogador_id);
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;position:relative';
+
+    const inputWrap = document.createElement('div');
+    inputWrap.style.cssText = 'flex:1;position:relative';
+
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'form-control';
+    inp.placeholder = 'Pesquisar suplente...';
+    inp.value = sel ? sel.nome : '';
+    inp.autocomplete = 'off';
+    inp.id = 'suplInput_' + i;
+
+    const drop = document.createElement('div');
+    drop.id = 'suplDrop_' + i;
+    drop.style.cssText = 'display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid var(--verde);border-top:none;border-radius:0 0 8px 8px;max-height:200px;overflow-y:auto;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.12)';
+
+    const mostrarOpcoes = (q) => {
+      const filtrado = q ? lista.filter(j => j.nome.toLowerCase().includes(q.toLowerCase())) : lista;
+      drop.innerHTML = '';
+      if (!filtrado.length) { drop.style.display = 'none'; return; }
+      filtrado.slice(0, 10).forEach(j => {
+        const d = document.createElement('div');
+        d.textContent = j.nome;
+        d.style.cssText = 'padding:9px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #e2dfd8';
+        d.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          suplentesTemp[i].jogador_id = j.id;
+          suplentesTemp[i].nome = j.nome;
+          inp.value = j.nome;
+          drop.style.display = 'none';
+        });
+        d.addEventListener('mouseover', () => d.style.background = '#e8f5ee');
+        d.addEventListener('mouseout', () => d.style.background = 'white');
+        drop.appendChild(d);
+      });
+      drop.style.display = 'block';
+    };
+
+    inp.addEventListener('input', () => mostrarOpcoes(inp.value));
+    inp.addEventListener('focus', () => mostrarOpcoes(inp.value));
+    inp.addEventListener('blur', () => setTimeout(() => { drop.style.display = 'none'; }, 200));
+
+    inputWrap.appendChild(inp);
+    inputWrap.appendChild(drop);
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-remover-row';
+    btn.textContent = '✕';
+    btn.addEventListener('click', () => removerSuplente(i));
+
+    wrap.appendChild(inputWrap);
+    wrap.appendChild(btn);
+    cont.appendChild(wrap);
+  });
 }
 function adicionarSuplente() { suplentesTemp.push({jogador_id:'',nome:''}); renderizarSuplentes(); }
 function removerSuplente(i) { suplentesTemp.splice(i,1); renderizarSuplentes(); }
@@ -1729,7 +1782,13 @@ async function guardarJogo() {
   const formacaoEl = document.querySelector('input[name="formacao"]:checked');
   const slots = FORMACOES[formacaoEl?.value||'4-3-3'];
   const jogadores_jogo = [
-    ...Object.entries(campoJogadores).map(([idx, j]) => ({ jogador_id: j.jogador_id, titular: true, posicao_slot: +idx, slot_x: slots[+idx]?.x, slot_y: slots[+idx]?.y })),
+    ...Object.entries(campoJogadores).map(([idx, j]) => ({
+      jogador_id: j.jogador_id,
+      titular: true,
+      posicao_slot: +idx,
+      slot_x: slots[+idx]?.x ?? null,
+      slot_y: slots[+idx]?.y ?? null
+    })),
     ...suplentesTemp.filter(s=>s.jogador_id).map(s => ({ jogador_id: s.jogador_id, titular: false }))
   ];
 
@@ -1778,10 +1837,19 @@ async function guardarJogo() {
     jogadores_jogo
   };
 
+  // remover campos null para não causar erros no Supabase
+  const jogoLimpo = Object.fromEntries(
+    Object.entries(jogo).filter(([k, v]) => v !== null && v !== undefined)
+  );
+  // manter sempre arrays mesmo vazios
+  ['golos','substituicoes','golos_adv_eventos','subs_adv','cartoes_amarelos','cartoes_vermelhos','jogadores_jogo','treinadores'].forEach(k => {
+    if (jogo[k] !== undefined) jogoLimpo[k] = jogo[k];
+  });
+
   try {
     if (novoAdversarioPendente) { await guardarNovoAdversario(novoAdversarioPendente); novoAdversarioPendente = null; }
-    if (editandoJogoId) { await DB.atualizarJogo(editandoJogoId, jogo); toast('✅ Jogo atualizado!'); }
-    else { await DB.criarJogo(jogo); toast('✅ Jogo guardado!'); }
+    if (editandoJogoId) { await DB.atualizarJogo(editandoJogoId, jogoLimpo); toast('✅ Jogo atualizado!'); }
+    else { await DB.criarJogo(jogoLimpo); toast('✅ Jogo guardado!'); }
     fecharModal('modalJogo');
     carregarJogos();
   } catch(e) { toast(e.message, 'erro'); }
