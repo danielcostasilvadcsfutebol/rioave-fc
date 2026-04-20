@@ -568,9 +568,10 @@
             <label class="form-label">Hora</label>
             <input type="time" class="form-control" id="jgHora" value="15:30">
           </div>
-          <div class="form-group form-col-full">
+          <div class="form-group form-col-full" style="position:relative">
             <label class="form-label">Adversário <span class="obrigatorio">*</span></label>
-            <input type="text" class="form-control" id="jgAdversario" placeholder="Ex: FC Porto">
+            <input type="text" class="form-control" id="jgAdversario" placeholder="Escreve o nome da equipa..." autocomplete="off" oninput="filtrarAdversarios(this.value)" onblur="setTimeout(()=>fecharDropAdv(),200)">
+            <div id="advDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid var(--verde);border-top:none;border-radius:0 0 var(--raio) var(--raio);max-height:220px;overflow-y:auto;z-index:999;box-shadow:var(--sombra-md)"></div>
           </div>
           <div class="form-group">
             <label class="form-label">Local <span class="obrigatorio">*</span></label>
@@ -936,6 +937,7 @@ async function mostrarAdmin() {
   carregarJogos();
   carregarTreinadores();
   carregarPresidentes();
+  carregarAdversarios();
 }
 
 async function fazerLogout() {
@@ -1288,7 +1290,7 @@ function limparFormJogo() {
   document.querySelectorAll('input[name="formacao"]').forEach(r => r.checked = false);
   document.getElementById('fm433').checked = true;
   ['st-posse','st-remates','st-rematesos','st-cruzamentos','st-ataques','st-atc','st-ate','st-atd','st-cantos','st-forasjogo','st-faltas','st-amarelos','st-vermelhos','adv-posse','adv-remates','adv-rematesos','adv-cruzamentos','adv-ataques','adv-atc','adv-ate','adv-atd','adv-cantos','adv-forasjogo','adv-faltas','adv-amarelos','adv-vermelhos'].forEach(id => document.getElementById(id).value = '');
-  campoJogadores = {}; suplentesTemp = []; treinadoresTemp = []; golosTemp = []; subsTemp = [];
+  campoJogadores = {}; suplentesTemp = []; treinadoresTemp = []; golosTemp = []; subsTemp = []; novoAdversarioPendente = null;
   renderizarSuplentes(); renderizarTreinadores(); renderizarGolos(); renderizarSubs();
   const tabs = document.querySelector('#modalJogo .modal-body');
   if (tabs) { tabs.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('ativo', i===0)); tabs.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('ativo', i===0)); }
@@ -1533,6 +1535,7 @@ async function guardarJogo() {
   };
 
   try {
+    if (novoAdversarioPendente) { await guardarNovoAdversario(novoAdversarioPendente); novoAdversarioPendente = null; }
     if (editandoJogoId) { await DB.atualizarJogo(editandoJogoId, jogo); toast('✅ Jogo atualizado!'); }
     else { await DB.criarJogo(jogo); toast('✅ Jogo guardado!'); }
     fecharModal('modalJogo');
@@ -1575,10 +1578,69 @@ async function editarJogo(id) {
   abrirModal('modalJogo');
 }
 
-let todosTreinadores = [], todosPresidentes = [];
+let todosTreinadores = [], todosPresidentes = [], todosAdversarios = [];
+let novoAdversarioPendente = null;
 let editandoTreinadorId = null, editandoPresidenteId = null;
 let trFotoBase64 = null, prFotoBase64 = null;
 let trEpocasTemp = [], prEpocasTemp = [];
+
+/* ============================================================
+   ADVERSÁRIOS (autocomplete)
+   ============================================================ */
+async function carregarAdversarios() {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/adversarios?select=nome&order=nome`, { headers: headers() });
+    const data = await r.json();
+    todosAdversarios = data.map(a => a.nome);
+  } catch(e) { console.warn('Erro ao carregar adversários:', e); }
+}
+
+function filtrarAdversarios(valor) {
+  const drop = document.getElementById('advDropdown');
+  if (!valor.trim()) { drop.style.display = 'none'; return; }
+  const q = valor.toLowerCase();
+  const matches = todosAdversarios.filter(a => a.toLowerCase().includes(q)).slice(0, 8);
+  const exacto = todosAdversarios.some(a => a.toLowerCase() === q);
+  let html = matches.map(a => `
+    <div onclick="selecionarAdversario('${a.replace(/'/g,"\'")}');event.stopPropagation()"
+      style="padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--cinza-borda);transition:background 0.1s"
+      onmouseover="this.style.background='var(--verde-suave)'" onmouseout="this.style.background='white'">
+      ${a}
+    </div>`).join('');
+  if (!exacto && valor.trim()) {
+    html += `<div onclick="selecionarAdversario('${valor.trim().replace(/'/g,"\'")}', true);event.stopPropagation()"
+      style="padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--cinza-borda);background:var(--verde-suave);color:var(--verde);font-weight:600;transition:background 0.1s"
+      onmouseover="this.style.background='var(--verde-suave2)'" onmouseout="this.style.background='var(--verde-suave)'">
+      + Criar "<strong>${valor.trim()}</strong>"
+    </div>`;
+  }
+  drop.innerHTML = html;
+  drop.style.display = matches.length || !exacto ? 'block' : 'none';
+}
+
+function selecionarAdversario(nome, novo) {
+  document.getElementById('jgAdversario').value = nome;
+  document.getElementById('advDropdown').style.display = 'none';
+  if (novo) novoAdversarioPendente = nome;
+  else novoAdversarioPendente = null;
+}
+
+function fecharDropAdv() {
+  const drop = document.getElementById('advDropdown');
+  if (drop) drop.style.display = 'none';
+}
+
+async function guardarNovoAdversario(nome) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/adversarios`, {
+      method: 'POST',
+      headers: await headersAuth(),
+      body: JSON.stringify({ nome })
+    });
+    todosAdversarios.push(nome);
+    todosAdversarios.sort();
+  } catch(e) { console.warn('Erro ao guardar adversário:', e); }
+}
 
 /* ============================================================
    TREINADORES
