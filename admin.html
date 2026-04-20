@@ -387,6 +387,7 @@
                 <th>Local</th>
                 <th>Resultado</th>
                 <th>Competição</th>
+                <th>Jornada/Fase</th>
                 <th>Época</th>
                 <th></th>
               </tr>
@@ -742,6 +743,14 @@
             </div>
           </div>
         </div>
+
+        <div class="form-secao" style="margin-top:20px">Cartões Rio Ave</div>
+        <div id="listaAmarelos" style="margin-bottom:10px"></div>
+        <div id="listaVermelhos" style="margin-bottom:10px"></div>
+        <button class="btn btn-secondary btn-sm" onclick="adicionarAmarelo()" style="background:var(--amarelo-suave);color:#92600a;border-color:var(--amarelo)">+ Amarelo</button>
+        <span style="margin:0 8px"></span>
+        <button class="btn btn-secondary btn-sm" onclick="adicionarVermelho()" style="background:var(--vermelho-suave);color:var(--vermelho);border-color:var(--vermelho)">+ Vermelho</button>
+
       </div>
 
     </div>
@@ -759,7 +768,13 @@
       <h2>Selecionar Jogador</h2>
       <button class="modal-fechar" onclick="fecharModal('modalSelecionarJogador')">✕</button>
     </div>
-    <div class="modal-body" style="max-height:400px;overflow-y:auto">
+    <div class="modal-body" style="padding-bottom:0">
+      <div class="busca-wrap" style="margin-bottom:12px">
+        <span class="busca-icon">🔍</span>
+        <input type="text" class="busca-input" id="buscaModalJogador" placeholder="Escreve o nome..." oninput="filtrarModalJogadores(this.value)" style="width:100%;border-radius:var(--raio)">
+      </div>
+    </div>
+    <div style="max-height:360px;overflow-y:auto;padding:0 28px 16px">
       <div id="listaJogadoresModal" style="display:flex;flex-direction:column;gap:6px"></div>
     </div>
   </div>
@@ -885,6 +900,8 @@ let golosTemp = [];
 let subsTemp = [];
 let golosAdvTemp = [];
 let subsAdvTemp = [];
+let amarelosTemp = [];
+let vermelhosTemp = [];
 
 const PAISES = ["Afeganistão","África do Sul","Albânia","Alemanha","Angola","Argentina","Bélgica","Brasil","Cabo Verde","Camarões","Chile","China","Colômbia","Coreia do Sul","Costa do Marfim","Croácia","Dinamarca","Egito","Espanha","Estados Unidos","França","Gana","Guiné","Guiné-Bissau","Holanda","Hungria","Inglaterra","Itália","Japão","Marrocos","México","Moçambique","Nigéria","Noruega","Peru","Polónia","Portugal","República Checa","Roménia","Rússia","São Tomé e Príncipe","Senegal","Sérvia","Suécia","Suíça","Timor-Leste","Turquia","Ucrânia","Uruguai","Venezuela"].concat(["Andorra","Argélia","Arménia","Áustria","Azerbaijão","Bangladesh","Bielorrússia","Bolívia","Bósnia","Bulgária","Burundi","Cambodja","Canadá","Catar","Cazaquistão","Chade","Chipre","Congo","Costa Rica","Cuba","Djibouti","Equador","Eritreia","Eslováquia","Eslovénia","Estónia","Etiópia","Filipinas","Finlândia","Gabão","Grécia","Guatemala","Guiné Equatorial","Haiti","Honduras","Índia","Indonésia","Irão","Iraque","Irlanda","Islândia","Israel","Jamaica","Jordânia","Kosovo","Laos","Lesoto","Letónia","Líbano","Líbia","Lituânia","Luxemburgo","Madagascar","Malásia","Maldivas","Mali","Malta","Mauritânia","Mianmar","Moldávia","Mónaco","Mongólia","Montenegro","Namíbia","Nepal","Nicarágua","Níger","Nova Zelândia","Omã","Paquistão","Panamá","Paraguai","Quénia","República Dominicana","Ruanda","Samoa","Singapura","Síria","Somália","Sri Lanka","Sudão","Tailândia","Tanzânia","Togo","Trinidad e Tobago","Tunísia","Turquemenistão","Uganda","Uzbequistão","Vietname","Zimbabué"]).sort();
 
@@ -1295,6 +1312,7 @@ function renderizarJogos() {
     <td><span class="badge badge-cinza">${j.local||'—'}</span></td>
     <td>${resultado(j.golos_nos, j.golos_adv)} <strong>${j.golos_nos} – ${j.golos_adv}</strong></td>
     <td><span class="badge badge-azul">${j.competicao||'—'}</span></td>
+    <td>${j.jornada ? `<span class="badge badge-cinza">${j.jornada}</span>` : '—'}</td>
     <td>${j.epoca||'—'}</td>
     <td style="white-space:nowrap">
       <button class="btn btn-ghost btn-sm btn-icon" onclick="editarJogo('${j.id}')" title="Editar">✏️</button>
@@ -1325,8 +1343,8 @@ function limparFormJogo() {
   document.querySelectorAll('input[name="formacao"]').forEach(r => r.checked = false);
   document.getElementById('fm433').checked = true;
   ['st-posse','st-remates','st-rematesos','st-cruzamentos','st-ataques','st-atc','st-ate','st-atd','st-cantos','st-forasjogo','st-faltas','st-amarelos','st-vermelhos','adv-posse','adv-remates','adv-rematesos','adv-cruzamentos','adv-ataques','adv-atc','adv-ate','adv-atd','adv-cantos','adv-forasjogo','adv-faltas','adv-amarelos','adv-vermelhos'].forEach(id => document.getElementById(id).value = '');
-  campoJogadores = {}; suplentesTemp = []; treinadoresTemp = []; golosTemp = []; subsTemp = []; golosAdvTemp = []; subsAdvTemp = []; novoAdversarioPendente = null;
-  renderizarSuplentes(); renderizarTreinadores(); renderizarGolos(); renderizarSubs(); renderizarGolosAdv(); renderizarSubsAdv();
+  campoJogadores = {}; suplentesTemp = []; treinadoresTemp = []; golosTemp = []; subsTemp = []; golosAdvTemp = []; subsAdvTemp = []; amarelosTemp = []; vermelhosTemp = []; novoAdversarioPendente = null;
+  renderizarSuplentes(); renderizarTreinadores(); renderizarGolos(); renderizarSubs(); renderizarGolosAdv(); renderizarSubsAdv(); renderizarAmarelos(); renderizarVermelhos();
   const tabs = document.querySelector('#modalJogo .modal-body');
   if (tabs) { tabs.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('ativo', i===0)); tabs.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('ativo', i===0)); }
 }
@@ -1351,6 +1369,14 @@ function atualizarCampo() {
   });
 }
 
+
+function filtrarModalJogadores(q) {
+  const busca = q.toLowerCase();
+  document.querySelectorAll('#listaJogadoresModal button').forEach(btn => {
+    const nome = btn.textContent.toLowerCase();
+    btn.style.display = nome.includes(busca) ? '' : 'none';
+  });
+}
 function selecionarSlotCampo(slotIdx) {
   campoSlotAtual = slotIdx;
   const cont = document.getElementById('listaJogadoresModal');
@@ -1410,6 +1436,7 @@ function selecionarSlotCampo(slotIdx) {
   }
 
   if (!listaBase.length) cont.innerHTML = '<p style="color:var(--cinza-texto);font-size:13px">Sem jogadores para esta época.</p>';
+  const buscaModal = document.getElementById('buscaModalJogador'); if(buscaModal) buscaModal.value='';
   abrirModal('modalSelecionarJogador');
 }
 
@@ -1562,6 +1589,66 @@ function renderizarSubsAdv() {
 }
 function adicionarSubAdv() { subsAdvTemp.push({saiu:'',entrou:'',minuto:''}); renderizarSubsAdv(); }
 function removerSubAdv(i) { subsAdvTemp.splice(i,1); renderizarSubsAdv(); }
+/* cartões */
+function renderizarAmarelos() {
+  const cont = document.getElementById('listaAmarelos'); if(!cont) return;
+  cont.innerHTML = amarelosTemp.map((c,i) => cartaoRow('amarelo', c, i)).join('');
+}
+function renderizarVermelhos() {
+  const cont = document.getElementById('listaVermelhos'); if(!cont) return;
+  cont.innerHTML = vermelhosTemp.map((c,i) => cartaoRow('vermelho', c, i)).join('');
+}
+
+function cartaoRow(tipo, c, i) {
+  const cor = tipo==='amarelo' ? 'var(--amarelo)' : 'var(--vermelho)';
+  const corSuave = tipo==='amarelo' ? 'var(--amarelo-suave)' : 'var(--vermelho-suave)';
+  const nome = jogadorNome(c.jogador_id);
+  return `<div style="display:grid;grid-template-columns:1fr 80px 40px;gap:10px;align-items:end;margin-bottom:10px">
+    <div class="form-group" style="margin:0;position:relative">
+      <label class="form-label" style="color:${cor}">Jogador</label>
+      <input type="text" class="form-control" placeholder="Pesquisar..." value="${nome}"
+        style="border-color:${cor}" autocomplete="off"
+        oninput="abrirDropCartao('${tipo}',${i},this.value)" onblur="setTimeout(()=>fecharDropCartao('${tipo}',${i}),200)"
+        id="cartao${tipo}${i}">
+      <div id="cartao${tipo}Drop${i}" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid ${cor};border-top:none;border-radius:0 0 var(--raio) var(--raio);max-height:160px;overflow-y:auto;z-index:999;box-shadow:var(--sombra-md)"></div>
+    </div>
+    <div class="form-group" style="margin:0">
+      <label class="form-label" style="color:${cor}">Minuto</label>
+      <input type="number" class="form-control" min="1" max="120" value="${c.minuto||''}"
+        style="border-color:${cor}"
+        onchange="${tipo==='amarelo'?'amarelosTemp':'vermelhosTemp'}[${i}].minuto=+this.value">
+    </div>
+    <button class="btn-remover-row" onclick="${tipo==='amarelo'?'removerAmarelo':'removerVermelho'}(${i})" style="align-self:flex-end">✕</button>
+  </div>`;
+}
+
+function abrirDropCartao(tipo, idx, q) {
+  const lista = jogadoresDaEpoca().sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
+  const drop = document.getElementById('cartao'+tipo+'Drop'+idx); if(!drop) return;
+  const filtrado = q ? lista.filter(j=>j.nome.toLowerCase().includes(q.toLowerCase())) : lista;
+  drop.innerHTML = filtrado.slice(0,8).map(j=>`
+    <div onclick="selecionarCartao('${tipo}',${idx},'${j.id}','${j.nome.replace(/'/g,"\'")}');event.stopPropagation()"
+      style="padding:9px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--cinza-borda)"
+      onmouseover="this.style.background='var(--cinza-bg)'" onmouseout="this.style.background='white'">${j.nome}</div>`).join('');
+  drop.style.display = filtrado.length ? 'block' : 'none';
+}
+
+function selecionarCartao(tipo, idx, id, nome) {
+  const arr = tipo==='amarelo' ? amarelosTemp : vermelhosTemp;
+  arr[idx].jogador_id = id;
+  const el = document.getElementById('cartao'+tipo+idx); if(el) el.value = nome;
+  fecharDropCartao(tipo, idx);
+}
+
+function fecharDropCartao(tipo, idx) {
+  const drop = document.getElementById('cartao'+tipo+'Drop'+idx); if(drop) drop.style.display='none';
+}
+
+function adicionarAmarelo() { amarelosTemp.push({jogador_id:'',minuto:''}); renderizarAmarelos(); }
+function removerAmarelo(i) { amarelosTemp.splice(i,1); renderizarAmarelos(); }
+function adicionarVermelho() { vermelhosTemp.push({jogador_id:'',minuto:''}); renderizarVermelhos(); }
+function removerVermelho(i) { vermelhosTemp.splice(i,1); renderizarVermelhos(); }
+
 
 
 
@@ -1620,6 +1707,8 @@ async function guardarJogo() {
     substituicoes: subsTemp.filter(s=>s.saiu_id&&s.entrou_id),
     golos_adv_eventos: golosAdvTemp.filter(g=>g.nome),
     subs_adv: subsAdvTemp.filter(s=>s.saiu||s.entrou),
+    cartoes_amarelos: amarelosTemp.filter(c=>c.jogador_id),
+    cartoes_vermelhos: vermelhosTemp.filter(c=>c.jogador_id),
     jogadores_jogo
   };
 
@@ -1666,7 +1755,9 @@ async function editarJogo(id) {
   subsTemp = (j.substituicoes||[]).map(s=>({...s}));
   golosAdvTemp = (j.golos_adv_eventos||[]).map(g=>({...g}));
   subsAdvTemp = (j.subs_adv||[]).map(s=>({...s}));
-  renderizarSuplentes(); renderizarTreinadores(); renderizarGolos(); renderizarSubs(); renderizarGolosAdv(); renderizarSubsAdv();
+  amarelosTemp = (j.cartoes_amarelos||[]).map(c=>({...c}));
+  vermelhosTemp = (j.cartoes_vermelhos||[]).map(c=>({...c}));
+  renderizarSuplentes(); renderizarTreinadores(); renderizarGolos(); renderizarSubs(); renderizarGolosAdv(); renderizarSubsAdv(); renderizarAmarelos(); renderizarVermelhos();
   atualizarCampo();
   abrirModal('modalJogo');
 }
