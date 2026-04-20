@@ -997,7 +997,7 @@ function calcularStatsJogador(jogadorId) {
 function renderizarChartPeriodos(stats) {
   if(pfjCharts.periodos) pfjCharts.periodos.destroy();
   const ctx = document.getElementById('pfj-chart-periodos'); if(!ctx) return;
-  const labels = ['0-15'','15-30'','30-45'','45-60'','60-75'','75-90''];
+  const labels = ["0-15'","15-30'","30-45'","45-60'","60-75'","75-90'"];
   const data = Object.values(stats.periodos);
   pfjCharts.periodos = new Chart(ctx, {
     type:'bar',
