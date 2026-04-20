@@ -312,13 +312,20 @@
           <div class="stat-item"><div class="stat-valor" id="sj-ava">0</div><div class="stat-label">Avançados</div></div>
         </div>
 
-        <div class="filtros-bar">
+        <div class="filtros-bar" style="flex-wrap:wrap;gap:10px">
           <button class="filtro-btn ativo" onclick="filtrarJogadores('todos',this)">Todos</button>
           <button class="filtro-btn" onclick="filtrarJogadores('GR',this)">GR</button>
           <button class="filtro-btn" onclick="filtrarJogadores('DEF',this)">Defesa</button>
           <button class="filtro-btn" onclick="filtrarJogadores('MED',this)">Médio</button>
           <button class="filtro-btn" onclick="filtrarJogadores('EXT',this)">Extremo</button>
           <button class="filtro-btn" onclick="filtrarJogadores('AVA',this)">Avançado</button>
+          <select class="form-control" id="filtroEpocaJogadores" onchange="renderizarJogadores()" style="width:160px;border-radius:999px;padding:6px 14px;font-family:var(--fonte-display);font-size:12px;font-weight:700;letter-spacing:1px">
+            <option value="">Todas as épocas</option>
+          </select>
+          <div class="busca-wrap" style="margin-left:auto">
+            <span class="busca-icon">🔍</span>
+            <input type="text" class="busca-input" id="buscaJogadoresAdmin" placeholder="Pesquisar jogador..." oninput="renderizarJogadores()">
+          </div>
         </div>
 
         <div class="card">
@@ -801,11 +808,15 @@ async function carregarJogadores() {
 }
 
 function renderizarJogadores() {
-  let lista = todosJogadores;
+  const busca = document.getElementById('buscaJogadoresAdmin')?.value.toLowerCase() || '';
+  const epoca = document.getElementById('filtroEpocaJogadores')?.value || '';
+  let lista = [...todosJogadores].sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
   if (filtroJogadores !== 'todos') lista = lista.filter(j => j.posicoes?.includes(filtroJogadores));
+  if (epoca) lista = lista.filter(j => j.epocas?.includes(epoca));
+  if (busca) lista = lista.filter(j => j.nome.toLowerCase().includes(busca));
   const tbody = document.getElementById('bodyJogadores');
   if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="estado-vazio"><div class="estado-vazio-icon">👤</div><h3>Sem jogadores</h3><p>Clica em "Novo Jogador" para adicionar.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="estado-vazio"><div class="estado-vazio-icon">👤</div><h3>${busca || epoca ? 'Sem resultados' : 'Sem jogadores'}</h3><p>${busca || epoca ? 'Tenta outra pesquisa ou filtro.' : 'Clica em "Novo Jogador" para adicionar.'}</p></div></td></tr>`;
     return;
   }
   tbody.innerHTML = lista.map(j => {
@@ -819,7 +830,7 @@ function renderizarJogadores() {
       <td>${j.nacionalidade||'—'}</td>
       <td>${idade ? `${idade} anos` : '—'}</td>
       <td>${j.pe ? `<span class="badge badge-cinza">Pé ${j.pe}</span>` : '—'}</td>
-      <td>${(j.epocas||[]).slice(0,3).join(', ')}</td>
+      <td>${(j.epocas||[]).join(', ')||'—'}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-ghost btn-sm btn-icon" onclick="editarJogador('${j.id}')" title="Editar">✏️</button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="apagarJogador('${j.id}')" title="Apagar">🗑</button>
@@ -986,10 +997,10 @@ function renderizarEpocas() {
 }
 
 function preencherSelectsEpoca() {
-  ['filtroEpocaJogos','jgEpoca'].forEach(id => {
+  ['filtroEpocaJogos','filtroEpocaJogadores','jgEpoca'].forEach(id => {
     const sel = document.getElementById(id); if (!sel) return;
     const val = sel.value;
-    const primeiro = id === 'filtroEpocaJogos' ? '<option value="">Todas as épocas</option>' : '<option value="">Selecionar...</option>';
+    const primeiro = id === 'jgEpoca' ? '<option value="">Selecionar...</option>' : '<option value="">Todas as épocas</option>';
     sel.innerHTML = primeiro + todasEpocas.map(e=>`<option value="${e.nome}">${e.nome}</option>`).join('');
     sel.value = val;
   });
