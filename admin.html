@@ -1601,6 +1601,12 @@ function renderizarVermelhos() {
   vermelhosTemp.forEach((c,i) => cont.appendChild(cartaoRow('vermelho', c, i)));
 }
 
+function jogadorNome(id) {
+  if (!id) return '';
+  const j = jogadoresDaEpoca().find(x => x.id === id);
+  return j ? j.nome : '';
+}
+
 function cartaoRow(tipo, c, i) {
   const nome = jogadorNome(c.jogador_id);
   const arrName = tipo === 'amarelo' ? 'amarelosTemp' : 'vermelhosTemp';
