@@ -8,6 +8,26 @@
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
+  /* NAV BUTTONS override */
+  button.nav-link {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--fonte-display);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    padding: 6px 14px;
+    border-radius: var(--raio-sm);
+    transition: all 0.18s;
+  }
+  button.nav-link:hover, button.nav-link.ativo {
+    background: rgba(255,255,255,0.12);
+    color: white;
+  }
+
   /* HERO */
   .hero {
     background: var(--verde-escuro);
