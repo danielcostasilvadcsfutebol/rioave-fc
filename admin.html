@@ -286,6 +286,13 @@
       <button class="sidebar-link" onclick="irPara('jogos')">
         <span class="sidebar-icon">⚽</span> Jogos
       </button>
+      <div class="sidebar-section">Clube</div>
+      <button class="sidebar-link" onclick="irPara('treinadores')">
+        <span class="sidebar-icon">🧑‍💼</span> Treinadores
+      </button>
+      <button class="sidebar-link" onclick="irPara('presidentes')">
+        <span class="sidebar-icon">🏅</span> Presidentes
+      </button>
       <button class="sidebar-link" onclick="irPara('epocas')">
         <span class="sidebar-icon">📅</span> Épocas
       </button>
@@ -385,6 +392,52 @@
               </tr>
             </thead>
             <tbody id="bodyJogos"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ======== TREINADORES ======== -->
+      <section class="admin-section" id="sec-treinadores">
+        <div class="page-header">
+          <div class="page-header-info"><h1>Treinadores</h1><p id="subtitulo-treinadores">A carregar...</p></div>
+          <button class="btn btn-primary" onclick="abrirModalTreinador()">+ Novo Treinador</button>
+        </div>
+        <div class="filtros-bar">
+          <select class="form-control" id="filtroEpocaTreinadores" onchange="renderizarTreinadoresSec()" style="width:160px;border-radius:999px;padding:6px 14px;font-family:var(--fonte-display);font-size:12px;font-weight:700">
+            <option value="">Todas as épocas</option>
+          </select>
+          <div class="busca-wrap" style="margin-left:auto">
+            <span class="busca-icon">🔍</span>
+            <input type="text" class="busca-input" id="buscaTreinadores" placeholder="Pesquisar..." oninput="renderizarTreinadoresSec()">
+          </div>
+        </div>
+        <div class="card">
+          <table class="tabela">
+            <thead><tr><th>Treinador</th><th>Nacionalidade</th><th>Idade</th><th>Épocas</th><th></th></tr></thead>
+            <tbody id="bodyTreinadores"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ======== PRESIDENTES ======== -->
+      <section class="admin-section" id="sec-presidentes">
+        <div class="page-header">
+          <div class="page-header-info"><h1>Presidentes</h1><p id="subtitulo-presidentes">A carregar...</p></div>
+          <button class="btn btn-primary" onclick="abrirModalPresidente()">+ Novo Presidente</button>
+        </div>
+        <div class="filtros-bar">
+          <select class="form-control" id="filtroEpocaPresidentes" onchange="renderizarPresidentesSec()" style="width:160px;border-radius:999px;padding:6px 14px;font-family:var(--fonte-display);font-size:12px;font-weight:700">
+            <option value="">Todas as épocas</option>
+          </select>
+          <div class="busca-wrap" style="margin-left:auto">
+            <span class="busca-icon">🔍</span>
+            <input type="text" class="busca-input" id="buscaPresidentes" placeholder="Pesquisar..." oninput="renderizarPresidentesSec()">
+          </div>
+        </div>
+        <div class="card">
+          <table class="tabela">
+            <thead><tr><th>Presidente</th><th>Início</th><th>Fim</th><th>Épocas</th><th>Notas</th><th></th></tr></thead>
+            <tbody id="bodyPresidentes"></tbody>
           </table>
         </div>
       </section>
@@ -654,6 +707,102 @@
   </div>
 </div>
 
+<!-- MODAL TREINADOR -->
+<div class="modal-overlay" id="modalTreinador" onclick="fecharModalFora(event,'modalTreinador')">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h2 id="tituloModalTreinador">Novo Treinador</h2>
+      <button class="modal-fechar" onclick="fecharModal('modalTreinador')">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:75vh;overflow-y:auto">
+      <div class="foto-upload-area" style="margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--cinza-borda)">
+        <div class="foto-preview" id="trFotoPreview"><div class="foto-initials" id="trFotoInitials">?</div></div>
+        <div>
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin-bottom:6px">
+            📷 Carregar foto
+            <input type="file" accept="image/*" onchange="carregarFotoTreinador(event)" style="display:none">
+          </label><br>
+          <button onclick="removerFotoTreinador()" style="background:none;border:none;color:var(--vermelho);font-size:12px;cursor:pointer;font-family:var(--fonte-body)">Remover</button>
+        </div>
+      </div>
+      <div class="form-secao">Dados Pessoais</div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group form-col-full">
+          <label class="form-label">Nome completo <span class="obrigatorio">*</span></label>
+          <input type="text" class="form-control" id="trNome" oninput="atualizarInitialsTreinador()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data de nascimento</label>
+          <input type="date" class="form-control" id="trDataNasc">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nacionalidade</label>
+          <select class="form-control" id="trNacionalidade"></select>
+        </div>
+      </div>
+      <div class="form-secao">Épocas no Clube</div>
+      <div class="form-group">
+        <div class="form-hint" style="margin-bottom:8px">Épocas em que treinou o Rio Ave</div>
+        <div class="pill-group" id="trEpocasCheckboxes"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modalTreinador')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarTreinador()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PRESIDENTE -->
+<div class="modal-overlay" id="modalPresidente" onclick="fecharModalFora(event,'modalPresidente')">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <h2 id="tituloModalPresidente">Novo Presidente</h2>
+      <button class="modal-fechar" onclick="fecharModal('modalPresidente')">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:75vh;overflow-y:auto">
+      <div class="foto-upload-area" style="margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--cinza-borda)">
+        <div class="foto-preview" id="prFotoPreview"><div class="foto-initials" id="prFotoInitials">?</div></div>
+        <div>
+          <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin-bottom:6px">
+            📷 Carregar foto
+            <input type="file" accept="image/*" onchange="carregarFotoPresidente(event)" style="display:none">
+          </label><br>
+          <button onclick="removerFotoPresidente()" style="background:none;border:none;color:var(--vermelho);font-size:12px;cursor:pointer;font-family:var(--fonte-body)">Remover</button>
+        </div>
+      </div>
+      <div class="form-secao">Dados</div>
+      <div class="form-grid form-grid-2">
+        <div class="form-group form-col-full">
+          <label class="form-label">Nome completo <span class="obrigatorio">*</span></label>
+          <input type="text" class="form-control" id="prNome" oninput="atualizarInitialsPresidente()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data de início</label>
+          <input type="date" class="form-control" id="prDataInicio">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data de fim</label>
+          <input type="date" class="form-control" id="prDataFim">
+        </div>
+        <div class="form-group form-col-full">
+          <label class="form-label">Notas</label>
+          <input type="text" class="form-control" id="prNotas" placeholder="Ex: Mandato interino, reeleito, etc.">
+        </div>
+      </div>
+      <div class="form-secao">Épocas no Clube</div>
+      <div class="form-group">
+        <div class="form-hint" style="margin-bottom:8px">Épocas em que presidiu o Rio Ave</div>
+        <div class="pill-group" id="prEpocasCheckboxes"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModal('modalPresidente')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarPresidente()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -692,6 +841,7 @@ const FORMACOES = {
    ============================================================ */
 document.addEventListener('DOMContentLoaded', async () => {
   preencherPaisesSelect('jNacionalidade');
+  preencherPaisesSelect('trNacionalidade');
   document.getElementById('jgEpoca');
 
   if (await isLoggedIn()) {
@@ -729,6 +879,8 @@ async function mostrarAdmin() {
   document.getElementById('adminWrap').style.display = 'block';
   await Promise.all([carregarJogadores(), carregarEpocas()]);
   carregarJogos();
+  carregarTreinadores();
+  carregarPresidentes();
 }
 
 async function fazerLogout() {
@@ -744,6 +896,12 @@ function irPara(secao) {
   document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('ativo'));
   document.getElementById(`sec-${secao}`).classList.add('ativo');
   event.currentTarget.classList.add('ativo');
+}
+
+async function apagarJogo(id) {
+  if (!confirm('Apagar este jogo e todos os dados associados?')) return;
+  try { await DB.apagarJogo(id); toast('🗑 Jogo removido'); carregarJogos(); }
+  catch(e) { toast(e.message, 'erro'); }
 }
 
 function mudarTab(btn, tabId) {
@@ -997,7 +1155,7 @@ function renderizarEpocas() {
 }
 
 function preencherSelectsEpoca() {
-  ['filtroEpocaJogos','filtroEpocaJogadores','jgEpoca'].forEach(id => {
+  ['filtroEpocaJogos','filtroEpocaJogadores','filtroEpocaTreinadores','filtroEpocaPresidentes','jgEpoca'].forEach(id => {
     const sel = document.getElementById(id); if (!sel) return;
     const val = sel.value;
     const primeiro = id === 'jgEpoca' ? '<option value="">Selecionar...</option>' : '<option value="">Todas as épocas</option>';
@@ -1303,10 +1461,200 @@ async function editarJogo(id) {
   abrirModal('modalJogo');
 }
 
-async function apagarJogo(id) {
-  if (!confirm('Apagar este jogo e todos os dados associados?')) return;
-  try { await DB.apagarJogo(id); toast('🗑 Jogo removido'); carregarJogos(); }
-  catch(e) { toast(e.message, 'erro'); }
+let todosTreinadores = [], todosPresidentes = [];
+let editandoTreinadorId = null, editandoPresidenteId = null;
+let trFotoBase64 = null, prFotoBase64 = null;
+let trEpocasTemp = [], prEpocasTemp = [];
+
+/* ============================================================
+   TREINADORES
+   ============================================================ */
+async function carregarTreinadores() {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/treinadores?select=*&order=nome`, { headers: headers() });
+    todosTreinadores = await r.json();
+    renderizarTreinadoresSec();
+    document.getElementById('subtitulo-treinadores').textContent = `${todosTreinadores.length} treinador${todosTreinadores.length!==1?'es':''} registado${todosTreinadores.length!==1?'s':''}`;
+  } catch(e) { toast(e.message, 'erro'); }
+}
+
+function renderizarTreinadoresSec() {
+  const busca = document.getElementById('buscaTreinadores')?.value.toLowerCase()||'';
+  const epoca = document.getElementById('filtroEpocaTreinadores')?.value||'';
+  let lista = [...todosTreinadores].sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
+  if (epoca) lista = lista.filter(t=>t.epocas?.includes(epoca));
+  if (busca) lista = lista.filter(t=>t.nome.toLowerCase().includes(busca));
+  const tbody = document.getElementById('bodyTreinadores');
+  if (!lista.length) { tbody.innerHTML=`<tr><td colspan="5"><div class="estado-vazio"><div class="estado-vazio-icon">🧑‍💼</div><h3>Sem treinadores</h3></div></td></tr>`; return; }
+  tbody.innerHTML = lista.map(t => {
+    const iniciais = t.nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
+    const foto = t.foto ? `<img src="${t.foto}" style="width:32px;height:32px;border-radius:50%;object-fit:cover">` : `<div style="width:32px;height:32px;border-radius:50%;background:var(--verde-suave);display:flex;align-items:center;justify-content:center;font-family:var(--fonte-display);font-size:11px;font-weight:800;color:var(--verde)">${iniciais}</div>`;
+    const idade = calcIdade(t.data_nasc);
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:10px">${foto}<span style="font-weight:500">${t.nome}</span></div></td>
+      <td>${t.nacionalidade||'—'}</td>
+      <td>${idade?`${idade} anos`:'—'}</td>
+      <td>${(t.epocas||[]).join(', ')||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="editarTreinador('${t.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="apagarTreinador('${t.id}')">🗑</button>
+      </td></tr>`;
+  }).join('');
+}
+
+function abrirModalTreinador() {
+  editandoTreinadorId=null; trFotoBase64=null; trEpocasTemp=[];
+  document.getElementById('tituloModalTreinador').textContent='Novo Treinador';
+  document.getElementById('trNome').value='';
+  document.getElementById('trDataNasc').value='';
+  document.getElementById('trNacionalidade').value='';
+  document.getElementById('trFotoPreview').innerHTML='<div class="foto-initials" id="trFotoInitials">?</div>';
+  renderizarEpocasCheckboxes('trEpocasCheckboxes', trEpocasTemp, 'tr');
+  abrirModal('modalTreinador');
+}
+
+function atualizarInitialsTreinador() {
+  const nome=document.getElementById('trNome').value;
+  const i=nome?nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase():'?';
+  if(!trFotoBase64){const el=document.getElementById('trFotoInitials');if(el)el.textContent=i;}
+}
+function carregarFotoTreinador(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{trFotoBase64=ev.target.result;document.getElementById('trFotoPreview').innerHTML=`<img src="${trFotoBase64}">`};r.readAsDataURL(f);}
+function removerFotoTreinador(){trFotoBase64=null;const i=document.getElementById('trNome').value.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase()||'?';document.getElementById('trFotoPreview').innerHTML=`<div class="foto-initials" id="trFotoInitials">${i}</div>`;}
+
+async function guardarTreinador() {
+  const nome=document.getElementById('trNome').value.trim();
+  if(!nome){toast('Insere o nome do treinador','erro');return;}
+  const dados={nome,data_nasc:document.getElementById('trDataNasc').value||null,nacionalidade:document.getElementById('trNacionalidade').value||null,epocas:trEpocasTemp,foto:trFotoBase64};
+  try {
+    const url=`${SUPABASE_URL}/rest/v1/treinadores${editandoTreinadorId?`?id=eq.${editandoTreinadorId}`:''}`;
+    const method=editandoTreinadorId?'PATCH':'POST';
+    const r=await fetch(url,{method,headers:await headersAuth(),body:JSON.stringify(dados)});
+    if(!r.ok){const e=await r.json();throw new Error(e.message);}
+    toast(editandoTreinadorId?'✅ Treinador atualizado!':'✅ Treinador guardado!');
+    fecharModal('modalTreinador'); carregarTreinadores();
+  } catch(e){toast(e.message,'erro');}
+}
+
+function editarTreinador(id) {
+  const t=todosTreinadores.find(x=>x.id===id);if(!t)return;
+  editandoTreinadorId=id; trFotoBase64=t.foto||null; trEpocasTemp=t.epocas||[];
+  document.getElementById('tituloModalTreinador').textContent='Editar Treinador';
+  document.getElementById('trNome').value=t.nome;
+  document.getElementById('trDataNasc').value=t.data_nasc||'';
+  document.getElementById('trNacionalidade').value=t.nacionalidade||'';
+  if(t.foto)document.getElementById('trFotoPreview').innerHTML=`<img src="${t.foto}">`;
+  else{const i=t.nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();document.getElementById('trFotoPreview').innerHTML=`<div class="foto-initials" id="trFotoInitials">${i}</div>`;}
+  renderizarEpocasCheckboxes('trEpocasCheckboxes',trEpocasTemp,'tr');
+  abrirModal('modalTreinador');
+}
+
+async function apagarTreinador(id) {
+  if(!confirm('Apagar este treinador?'))return;
+  try{await fetch(`${SUPABASE_URL}/rest/v1/treinadores?id=eq.${id}`,{method:'DELETE',headers:await headersAuth()});toast('🗑 Treinador removido');carregarTreinadores();}
+  catch(e){toast(e.message,'erro');}
+}
+
+/* ============================================================
+   PRESIDENTES
+   ============================================================ */
+async function carregarPresidentes() {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/presidentes?select=*&order=data_inicio.desc`, { headers: headers() });
+    todosPresidentes = await r.json();
+    renderizarPresidentesSec();
+    document.getElementById('subtitulo-presidentes').textContent = `${todosPresidentes.length} presidente${todosPresidentes.length!==1?'s':''} registado${todosPresidentes.length!==1?'s':''}`;
+  } catch(e) { toast(e.message, 'erro'); }
+}
+
+function renderizarPresidentesSec() {
+  const busca=document.getElementById('buscaPresidentes')?.value.toLowerCase()||'';
+  const epoca=document.getElementById('filtroEpocaPresidentes')?.value||'';
+  let lista=[...todosPresidentes];
+  if(epoca)lista=lista.filter(p=>p.epocas?.includes(epoca));
+  if(busca)lista=lista.filter(p=>p.nome.toLowerCase().includes(busca));
+  const tbody=document.getElementById('bodyPresidentes');
+  if(!lista.length){tbody.innerHTML=`<tr><td colspan="6"><div class="estado-vazio"><div class="estado-vazio-icon">🏅</div><h3>Sem presidentes</h3></div></td></tr>`;return;}
+  tbody.innerHTML=lista.map(p=>{
+    const iniciais=p.nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
+    const foto=p.foto?`<img src="${p.foto}" style="width:32px;height:32px;border-radius:50%;object-fit:cover">`:`<div style="width:32px;height:32px;border-radius:50%;background:var(--amarelo-suave);display:flex;align-items:center;justify-content:center;font-family:var(--fonte-display);font-size:11px;font-weight:800;color:#92600a">${iniciais}</div>`;
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:10px">${foto}<span style="font-weight:500">${p.nome}</span></div></td>
+      <td>${formatarData(p.data_inicio)}</td>
+      <td>${p.data_fim?formatarData(p.data_fim):'<span class="badge badge-verde">Actual</span>'}</td>
+      <td>${(p.epocas||[]).join(', ')||'—'}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.notas||'—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="editarPresidente('${p.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="apagarPresidente('${p.id}')">🗑</button>
+      </td></tr>`;
+  }).join('');
+}
+
+function abrirModalPresidente() {
+  editandoPresidenteId=null; prFotoBase64=null; prEpocasTemp=[];
+  document.getElementById('tituloModalPresidente').textContent='Novo Presidente';
+  ['prNome','prDataInicio','prDataFim','prNotas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('prFotoPreview').innerHTML='<div class="foto-initials" id="prFotoInitials">?</div>';
+  renderizarEpocasCheckboxes('prEpocasCheckboxes',prEpocasTemp,'pr');
+  abrirModal('modalPresidente');
+}
+
+function atualizarInitialsPresidente(){const nome=document.getElementById('prNome').value;const i=nome?nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase():'?';if(!prFotoBase64){const el=document.getElementById('prFotoInitials');if(el)el.textContent=i;}}
+function carregarFotoPresidente(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{prFotoBase64=ev.target.result;document.getElementById('prFotoPreview').innerHTML=`<img src="${prFotoBase64}">`};r.readAsDataURL(f);}
+function removerFotoPresidente(){prFotoBase64=null;const i=document.getElementById('prNome').value.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase()||'?';document.getElementById('prFotoPreview').innerHTML=`<div class="foto-initials" id="prFotoInitials">${i}</div>`;}
+
+async function guardarPresidente() {
+  const nome=document.getElementById('prNome').value.trim();
+  if(!nome){toast('Insere o nome do presidente','erro');return;}
+  const dados={nome,data_inicio:document.getElementById('prDataInicio').value||null,data_fim:document.getElementById('prDataFim').value||null,notas:document.getElementById('prNotas').value||null,epocas:prEpocasTemp,foto:prFotoBase64};
+  try {
+    const url=`${SUPABASE_URL}/rest/v1/presidentes${editandoPresidenteId?`?id=eq.${editandoPresidenteId}`:''}`;
+    const method=editandoPresidenteId?'PATCH':'POST';
+    const r=await fetch(url,{method,headers:await headersAuth(),body:JSON.stringify(dados)});
+    if(!r.ok){const e=await r.json();throw new Error(e.message);}
+    toast(editandoPresidenteId?'✅ Presidente atualizado!':'✅ Presidente guardado!');
+    fecharModal('modalPresidente'); carregarPresidentes();
+  } catch(e){toast(e.message,'erro');}
+}
+
+function editarPresidente(id) {
+  const p=todosPresidentes.find(x=>x.id===id);if(!p)return;
+  editandoPresidenteId=id; prFotoBase64=p.foto||null; prEpocasTemp=p.epocas||[];
+  document.getElementById('tituloModalPresidente').textContent='Editar Presidente';
+  document.getElementById('prNome').value=p.nome;
+  document.getElementById('prDataInicio').value=p.data_inicio||'';
+  document.getElementById('prDataFim').value=p.data_fim||'';
+  document.getElementById('prNotas').value=p.notas||'';
+  if(p.foto)document.getElementById('prFotoPreview').innerHTML=`<img src="${p.foto}">`;
+  else{const i=p.nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();document.getElementById('prFotoPreview').innerHTML=`<div class="foto-initials" id="prFotoInitials">${i}</div>`;}
+  renderizarEpocasCheckboxes('prEpocasCheckboxes',prEpocasTemp,'pr');
+  abrirModal('modalPresidente');
+}
+
+async function apagarPresidente(id) {
+  if(!confirm('Apagar este presidente?'))return;
+  try{await fetch(`${SUPABASE_URL}/rest/v1/presidentes?id=eq.${id}`,{method:'DELETE',headers:await headersAuth()});toast('🗑 Presidente removido');carregarPresidentes();}
+  catch(e){toast(e.message,'erro');}
+}
+
+/* função partilhada para renderizar épocas como checkboxes */
+function renderizarEpocasCheckboxes(contId, seleccionadas, prefixo) {
+  const cont=document.getElementById(contId);
+  if(!cont)return;
+  if(!todasEpocas.length){cont.innerHTML='<p style="font-size:13px;color:var(--cinza-texto)">Sem épocas criadas.</p>';return;}
+  cont.innerHTML=todasEpocas.map(e=>`
+    <span>
+      <input type="checkbox" id="${prefixo}ep-${e.id}" value="${e.nome}" class="pill-input"
+        ${seleccionadas.includes(e.nome)?'checked':''}
+        onchange="toggleEpoca('${prefixo}',this)">
+      <label for="${prefixo}ep-${e.id}" class="pill-label">${e.nome}</label>
+    </span>`).join('');
+}
+
+function toggleEpoca(prefixo, checkbox) {
+  const arr = prefixo==='tr' ? trEpocasTemp : prefixo==='pr' ? prEpocasTemp : jEpocasTemp;
+  if(checkbox.checked && !arr.includes(checkbox.value)) arr.push(checkbox.value);
+  if(!checkbox.checked) { const i=arr.indexOf(checkbox.value); if(i>-1)arr.splice(i,1); }
 }
 </script>
 </body>
