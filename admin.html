@@ -583,7 +583,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">Competição <span class="obrigatorio">*</span></label>
-            <select class="form-control" id="jgCompeticao">
+            <select class="form-control" id="jgCompeticao" onchange="atualizarCampoJornada()">
               <option value="">Selecionar...</option>
               <option>Liga Portugal</option>
               <option>Taça de Portugal</option>
@@ -596,6 +596,10 @@
           <div class="form-group">
             <label class="form-label">Época <span class="obrigatorio">*</span></label>
             <select class="form-control" id="jgEpoca"></select>
+          </div>
+          <div class="form-group" id="grupoJornada" style="display:none">
+            <label class="form-label" id="labelJornada">Jornada</label>
+            <input type="text" class="form-control" id="jgJornada" placeholder="">
           </div>
           <div class="form-group">
             <label class="form-label">Golos Rio Ave</label>
@@ -1312,6 +1316,8 @@ function limparFormJogo() {
   document.getElementById('jgDuracao').value = '90';
   document.getElementById('jgCompeticao').value = '';
   document.getElementById('jgEpoca').value = '';
+  document.getElementById('jgJornada').value = '';
+  document.getElementById('grupoJornada').style.display = 'none';
   document.querySelectorAll('input[name="jglocal"]').forEach(r => r.checked = false);
   document.querySelectorAll('input[name="formacao"]').forEach(r => r.checked = false);
   document.getElementById('fm433').checked = true;
@@ -1579,6 +1585,7 @@ async function guardarJogo() {
     duracao: +document.getElementById('jgDuracao').value,
     espectadores: +document.getElementById('jgEspectadores').value || null,
     formacao: formacaoEl?.value || null,
+    jornada: document.getElementById('jgJornada').value || null,
     treinadores: treinadoresTemp.filter(t=>t.nome).map(t=>t.nome),
     posse: +document.getElementById('st-posse').value||null,
     remates: +document.getElementById('st-remates').value||null,
@@ -1632,6 +1639,8 @@ async function editarJogo(id) {
   document.getElementById('jgAdversario').value = j.adversario||'';
   document.getElementById('jgCompeticao').value = j.competicao||'';
   document.getElementById('jgEpoca').value = j.epoca||'';
+  document.getElementById('jgJornada').value = j.jornada||'';
+  atualizarCampoJornada();
   document.getElementById('jgGolosNos').value = j.golos_nos??0;
   document.getElementById('jgGolosAdv').value = j.golos_adv??0;
   document.getElementById('jgDuracao').value = j.duracao||90;
@@ -1706,7 +1715,33 @@ function selecionarAdversario(nome, novo) {
   else novoAdversarioPendente = null;
 }
 
-function atualizarLabelsAdversario(nome) {
+function atualizarCampoJornada() {
+  const comp = document.getElementById('jgCompeticao').value;
+  const grupo = document.getElementById('grupoJornada');
+  const label = document.getElementById('labelJornada');
+  const input = document.getElementById('jgJornada');
+  if (!comp || comp === 'Particular') {
+    grupo.style.display = 'none'; return;
+  }
+  grupo.style.display = 'block';
+  if (comp === 'Liga Portugal') {
+    label.textContent = 'Jornada';
+    input.type = 'number'; input.min = '1'; input.max = '34';
+    input.placeholder = 'Ex: 5';
+  } else if (comp === 'Taça de Portugal') {
+    label.textContent = 'Fase';
+    input.type = 'text'; input.removeAttribute('min'); input.removeAttribute('max');
+    input.placeholder = 'Ex: 1/16, Oitavos, Quartos, Meias, Final';
+  } else if (comp === 'Taça da Liga') {
+    label.textContent = 'Fase';
+    input.type = 'text'; input.removeAttribute('min'); input.removeAttribute('max');
+    input.placeholder = 'Ex: Grupo A, Quartos, Meias, Final';
+  } else {
+    label.textContent = 'Fase / Ronda';
+    input.type = 'text'; input.removeAttribute('min'); input.removeAttribute('max');
+    input.placeholder = 'Ex: Fase de grupos, 1/16, Quartos...';
+  }
+}
   ['labelAdvEventos','labelAdversarioStats'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = nome || 'Adversário';
