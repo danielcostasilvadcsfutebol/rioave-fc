@@ -570,7 +570,7 @@
           </div>
           <div class="form-group form-col-full" style="position:relative">
             <label class="form-label">Adversário <span class="obrigatorio">*</span></label>
-            <input type="text" class="form-control" id="jgAdversario" placeholder="Escreve o nome da equipa..." autocomplete="off" oninput="filtrarAdversarios(this.value)" onblur="setTimeout(()=>fecharDropAdv(),200)">
+            <input type="text" class="form-control" id="jgAdversario" placeholder="Escreve o nome da equipa..." autocomplete="off" oninput="filtrarAdversarios(this.value);atualizarLabelsAdversario(this.value)" onblur="setTimeout(()=>fecharDropAdv(),200)">
             <div id="advDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid var(--verde);border-top:none;border-radius:0 0 var(--raio) var(--raio);max-height:220px;overflow-y:auto;z-index:999;box-shadow:var(--sombra-md)"></div>
           </div>
           <div class="form-group">
@@ -627,6 +627,8 @@
               <input type="radio" id="fm4231" name="formacao" value="4-2-3-1" class="pill-input" onchange="atualizarCampo()"><label for="fm4231" class="pill-label">4-2-3-1</label>
               <input type="radio" id="fm532" name="formacao" value="5-3-2" class="pill-input" onchange="atualizarCampo()"><label for="fm532" class="pill-label">5-3-2</label>
               <input type="radio" id="fm352" name="formacao" value="3-5-2" class="pill-input" onchange="atualizarCampo()"><label for="fm352" class="pill-label">3-5-2</label>
+              <input type="radio" id="fm5212" name="formacao" value="5-2-1-2" class="pill-input" onchange="atualizarCampo()"><label for="fm5212" class="pill-label">5-2-1-2</label>
+              <input type="radio" id="fm5131" name="formacao" value="5-1-3-1" class="pill-input" onchange="atualizarCampo()"><label for="fm5131" class="pill-label">5-1-3-1</label>
             </div>
             <div class="campo-editor" id="campoEditor">
               <div class="campo-linha-meio"></div>
@@ -652,13 +654,31 @@
 
       <!-- TAB EVENTOS -->
       <div class="tab-panel" id="tab-eventos">
-        <div class="form-secao">Golos</div>
-        <div id="listaGolos"></div>
-        <button class="btn btn-secondary btn-sm" onclick="adicionarGolo()">+ Adicionar Golo</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px">
 
-        <div class="form-secao">Substituições</div>
-        <div id="listaSubs"></div>
-        <button class="btn btn-secondary btn-sm" onclick="adicionarSub()">+ Adicionar Substituição</button>
+          <!-- RIO AVE -->
+          <div>
+            <div class="form-secao" style="margin-top:0">Rio Ave FC</div>
+            <div class="form-secao" style="background:var(--cinza-leve);color:var(--cinza-texto)">Golos</div>
+            <div id="listaGolos"></div>
+            <button class="btn btn-secondary btn-sm" onclick="adicionarGolo()" style="width:100%">+ Adicionar Golo</button>
+            <div class="form-secao" style="background:var(--cinza-leve);color:var(--cinza-texto)">Substituições</div>
+            <div id="listaSubs"></div>
+            <button class="btn btn-secondary btn-sm" onclick="adicionarSub()" style="width:100%">+ Adicionar Substituição</button>
+          </div>
+
+          <!-- ADVERSÁRIO -->
+          <div>
+            <div class="form-secao" style="margin-top:0;background:var(--vermelho-suave);color:var(--vermelho)" id="labelAdvEventos">Adversário</div>
+            <div class="form-secao" style="background:var(--cinza-leve);color:var(--cinza-texto)">Golos</div>
+            <div id="listaGolosAdv"></div>
+            <button class="btn btn-secondary btn-sm" onclick="adicionarGoloAdv()" style="width:100%">+ Adicionar Golo Adversário</button>
+            <div class="form-secao" style="background:var(--cinza-leve);color:var(--cinza-texto)">Substituições</div>
+            <div id="listaSubsAdv"></div>
+            <button class="btn btn-secondary btn-sm" onclick="adicionarSubAdv()" style="width:100%">+ Adicionar Substituição</button>
+          </div>
+
+        </div>
       </div>
 
       <!-- TAB STATS -->
@@ -858,6 +878,8 @@ let suplentesTemp = [];
 let treinadoresTemp = [];
 let golosTemp = [];
 let subsTemp = [];
+let golosAdvTemp = [];
+let subsAdvTemp = [];
 
 const PAISES = ["Afeganistão","África do Sul","Albânia","Alemanha","Angola","Argentina","Bélgica","Brasil","Cabo Verde","Camarões","Chile","China","Colômbia","Coreia do Sul","Costa do Marfim","Croácia","Dinamarca","Egito","Espanha","Estados Unidos","França","Gana","Guiné","Guiné-Bissau","Holanda","Hungria","Inglaterra","Itália","Japão","Marrocos","México","Moçambique","Nigéria","Noruega","Peru","Polónia","Portugal","República Checa","Roménia","Rússia","São Tomé e Príncipe","Senegal","Sérvia","Suécia","Suíça","Timor-Leste","Turquia","Ucrânia","Uruguai","Venezuela"].concat(["Andorra","Argélia","Arménia","Áustria","Azerbaijão","Bangladesh","Bielorrússia","Bolívia","Bósnia","Bulgária","Burundi","Cambodja","Canadá","Catar","Cazaquistão","Chade","Chipre","Congo","Costa Rica","Cuba","Djibouti","Equador","Eritreia","Eslováquia","Eslovénia","Estónia","Etiópia","Filipinas","Finlândia","Gabão","Grécia","Guatemala","Guiné Equatorial","Haiti","Honduras","Índia","Indonésia","Irão","Iraque","Irlanda","Islândia","Israel","Jamaica","Jordânia","Kosovo","Laos","Lesoto","Letónia","Líbano","Líbia","Lituânia","Luxemburgo","Madagascar","Malásia","Maldivas","Mali","Malta","Mauritânia","Mianmar","Moldávia","Mónaco","Mongólia","Montenegro","Namíbia","Nepal","Nicarágua","Níger","Nova Zelândia","Omã","Paquistão","Panamá","Paraguai","Quénia","República Dominicana","Ruanda","Samoa","Singapura","Síria","Somália","Sri Lanka","Sudão","Tailândia","Tanzânia","Togo","Trinidad e Tobago","Tunísia","Turquemenistão","Uganda","Uzbequistão","Vietname","Zimbabué"]).sort();
 
@@ -866,7 +888,9 @@ const FORMACOES = {
   '4-4-2':   [{x:50,y:90},{x:15,y:70},{x:38,y:70},{x:62,y:70},{x:85,y:70},{x:15,y:48},{x:38,y:48},{x:62,y:48},{x:85,y:48},{x:35,y:22},{x:65,y:22}],
   '4-2-3-1': [{x:50,y:90},{x:15,y:70},{x:38,y:70},{x:62,y:70},{x:85,y:70},{x:32,y:55},{x:68,y:55},{x:20,y:35},{x:50,y:33},{x:80,y:35},{x:50,y:16}],
   '5-3-2':   [{x:50,y:90},{x:10,y:68},{x:28,y:72},{x:50,y:74},{x:72,y:72},{x:90,y:68},{x:25,y:46},{x:50,y:44},{x:75,y:46},{x:35,y:20},{x:65,y:20}],
-  '3-5-2':   [{x:50,y:90},{x:25,y:72},{x:50,y:74},{x:75,y:72},{x:10,y:48},{x:30,y:44},{x:50,y:42},{x:70,y:44},{x:90,y:48},{x:35,y:20},{x:65,y:20}]
+  '3-5-2':   [{x:50,y:90},{x:25,y:72},{x:50,y:74},{x:75,y:72},{x:10,y:48},{x:30,y:44},{x:50,y:42},{x:70,y:44},{x:90,y:48},{x:35,y:20},{x:65,y:20}],
+  '5-2-1-2': [{x:50,y:90},{x:10,y:68},{x:28,y:72},{x:50,y:74},{x:72,y:72},{x:90,y:68},{x:32,y:52},{x:68,y:52},{x:50,y:36},{x:35,y:18},{x:65,y:18}],
+  '5-1-3-1': [{x:50,y:90},{x:10,y:68},{x:28,y:72},{x:50,y:74},{x:72,y:72},{x:90,y:68},{x:50,y:55},{x:20,y:36},{x:50,y:34},{x:80,y:36},{x:50,y:16}]
 };
 
 /* posição recomendada por slot em cada formação (para filtrar jogadores) */
@@ -875,7 +899,9 @@ const POSICOES_SLOT = {
   '4-4-2':   ['GR','DEF','DEF','DEF','DEF','MED','MED','MED','MED','AVA','AVA'],
   '4-2-3-1': ['GR','DEF','DEF','DEF','DEF','MED','MED','EXT','MED','EXT','AVA'],
   '5-3-2':   ['GR','DEF','DEF','DEF','DEF','DEF','MED','MED','MED','AVA','AVA'],
-  '3-5-2':   ['GR','DEF','DEF','DEF','MED','MED','MED','MED','MED','AVA','AVA']
+  '3-5-2':   ['GR','DEF','DEF','DEF','MED','MED','MED','MED','MED','AVA','AVA'],
+  '5-2-1-2': ['GR','DEF','DEF','DEF','DEF','DEF','MED','MED','MED','AVA','AVA'],
+  '5-1-3-1': ['GR','DEF','DEF','DEF','DEF','DEF','MED','EXT','MED','EXT','AVA']
 };
 
 /* jogadores filtrados pela época do jogo actual */
@@ -1290,8 +1316,8 @@ function limparFormJogo() {
   document.querySelectorAll('input[name="formacao"]').forEach(r => r.checked = false);
   document.getElementById('fm433').checked = true;
   ['st-posse','st-remates','st-rematesos','st-cruzamentos','st-ataques','st-atc','st-ate','st-atd','st-cantos','st-forasjogo','st-faltas','st-amarelos','st-vermelhos','adv-posse','adv-remates','adv-rematesos','adv-cruzamentos','adv-ataques','adv-atc','adv-ate','adv-atd','adv-cantos','adv-forasjogo','adv-faltas','adv-amarelos','adv-vermelhos'].forEach(id => document.getElementById(id).value = '');
-  campoJogadores = {}; suplentesTemp = []; treinadoresTemp = []; golosTemp = []; subsTemp = []; novoAdversarioPendente = null;
-  renderizarSuplentes(); renderizarTreinadores(); renderizarGolos(); renderizarSubs();
+  campoJogadores = {}; suplentesTemp = []; treinadoresTemp = []; golosTemp = []; subsTemp = []; golosAdvTemp = []; subsAdvTemp = []; novoAdversarioPendente = null;
+  renderizarSuplentes(); renderizarTreinadores(); renderizarGolos(); renderizarSubs(); renderizarGolosAdv(); renderizarSubsAdv();
   const tabs = document.querySelector('#modalJogo .modal-body');
   if (tabs) { tabs.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('ativo', i===0)); tabs.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('ativo', i===0)); }
 }
@@ -1478,6 +1504,57 @@ function renderizarSubs() {
 }
 function adicionarSub() { subsTemp.push({saiu_id:'',entrou_id:'',minuto:''}); renderizarSubs(); }
 function removerSub(i) { subsTemp.splice(i,1); renderizarSubs(); }
+/* golos adversário */
+function renderizarGolosAdv() {
+  const cont = document.getElementById('listaGolosAdv');
+  cont.innerHTML = golosAdvTemp.length ? golosAdvTemp.map((g,i) => `
+    <div class="golo-row" style="grid-template-columns:1fr 80px 100px 40px">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Marcador</label>
+        <input type="text" class="form-control" value="${g.nome||''}" placeholder="Nome do jogador" onchange="golosAdvTemp[${i}].nome=this.value">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Minuto</label>
+        <input type="number" class="form-control" min="1" max="120" value="${g.minuto||''}" onchange="golosAdvTemp[${i}].minuto=+this.value">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Tipo</label>
+        <select class="form-control" onchange="golosAdvTemp[${i}].tipo=this.value">
+          <option value="normal" ${g.tipo==='normal'?'selected':''}>Normal</option>
+          <option value="penalti" ${g.tipo==='penalti'?'selected':''}>Penálti</option>
+          <option value="og" ${g.tipo==='og'?'selected':''}>Autogolo</option>
+        </select>
+      </div>
+      <button class="btn-remover-row" onclick="removerGoloAdv(${i})" style="align-self:flex-end">✕</button>
+    </div>`).join('') : '<p style="color:var(--cinza-texto);font-size:13px;margin-bottom:12px">Sem golos registados.</p>';
+}
+function adicionarGoloAdv() { golosAdvTemp.push({nome:'',minuto:'',tipo:'normal'}); renderizarGolosAdv(); }
+function removerGoloAdv(i) { golosAdvTemp.splice(i,1); renderizarGolosAdv(); }
+
+/* substituições adversário */
+function renderizarSubsAdv() {
+  const cont = document.getElementById('listaSubsAdv');
+  cont.innerHTML = subsAdvTemp.length ? subsAdvTemp.map((s,i) => `
+    <div style="display:grid;grid-template-columns:1fr 1fr 80px 40px;gap:10px;align-items:end;margin-bottom:10px">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Saiu</label>
+        <input type="text" class="form-control" value="${s.saiu||''}" placeholder="Nome" onchange="subsAdvTemp[${i}].saiu=this.value">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Entrou</label>
+        <input type="text" class="form-control" value="${s.entrou||''}" placeholder="Nome" onchange="subsAdvTemp[${i}].entrou=this.value">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Minuto</label>
+        <input type="number" class="form-control" min="1" max="120" value="${s.minuto||''}" onchange="subsAdvTemp[${i}].minuto=+this.value">
+      </div>
+      <button class="btn-remover-row" onclick="removerSubAdv(${i})" style="align-self:flex-end">✕</button>
+    </div>`).join('') : '<p style="color:var(--cinza-texto);font-size:13px;margin-bottom:12px">Sem substituições registadas.</p>';
+}
+function adicionarSubAdv() { subsAdvTemp.push({saiu:'',entrou:'',minuto:''}); renderizarSubsAdv(); }
+function removerSubAdv(i) { subsAdvTemp.splice(i,1); renderizarSubsAdv(); }
+
+
 
 async function guardarJogo() {
   const data = document.getElementById('jgData').value;
@@ -1531,6 +1608,8 @@ async function guardarJogo() {
     adv_vermelhos: +document.getElementById('adv-vermelhos').value||null,
     golos: golosTemp.filter(g=>g.jogador_id),
     substituicoes: subsTemp.filter(s=>s.saiu_id&&s.entrou_id),
+    golos_adv_eventos: golosAdvTemp.filter(g=>g.nome),
+    subs_adv: subsAdvTemp.filter(s=>s.saiu||s.entrou),
     jogadores_jogo
   };
 
@@ -1573,7 +1652,9 @@ async function editarJogo(id) {
   treinadoresTemp = (j.treinadores||[]).map(n=>({nome:n}));
   golosTemp = (j.golos||[]).map(g=>({...g}));
   subsTemp = (j.substituicoes||[]).map(s=>({...s}));
-  renderizarSuplentes(); renderizarTreinadores(); renderizarGolos(); renderizarSubs();
+  golosAdvTemp = (j.golos_adv_eventos||[]).map(g=>({...g}));
+  subsAdvTemp = (j.subs_adv||[]).map(s=>({...s}));
+  renderizarSuplentes(); renderizarTreinadores(); renderizarGolos(); renderizarSubs(); renderizarGolosAdv(); renderizarSubsAdv();
   atualizarCampo();
   abrirModal('modalJogo');
 }
@@ -1623,6 +1704,13 @@ function selecionarAdversario(nome, novo) {
   document.getElementById('advDropdown').style.display = 'none';
   if (novo) novoAdversarioPendente = nome;
   else novoAdversarioPendente = null;
+}
+
+function atualizarLabelsAdversario(nome) {
+  ['labelAdvEventos','labelAdversarioStats'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = nome || 'Adversário';
+  });
 }
 
 function fecharDropAdv() {
