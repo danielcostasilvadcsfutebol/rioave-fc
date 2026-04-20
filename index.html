@@ -119,6 +119,165 @@
   .forma-dot.v { background: var(--verde); }
   .forma-dot.e { background: var(--amarelo); }
   .forma-dot.d { background: var(--vermelho); }
+
+  /* PERFIL JOGADOR */
+  .perfil-overlay {
+    display: none; position: fixed; inset: 0; background: #0a140d;
+    z-index: 600; overflow-y: auto;
+  }
+  .perfil-overlay.aberto { display: block; }
+
+  .perfil-header {
+    background: linear-gradient(160deg, #0a2e15 0%, #0f4224 60%, #1a6b3a 100%);
+    padding: 0; position: relative; overflow: hidden; min-height: 280px;
+  }
+  .perfil-header::before {
+    content: attr(data-initials);
+    position: absolute; right: -30px; top: 50%; transform: translateY(-50%);
+    font-family: var(--fonte-display); font-size: 320px; font-weight: 800;
+    color: rgba(255,255,255,0.04); line-height: 1; pointer-events: none;
+  }
+  .perfil-header-inner {
+    max-width: 1200px; margin: 0 auto; padding: 40px 48px;
+    display: grid; grid-template-columns: auto 1fr auto; gap: 36px; align-items: center;
+    position: relative; z-index: 1;
+  }
+  .perfil-foto {
+    width: 140px; height: 140px; border-radius: 50%;
+    border: 4px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--fonte-display); font-size: 48px; font-weight: 800;
+    color: rgba(255,255,255,0.7); overflow: hidden; flex-shrink: 0;
+  }
+  .perfil-foto img { width: 100%; height: 100%; object-fit: cover; }
+  .perfil-nome-bloco { color: white; }
+  .perfil-nome {
+    font-family: var(--fonte-display); font-size: 52px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 1px; line-height: 1; margin-bottom: 8px;
+  }
+  .perfil-posicao {
+    font-family: var(--fonte-display); font-size: 14px; font-weight: 600;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--verde-claro); margin-bottom: 16px;
+  }
+  .perfil-meta-pills { display: flex; gap: 10px; flex-wrap: wrap; }
+  .perfil-pill {
+    background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85);
+    border: 1px solid rgba(255,255,255,0.15); padding: 5px 14px; border-radius: 999px;
+    font-size: 13px; font-family: var(--fonte-display); font-weight: 600; letter-spacing: 0.5px;
+  }
+  .perfil-stats-topo {
+    display: flex; gap: 0; flex-direction: column; align-items: flex-end; gap: 8px;
+  }
+  .perfil-stat-destaque {
+    text-align: center; background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 14px 20px; min-width: 90px;
+  }
+  .perfil-stat-destaque .val {
+    font-family: var(--fonte-display); font-size: 36px; font-weight: 800; color: white; line-height: 1;
+  }
+  .perfil-stat-destaque .lbl {
+    font-family: var(--fonte-display); font-size: 10px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-top: 4px;
+  }
+
+  /* TABS PERFIL */
+  .perfil-tabs-bar {
+    background: #0f4224; border-bottom: 1px solid rgba(255,255,255,0.1);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .perfil-tabs-inner {
+    max-width: 1200px; margin: 0 auto; padding: 0 48px;
+    display: flex; gap: 0;
+  }
+  .perfil-tab {
+    color: rgba(255,255,255,0.5); background: none; border: none;
+    padding: 14px 20px; font-family: var(--fonte-display); font-size: 13px;
+    font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    cursor: pointer; transition: all 0.15s; border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+  }
+  .perfil-tab:hover { color: rgba(255,255,255,0.85); }
+  .perfil-tab.ativo { color: var(--verde-claro); border-bottom-color: var(--verde-claro); }
+
+  /* CONTEÚDO PERFIL */
+  .perfil-body { background: #f5f4f1; min-height: calc(100vh - 340px); }
+  .perfil-body-inner { max-width: 1200px; margin: 0 auto; padding: 36px 48px; }
+
+  /* KPI CARDS */
+  .perfil-kpi-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 28px;
+  }
+  .kpi-card {
+    background: white; border-radius: 14px; padding: 20px 16px; text-align: center;
+    border: 1.5px solid var(--cinza-borda); box-shadow: var(--sombra-sm);
+    position: relative; overflow: hidden;
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--verde);
+  }
+  .kpi-val {
+    font-family: var(--fonte-display); font-size: 38px; font-weight: 800;
+    color: var(--verde); line-height: 1; margin-bottom: 4px;
+  }
+  .kpi-lbl {
+    font-family: var(--fonte-display); font-size: 10px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase; color: var(--cinza-texto);
+  }
+  .kpi-sub {
+    font-size: 11px; color: var(--cinza-texto); margin-top: 4px;
+  }
+
+  /* SECTION TITLE */
+  .perfil-sec-title {
+    font-family: var(--fonte-display); font-size: 13px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--cinza-texto);
+    margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .perfil-sec-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--cinza-borda);
+  }
+
+  /* MINUTOS BAR */
+  .minutos-bar-wrap { background: white; border-radius: 12px; padding: 20px 24px; border: 1.5px solid var(--cinza-borda); }
+  .minuto-segment { display: flex; flex-direction: column; gap: 4px; }
+  .minuto-label { font-family: var(--fonte-display); font-size: 10px; font-weight: 700; color: var(--cinza-texto); text-align: center; }
+  .minuto-bar-outer { height: 8px; background: var(--cinza-bg); border-radius: 4px; overflow: hidden; }
+  .minuto-bar-inner { height: 100%; background: var(--verde); border-radius: 4px; transition: width 0.6s ease; }
+
+  /* HISTÓRICO JOGOS */
+  .jogo-hist-row {
+    display: grid; grid-template-columns: 100px 50px 1fr 80px 80px;
+    gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--cinza-borda);
+    align-items: center; font-size: 13px; transition: background 0.15s; cursor: pointer;
+  }
+  .jogo-hist-row:hover { background: var(--cinza-bg); }
+  .jogo-hist-row:last-child { border-bottom: none; }
+
+  /* RADAR CHART */
+  .perfil-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .perfil-card { background: white; border-radius: 14px; padding: 24px; border: 1.5px solid var(--cinza-borda); box-shadow: var(--sombra-sm); }
+
+  /* BTN VOLTAR */
+  .btn-voltar {
+    position: fixed; top: 16px; left: 16px; z-index: 700;
+    background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2);
+    padding: 8px 16px; border-radius: 999px; font-family: var(--fonte-display);
+    font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; backdrop-filter: blur(8px); transition: all 0.15s;
+  }
+  .btn-voltar:hover { background: rgba(255,255,255,0.22); }
+
+  @media (max-width: 768px) {
+    .perfil-header-inner { grid-template-columns: 1fr; gap: 20px; padding: 24px 20px; }
+    .perfil-nome { font-size: 36px; }
+    .perfil-stats-topo { flex-direction: row; align-items: flex-start; }
+    .perfil-tabs-inner { padding: 0 16px; overflow-x: auto; }
+    .perfil-body-inner { padding: 20px 16px; }
+    .perfil-kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .perfil-2col { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -230,6 +389,83 @@
 
 
 </main>
+
+<!-- ========== PERFIL JOGADOR ========== -->
+<div class="perfil-overlay" id="perfilJogador">
+  <button class="btn-voltar" onclick="fecharPerfilJogador()">← Voltar</button>
+
+  <div class="perfil-header" id="pfj-header" data-initials="?">
+    <div class="perfil-header-inner">
+      <div class="perfil-foto" id="pfj-foto"></div>
+      <div class="perfil-nome-bloco">
+        <div class="perfil-posicao" id="pfj-posicao">—</div>
+        <div class="perfil-nome" id="pfj-nome">—</div>
+        <div class="perfil-meta-pills" id="pfj-pills"></div>
+      </div>
+      <div class="perfil-stats-topo" id="pfj-stats-topo"></div>
+    </div>
+  </div>
+
+  <div class="perfil-tabs-bar">
+    <div class="perfil-tabs-inner">
+      <button class="perfil-tab ativo" onclick="mudarTabPerfil(this,'pfj-visao')">Visão Geral</button>
+      <button class="perfil-tab" onclick="mudarTabPerfil(this,'pfj-jogos')">Jogos</button>
+      <button class="perfil-tab" onclick="mudarTabPerfil(this,'pfj-epocas')">Por Época</button>
+    </div>
+  </div>
+
+  <div class="perfil-body">
+    <div class="perfil-body-inner">
+
+      <!-- VISÃO GERAL -->
+      <div id="pfj-visao">
+        <div class="perfil-kpi-grid" id="pfj-kpis"></div>
+        <div class="perfil-2col" style="margin-bottom:24px">
+          <div class="perfil-card">
+            <div class="perfil-sec-title">Golos por período</div>
+            <canvas id="pfj-chart-periodos" height="180"></canvas>
+          </div>
+          <div class="perfil-card">
+            <div class="perfil-sec-title">Distribuição por competição</div>
+            <canvas id="pfj-chart-comp" height="180"></canvas>
+          </div>
+        </div>
+        <div class="perfil-card" style="margin-bottom:24px">
+          <div class="perfil-sec-title">Minutos jogados por jogo</div>
+          <canvas id="pfj-chart-minutos" height="100"></canvas>
+        </div>
+        <div class="perfil-2col">
+          <div class="perfil-card">
+            <div class="perfil-sec-title">Desempenho casa vs fora</div>
+            <div id="pfj-casa-fora"></div>
+          </div>
+          <div class="perfil-card">
+            <div class="perfil-sec-title">Cartões</div>
+            <div id="pfj-cartoes"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- JOGOS -->
+      <div id="pfj-jogos" style="display:none">
+        <div class="perfil-card">
+          <div class="perfil-sec-title">Histórico de jogos</div>
+          <div id="pfj-lista-jogos"></div>
+        </div>
+      </div>
+
+      <!-- POR ÉPOCA -->
+      <div id="pfj-epocas" style="display:none">
+        <div class="perfil-card">
+          <div class="perfil-sec-title">Estatísticas por época</div>
+          <div id="pfj-tabela-epocas"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 
 <!-- PERFIL DO JOGO -->
 <div class="jogo-perfil-overlay" id="jogoPerfil" onclick="if(event.target===this)fecharPerfil()">
@@ -560,7 +796,7 @@ function renderizarJogadoresPub() {
     const iniciais = j.nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
     const idade = j.data_nasc ? calcIdade(j.data_nasc) : null;
     const fotoHtml = j.foto ? `<img src="${j.foto}" alt="${j.nome}">` : `<div class="card-jogador-initials">${iniciais}</div>`;
-    return `<div class="card-jogador-pub">
+    return `<div class="card-jogador-pub" onclick="abrirPerfilJogador('${j.id}')" style="cursor:pointer">
       <div class="card-jogador-foto">${fotoHtml}<div class="card-jogador-pos-badge">${j.posicoes?.join('·')||''}</div></div>
       <div class="card-jogador-info">
         <div class="card-jogador-nome">${j.nome}</div>
@@ -568,6 +804,301 @@ function renderizarJogadoresPub() {
       </div>
     </div>`;
   }).join('');
+}
+
+
+/* ============================================================
+   PERFIL DO JOGADOR
+   ============================================================ */
+let pfjCharts = {};
+
+function mudarTabPerfil(btn, tabId) {
+  document.querySelectorAll('.perfil-tab').forEach(b=>b.classList.remove('ativo'));
+  ['pfj-visao','pfj-jogos','pfj-epocas'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+  btn.classList.add('ativo');
+  document.getElementById(tabId).style.display='block';
+}
+
+function fecharPerfilJogador() {
+  document.getElementById('perfilJogador').classList.remove('aberto');
+  document.body.style.overflow='';
+  Object.values(pfjCharts).forEach(c=>c.destroy());
+  pfjCharts={};
+}
+
+function abrirPerfilJogador(id) {
+  const j = todosJogadores.find(x=>x.id===id); if(!j) return;
+
+  /* calcular estatísticas do jogador */
+  const stats = calcularStatsJogador(j.id);
+
+  /* header */
+  const iniciais = j.nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
+  document.getElementById('pfj-header').dataset.initials = iniciais;
+  const fotoEl = document.getElementById('pfj-foto');
+  fotoEl.innerHTML = j.foto ? `<img src="${j.foto}" alt="${j.nome}">` : iniciais;
+  document.getElementById('pfj-nome').textContent = j.nome;
+  document.getElementById('pfj-posicao').textContent = (j.posicoes||[]).map(p=>({GR:'Guarda-Redes',DEF:'Defesa',MED:'Médio',EXT:'Extremo',AVA:'Avançado'}[p]||p)).join(' · ');
+
+  /* pills */
+  const pills = [];
+  if (j.nacionalidade) pills.push(j.nacionalidade);
+  if (j.data_nasc) pills.push(`${calcIdade(j.data_nasc)} anos`);
+  if (j.pe) pills.push(`Pé ${j.pe}`);
+  if (j.epocas?.length) pills.push(`${j.epocas.length} época${j.epocas.length>1?'s':''}`);
+  document.getElementById('pfj-pills').innerHTML = pills.map(p=>`<span class="perfil-pill">${p}</span>`).join('');
+
+  /* stats topo */
+  document.getElementById('pfj-stats-topo').innerHTML = `
+    <div style="display:flex;gap:12px">
+      <div class="perfil-stat-destaque"><div class="val">${stats.jogos}</div><div class="lbl">Jogos</div></div>
+      <div class="perfil-stat-destaque"><div class="val">${stats.golos}</div><div class="lbl">Golos</div></div>
+      <div class="perfil-stat-destaque"><div class="val">${stats.assistencias}</div><div class="lbl">Assist.</div></div>
+    </div>`;
+
+  /* KPIs */
+  const minMedia = stats.jogos > 0 ? Math.round(stats.minutos / stats.jogos) : 0;
+  document.getElementById('pfj-kpis').innerHTML = `
+    <div class="kpi-card"><div class="kpi-val">${stats.jogos}</div><div class="kpi-lbl">Jogos</div><div class="kpi-sub">${stats.titularidades} titular · ${stats.jogos-stats.titularidades} sub</div></div>
+    <div class="kpi-card"><div class="kpi-val">${stats.minutos}'</div><div class="kpi-lbl">Minutos</div><div class="kpi-sub">~${minMedia}' por jogo</div></div>
+    <div class="kpi-card"><div class="kpi-val">${stats.golos}</div><div class="kpi-lbl">Golos</div><div class="kpi-sub">${stats.golosPen} penálti · ${stats.golosOG} autog.</div></div>
+    <div class="kpi-card"><div class="kpi-val">${stats.assistencias}</div><div class="kpi-lbl">Assistências</div><div class="kpi-sub">Participações: ${stats.golos+stats.assistencias}</div></div>
+    <div class="kpi-card"><div class="kpi-val">${stats.amarelos}</div><div class="kpi-lbl">Amarelos</div><div class="kpi-sub">${stats.vermelhos} vermelho${stats.vermelhos!==1?'s':''}</div></div>`;
+
+  /* renderizar gráficos e listas */
+  setTimeout(() => {
+    renderizarChartPeriodos(stats);
+    renderizarChartCompPerf(stats, j.id);
+    renderizarChartMinutos(stats);
+    renderizarCasaFora(stats);
+    renderizarCartoes(stats);
+    renderizarListaJogos(j.id);
+    renderizarTabelaEpocas(j.id, j.epocas||[]);
+  }, 50);
+
+  /* mostrar */
+  document.getElementById('perfilJogador').classList.add('aberto');
+  document.getElementById('perfilJogador').scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+
+  /* reset tabs */
+  document.querySelectorAll('.perfil-tab').forEach((b,i)=>b.classList.toggle('ativo',i===0));
+  ['pfj-visao','pfj-jogos','pfj-epocas'].forEach((id,i)=>{const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';});
+}
+
+function calcularStatsJogador(jogadorId) {
+  const stats = {
+    jogos:0, titularidades:0, minutos:0, golos:0, golosPen:0, golosOG:0,
+    assistencias:0, amarelos:0, vermelhos:0,
+    periodos:{0:0,15:0,30:0,45:0,60:0,75:0},
+    porCompeticao:{}, porEpoca:{},
+    jogosDetalhes:[], minutosPorJogo:[],
+    casa:{jogos:0,golos:0,assist:0}, fora:{jogos:0,golos:0,assist:0}
+  };
+
+  todosJogos.forEach(jogo => {
+    const jj = (jogo.jogadores_jogo||[]).find(x=>x.jogador_id===jogadorId);
+    if (!jj) return;
+
+    stats.jogos++;
+    const local = jogo.local;
+    const comp = jogo.competicao||'Outro';
+    const epoca = jogo.epoca||'—';
+    if (!stats.porCompeticao[comp]) stats.porCompeticao[comp]=0;
+    if (!stats.porEpoca[epoca]) stats.porEpoca[epoca]={jogos:0,golos:0,assist:0,min:0,titulares:0};
+
+    /* minutos jogados */
+    let minJogados = 0;
+    const duracao = jogo.duracao || 90;
+    if (jj.titular) {
+      stats.titularidades++;
+      stats.porEpoca[epoca].titulares++;
+      /* verificar se foi substituído */
+      const sub = (jogo.substituicoes||[]).find(s=>s.saiu_id===jogadorId);
+      minJogados = sub ? (sub.minuto||duracao) : duracao;
+    } else {
+      /* entrou da bancada */
+      const sub = (jogo.substituicoes||[]).find(s=>s.entrou_id===jogadorId);
+      minJogados = sub ? duracao-(sub.minuto||duracao) : 0;
+    }
+    stats.minutos += minJogados;
+    stats.porEpoca[epoca].min += minJogados;
+    stats.minutosPorJogo.push({ data: jogo.data, adversario: jogo.adversario, minutos: minJogados, titular: jj.titular });
+
+    /* golos */
+    const golosJogo = (jogo.golos||[]).filter(g=>g.jogador_id===jogadorId);
+    golosJogo.forEach(g=>{
+      stats.golos++;
+      if(g.tipo==='penalti') stats.golosPen++;
+      if(g.tipo==='og') stats.golosOG++;
+      stats.porCompeticao[comp]++;
+      stats.porEpoca[epoca].golos++;
+      /* período */
+      const m=g.minuto||0;
+      const periodo=m<15?0:m<30?15:m<45?30:m<60?45:m<75?60:75;
+      stats.periodos[periodo]++;
+      if(local==='Casa') stats.casa.golos++; else stats.fora.golos++;
+    });
+
+    /* assistências */
+    const assistJogo = (jogo.golos||[]).filter(g=>g.assist_id===jogadorId);
+    assistJogo.forEach(()=>{
+      stats.assistencias++;
+      stats.porEpoca[epoca].assist++;
+      if(local==='Casa') stats.casa.assist++; else stats.fora.assist++;
+    });
+
+    /* cartões */
+    /* (não temos cartões por jogador ainda, mas preparamos estrutura) */
+
+    /* casa/fora */
+    if(local==='Casa') stats.casa.jogos++; else stats.fora.jogos++;
+    stats.porEpoca[epoca].jogos++;
+
+    stats.jogosDetalhes.push({
+      data: jogo.data, adversario: jogo.adversario, local: jogo.local,
+      golosNos: jogo.golos_nos, golosAdv: jogo.golos_adv,
+      competicao: jogo.competicao, epoca: jogo.epoca,
+      minutos: minJogados, titular: jj.titular,
+      golos: golosJogo.length, assist: assistJogo.length, jogoId: jogo.id
+    });
+  });
+
+  stats.jogosDetalhes.sort((a,b)=>new Date(b.data)-new Date(a.data));
+  return stats;
+}
+
+function renderizarChartPeriodos(stats) {
+  if(pfjCharts.periodos) pfjCharts.periodos.destroy();
+  const ctx = document.getElementById('pfj-chart-periodos'); if(!ctx) return;
+  const labels = ['0-15'','15-30'','30-45'','45-60'','60-75'','75-90''];
+  const data = Object.values(stats.periodos);
+  pfjCharts.periodos = new Chart(ctx, {
+    type:'bar',
+    data:{ labels, datasets:[{data, backgroundColor:'#1a6b3a', borderRadius:6}] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{grid:{display:false}}} }
+  });
+}
+
+function renderizarChartCompPerf(stats, jogadorId) {
+  if(pfjCharts.comp) pfjCharts.comp.destroy();
+  const ctx = document.getElementById('pfj-chart-comp'); if(!ctx) return;
+  const labels = Object.keys(stats.porCompeticao);
+  const data = Object.values(stats.porCompeticao);
+  if(!labels.length){ ctx.parentElement.innerHTML='<p style="color:var(--cinza-texto);font-size:13px;text-align:center;padding:20px">Sem golos registados.</p>'; return; }
+  pfjCharts.comp = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels, datasets:[{data, backgroundColor:['#1a6b3a','#2d9a55','#e8a020','#c0392b','#2563eb','#888780'], borderWidth:0}] },
+    options:{ responsive:true, plugins:{legend:{position:'right',labels:{font:{size:12}}}} }
+  });
+}
+
+function renderizarChartMinutos(stats) {
+  if(pfjCharts.minutos) pfjCharts.minutos.destroy();
+  const ctx = document.getElementById('pfj-chart-minutos'); if(!ctx) return;
+  const ultimos = stats.minutosPorJogo.slice(-15);
+  if(!ultimos.length){ ctx.parentElement.innerHTML='<p style="color:var(--cinza-texto);font-size:13px;text-align:center;padding:20px">Sem dados de minutos.</p>'; return; }
+  pfjCharts.minutos = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: ultimos.map(j=>j.adversario?.substring(0,8)||'?'),
+      datasets:[{ data: ultimos.map(j=>j.minutos), backgroundColor: ultimos.map(j=>j.titular?'#1a6b3a':'#9FE1CB'), borderRadius:4, label:'Minutos' }]
+    },
+    options:{ responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw}' — ${ultimos[c.dataIndex].titular?'Titular':'Suplente'}`}}}, scales:{y:{beginAtZero:true,max:95,ticks:{stepSize:15}},x:{grid:{display:false},ticks:{font:{size:10}}}} }
+  });
+}
+
+function renderizarCasaFora(stats) {
+  const el = document.getElementById('pfj-casa-fora'); if(!el) return;
+  const linhas = [
+    {label:'Jogos',casa:stats.casa.jogos,fora:stats.fora.jogos},
+    {label:'Golos',casa:stats.casa.golos,fora:stats.fora.golos},
+    {label:'Assistências',casa:stats.casa.assist,fora:stats.fora.assist},
+  ];
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 60px 60px;gap:8px;align-items:center">
+      <div></div>
+      <div style="text-align:center;font-family:var(--fonte-display);font-size:11px;font-weight:700;letter-spacing:1px;color:var(--cinza-texto)">CASA</div>
+      <div style="text-align:center;font-family:var(--fonte-display);font-size:11px;font-weight:700;letter-spacing:1px;color:var(--cinza-texto)">FORA</div>
+      ${linhas.map(l=>`
+        <div style="font-size:14px;color:var(--cinza-texto)">${l.label}</div>
+        <div style="text-align:center;font-family:var(--fonte-display);font-size:22px;font-weight:800;color:var(--verde)">${l.casa}</div>
+        <div style="text-align:center;font-family:var(--fonte-display);font-size:22px;font-weight:800;color:var(--preto)">${l.fora}</div>
+      `).join('')}
+    </div>`;
+}
+
+function renderizarCartoes(stats) {
+  const el = document.getElementById('pfj-cartoes'); if(!el) return;
+  el.innerHTML = `
+    <div style="display:flex;gap:20px;align-items:center;justify-content:center;padding:20px 0">
+      <div style="text-align:center">
+        <div style="width:40px;height:56px;background:var(--amarelo);border-radius:4px;margin:0 auto 8px;box-shadow:0 4px 12px rgba(232,160,32,0.4)"></div>
+        <div style="font-family:var(--fonte-display);font-size:28px;font-weight:800;color:var(--amarelo)">${stats.amarelos}</div>
+        <div style="font-family:var(--fonte-display);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--cinza-texto)">Amarelos</div>
+      </div>
+      <div style="text-align:center">
+        <div style="width:40px;height:56px;background:var(--vermelho);border-radius:4px;margin:0 auto 8px;box-shadow:0 4px 12px rgba(192,57,43,0.4)"></div>
+        <div style="font-family:var(--fonte-display);font-size:28px;font-weight:800;color:var(--vermelho)">${stats.vermelhos}</div>
+        <div style="font-family:var(--fonte-display);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--cinza-texto)">Vermelhos</div>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:12px;color:var(--cinza-texto)">Cartões individuais disponíveis em breve</p>`;
+}
+
+function renderizarListaJogos(jogadorId) {
+  const el = document.getElementById('pfj-lista-jogos'); if(!el) return;
+  const jogosJogador = todosJogos.filter(jogo => (jogo.jogadores_jogo||[]).some(jj=>jj.jogador_id===jogadorId))
+    .sort((a,b)=>new Date(b.data)-new Date(a.data));
+  if(!jogosJogador.length) { el.innerHTML='<p style="color:var(--cinza-texto);padding:20px">Sem jogos registados.</p>'; return; }
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:90px 50px 1fr 70px 70px 60px;gap:10px;padding:8px 16px;background:var(--cinza-leve);font-family:var(--fonte-display);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--cinza-texto)">
+      <div>Data</div><div>Local</div><div>Adversário</div><div>Resultado</div><div>Min.</div><div>G/A</div>
+    </div>` +
+    jogosJogador.map(jogo => {
+      const jj = (jogo.jogadores_jogo||[]).find(x=>x.jogador_id===jogadorId);
+      const duracao = jogo.duracao||90;
+      let min = 0;
+      if(jj?.titular){ const sub=(jogo.substituicoes||[]).find(s=>s.saiu_id===jogadorId); min=sub?(sub.minuto||duracao):duracao; }
+      else { const sub=(jogo.substituicoes||[]).find(s=>s.entrou_id===jogadorId); min=sub?duracao-(sub.minuto||duracao):0; }
+      const golos=(jogo.golos||[]).filter(g=>g.jogador_id===jogadorId).length;
+      const assist=(jogo.golos||[]).filter(g=>g.assist_id===jogadorId).length;
+      const res=jogo.golos_nos>jogo.golos_adv?'resultado-v':jogo.golos_nos===jogo.golos_adv?'resultado-e':'resultado-d';
+      return `<div class="jogo-hist-row" onclick="fecharPerfilJogador();setTimeout(()=>abrirPerfil('${jogo.id}'),300)">
+        <div style="font-size:12px;color:var(--cinza-texto)">${formatarData(jogo.data)}</div>
+        <div><span class="badge badge-cinza" style="font-size:10px">${jogo.local||'—'}</span></div>
+        <div style="font-weight:500">${jogo.adversario}</div>
+        <div><span class="${res}">${jogo.golos_nos}–${jogo.golos_adv}</span></div>
+        <div style="font-family:var(--fonte-display);font-weight:700">${jj?.titular?`<span style="color:var(--verde)">●</span> `:'<span style="color:var(--cinza-texto)">○</span> '}${min}'</div>
+        <div style="font-family:var(--fonte-display);font-weight:700">${golos>0?`<span style="color:var(--verde)">${golos}G</span> `:''}${assist>0?`<span style="color:var(--azul)">${assist}A</span>`:golos===0?'—':''}</div>
+      </div>`;
+    }).join('');
+}
+
+function renderizarTabelaEpocas(jogadorId, epocas) {
+  const el = document.getElementById('pfj-tabela-epocas'); if(!el) return;
+  if(!epocas.length){ el.innerHTML='<p style="color:var(--cinza-texto);padding:20px">Sem épocas registadas no perfil do jogador.</p>'; return; }
+  const statsEpoca = {};
+  epocas.forEach(ep => { statsEpoca[ep]={jogos:0,titulares:0,minutos:0,golos:0,assist:0}; });
+  todosJogos.forEach(jogo => {
+    const ep = jogo.epoca; if(!ep||!statsEpoca[ep]) return;
+    const jj=(jogo.jogadores_jogo||[]).find(x=>x.jogador_id===jogadorId); if(!jj) return;
+    statsEpoca[ep].jogos++;
+    const duracao=jogo.duracao||90;
+    if(jj.titular){ statsEpoca[ep].titulares++; const sub=(jogo.substituicoes||[]).find(s=>s.saiu_id===jogadorId); statsEpoca[ep].minutos+=sub?(sub.minuto||duracao):duracao; }
+    else { const sub=(jogo.substituicoes||[]).find(s=>s.entrou_id===jogadorId); statsEpoca[ep].minutos+=sub?duracao-(sub.minuto||duracao):0; }
+    statsEpoca[ep].golos+=(jogo.golos||[]).filter(g=>g.jogador_id===jogadorId).length;
+    statsEpoca[ep].assist+=(jogo.golos||[]).filter(g=>g.assist_id===jogadorId).length;
+  });
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:120px repeat(5,1fr);gap:0">
+      <div style="padding:10px 16px;background:var(--cinza-leve);font-family:var(--fonte-display);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--cinza-texto)">Época</div>
+      ${['Jogos','Titular','Minutos','Golos','Assistências'].map(h=>`<div style="padding:10px 16px;background:var(--cinza-leve);font-family:var(--fonte-display);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--cinza-texto);text-align:center">${h}</div>`).join('')}
+      ${epocas.sort().reverse().map(ep=>{ const s=statsEpoca[ep]; return `
+        <div style="padding:12px 16px;border-bottom:1px solid var(--cinza-borda);font-family:var(--fonte-display);font-size:14px;font-weight:700">${ep}</div>
+        ${[s.jogos,s.titulares,s.minutos+"'",s.golos,s.assist].map(v=>`<div style="padding:12px 16px;border-bottom:1px solid var(--cinza-borda);text-align:center;font-family:var(--fonte-display);font-size:18px;font-weight:800;color:var(--verde)">${v}</div>`).join('')}
+      `;}).join('')}
+    </div>`;
 }
 
 /* ---- UTILS ---- */
