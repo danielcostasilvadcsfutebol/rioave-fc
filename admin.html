@@ -633,6 +633,7 @@
               <input type="radio" id="fm352" name="formacao" value="3-5-2" class="pill-input" onchange="atualizarCampo()"><label for="fm352" class="pill-label">3-5-2</label>
               <input type="radio" id="fm5212" name="formacao" value="5-2-1-2" class="pill-input" onchange="atualizarCampo()"><label for="fm5212" class="pill-label">5-2-1-2</label>
               <input type="radio" id="fm5131" name="formacao" value="5-1-3-1" class="pill-input" onchange="atualizarCampo()"><label for="fm5131" class="pill-label">5-1-3-1</label>
+              <input type="radio" id="fm523" name="formacao" value="5-2-3" class="pill-input" onchange="atualizarCampo()"><label for="fm523" class="pill-label">5-2-3</label>
             </div>
             <div class="campo-editor" id="campoEditor">
               <div class="campo-linha-meio"></div>
@@ -894,7 +895,8 @@ const FORMACOES = {
   '5-3-2':   [{x:50,y:90},{x:10,y:68},{x:28,y:72},{x:50,y:74},{x:72,y:72},{x:90,y:68},{x:25,y:46},{x:50,y:44},{x:75,y:46},{x:35,y:20},{x:65,y:20}],
   '3-5-2':   [{x:50,y:90},{x:25,y:72},{x:50,y:74},{x:75,y:72},{x:10,y:48},{x:30,y:44},{x:50,y:42},{x:70,y:44},{x:90,y:48},{x:35,y:20},{x:65,y:20}],
   '5-2-1-2': [{x:50,y:90},{x:10,y:68},{x:28,y:72},{x:50,y:74},{x:72,y:72},{x:90,y:68},{x:32,y:52},{x:68,y:52},{x:50,y:36},{x:35,y:18},{x:65,y:18}],
-  '5-1-3-1': [{x:50,y:90},{x:10,y:68},{x:28,y:72},{x:50,y:74},{x:72,y:72},{x:90,y:68},{x:50,y:55},{x:20,y:36},{x:50,y:34},{x:80,y:36},{x:50,y:16}]
+  '5-1-3-1': [{x:50,y:90},{x:10,y:68},{x:28,y:72},{x:50,y:74},{x:72,y:72},{x:90,y:68},{x:50,y:55},{x:20,y:36},{x:50,y:34},{x:80,y:36},{x:50,y:16}],
+  '5-2-3':   [{x:50,y:90},{x:10,y:68},{x:28,y:72},{x:50,y:74},{x:72,y:72},{x:90,y:68},{x:32,y:50},{x:68,y:50},{x:20,y:24},{x:50,y:22},{x:80,y:24}]
 };
 
 /* posição recomendada por slot em cada formação (para filtrar jogadores) */
@@ -905,7 +907,8 @@ const POSICOES_SLOT = {
   '5-3-2':   ['GR','DEF','DEF','DEF','DEF','DEF','MED','MED','MED','AVA','AVA'],
   '3-5-2':   ['GR','DEF','DEF','DEF','MED','MED','MED','MED','MED','AVA','AVA'],
   '5-2-1-2': ['GR','DEF','DEF','DEF','DEF','DEF','MED','MED','MED','AVA','AVA'],
-  '5-1-3-1': ['GR','DEF','DEF','DEF','DEF','DEF','MED','EXT','MED','EXT','AVA']
+  '5-1-3-1': ['GR','DEF','DEF','DEF','DEF','DEF','MED','EXT','MED','EXT','AVA'],
+  '5-2-3':   ['GR','DEF','DEF','DEF','DEF','DEF','MED','MED','EXT','AVA','EXT']
 };
 
 /* jogadores filtrados pela época do jogo actual */
