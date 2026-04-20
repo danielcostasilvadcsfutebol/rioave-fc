@@ -662,27 +662,59 @@
 
       <!-- TAB STATS -->
       <div class="tab-panel" id="tab-stats">
-        <div class="form-secao">Posse &amp; Remates</div>
-        <div class="stats-grid" style="margin-bottom:20px">
-          <div class="stat-input-group"><label>Posse (%)</label><input type="number" id="st-posse" min="0" max="100" placeholder="50"></div>
-          <div class="stat-input-group"><label>Remates</label><input type="number" id="st-remates" min="0" placeholder="0"></div>
-          <div class="stat-input-group"><label>Remates à Baliza</label><input type="number" id="st-rematesos" min="0" placeholder="0"></div>
-          <div class="stat-input-group"><label>Cruzamentos</label><input type="number" id="st-cruzamentos" min="0" placeholder="0"></div>
-        </div>
-        <div class="form-secao">Ataques</div>
-        <div class="stats-grid" style="margin-bottom:20px">
-          <div class="stat-input-group"><label>Total Ataques</label><input type="number" id="st-ataques" min="0" placeholder="0"></div>
-          <div class="stat-input-group"><label>Pelo Centro</label><input type="number" id="st-atc" min="0" placeholder="0"></div>
-          <div class="stat-input-group"><label>Pela Esquerda</label><input type="number" id="st-ate" min="0" placeholder="0"></div>
-          <div class="stat-input-group"><label>Pela Direita</label><input type="number" id="st-atd" min="0" placeholder="0"></div>
-        </div>
-        <div class="form-secao">Disciplina &amp; Outros</div>
-        <div class="stats-grid">
-          <div class="stat-input-group"><label>Cantos</label><input type="number" id="st-cantos" min="0" placeholder="0"></div>
-          <div class="stat-input-group"><label>Foras de Jogo</label><input type="number" id="st-forasjogo" min="0" placeholder="0"></div>
-          <div class="stat-input-group"><label>Faltas</label><input type="number" id="st-faltas" min="0" placeholder="0"></div>
-          <div class="stat-input-group"><label>Amarelos</label><input type="number" id="st-amarelos" min="0" placeholder="0"></div>
-          <div class="stat-input-group"><label>Vermelhos</label><input type="number" id="st-vermelhos" min="0" placeholder="0"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+          <!-- RIO AVE -->
+          <div>
+            <div class="form-secao" style="margin-top:0">Rio Ave FC</div>
+            <div class="form-secao" style="background:var(--cinza-leve);color:var(--cinza-texto)">Posse &amp; Remates</div>
+            <div class="stats-grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+              <div class="stat-input-group"><label>Posse (%)</label><input type="number" id="st-posse" min="0" max="100" placeholder="50"></div>
+              <div class="stat-input-group"><label>Remates</label><input type="number" id="st-remates" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Rem. à Baliza</label><input type="number" id="st-rematesos" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Cruzamentos</label><input type="number" id="st-cruzamentos" min="0" placeholder="0"></div>
+            </div>
+            <div class="form-secao" style="background:var(--cinza-leve);color:var(--cinza-texto)">Ataques</div>
+            <div class="stats-grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+              <div class="stat-input-group"><label>Total Ataques</label><input type="number" id="st-ataques" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Pelo Centro</label><input type="number" id="st-atc" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Pela Esquerda</label><input type="number" id="st-ate" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Pela Direita</label><input type="number" id="st-atd" min="0" placeholder="0"></div>
+            </div>
+            <div class="form-secao" style="background:var(--cinza-leve);color:var(--cinza-texto)">Disciplina</div>
+            <div class="stats-grid" style="grid-template-columns:1fr 1fr">
+              <div class="stat-input-group"><label>Cantos</label><input type="number" id="st-cantos" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Foras de Jogo</label><input type="number" id="st-forasjogo" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Faltas</label><input type="number" id="st-faltas" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Amarelos</label><input type="number" id="st-amarelos" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Vermelhos</label><input type="number" id="st-vermelhos" min="0" placeholder="0"></div>
+            </div>
+          </div>
+          <!-- ADVERSÁRIO -->
+          <div>
+            <div class="form-secao" style="margin-top:0;background:var(--vermelho-suave);color:var(--vermelho)" id="labelAdversarioStats">Adversário</div>
+            <div class="form-secao" style="background:var(--cinza-leve);color:var(--cinza-texto)">Posse &amp; Remates</div>
+            <div class="stats-grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+              <div class="stat-input-group"><label>Posse (%)</label><input type="number" id="adv-posse" min="0" max="100" placeholder="50"></div>
+              <div class="stat-input-group"><label>Remates</label><input type="number" id="adv-remates" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Rem. à Baliza</label><input type="number" id="adv-rematesos" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Cruzamentos</label><input type="number" id="adv-cruzamentos" min="0" placeholder="0"></div>
+            </div>
+            <div class="form-secao" style="background:var(--cinza-leve);color:var(--cinza-texto)">Ataques</div>
+            <div class="stats-grid" style="grid-template-columns:1fr 1fr;margin-bottom:16px">
+              <div class="stat-input-group"><label>Total Ataques</label><input type="number" id="adv-ataques" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Pelo Centro</label><input type="number" id="adv-atc" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Pela Esquerda</label><input type="number" id="adv-ate" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Pela Direita</label><input type="number" id="adv-atd" min="0" placeholder="0"></div>
+            </div>
+            <div class="form-secao" style="background:var(--cinza-leve);color:var(--cinza-texto)">Disciplina</div>
+            <div class="stats-grid" style="grid-template-columns:1fr 1fr">
+              <div class="stat-input-group"><label>Cantos</label><input type="number" id="adv-cantos" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Foras de Jogo</label><input type="number" id="adv-forasjogo" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Faltas</label><input type="number" id="adv-faltas" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Amarelos</label><input type="number" id="adv-amarelos" min="0" placeholder="0"></div>
+              <div class="stat-input-group"><label>Vermelhos</label><input type="number" id="adv-vermelhos" min="0" placeholder="0"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -835,6 +867,29 @@ const FORMACOES = {
   '5-3-2':   [{x:50,y:90},{x:10,y:68},{x:28,y:72},{x:50,y:74},{x:72,y:72},{x:90,y:68},{x:25,y:46},{x:50,y:44},{x:75,y:46},{x:35,y:20},{x:65,y:20}],
   '3-5-2':   [{x:50,y:90},{x:25,y:72},{x:50,y:74},{x:75,y:72},{x:10,y:48},{x:30,y:44},{x:50,y:42},{x:70,y:44},{x:90,y:48},{x:35,y:20},{x:65,y:20}]
 };
+
+/* posição recomendada por slot em cada formação (para filtrar jogadores) */
+const POSICOES_SLOT = {
+  '4-3-3':   ['GR','DEF','DEF','DEF','DEF','MED','MED','MED','EXT','AVA','EXT'],
+  '4-4-2':   ['GR','DEF','DEF','DEF','DEF','MED','MED','MED','MED','AVA','AVA'],
+  '4-2-3-1': ['GR','DEF','DEF','DEF','DEF','MED','MED','EXT','MED','EXT','AVA'],
+  '5-3-2':   ['GR','DEF','DEF','DEF','DEF','DEF','MED','MED','MED','AVA','AVA'],
+  '3-5-2':   ['GR','DEF','DEF','DEF','MED','MED','MED','MED','MED','AVA','AVA']
+};
+
+/* jogadores filtrados pela época do jogo actual */
+function jogadoresDaEpoca() {
+  const epoca = document.getElementById('jgEpoca')?.value;
+  if (!epoca) return todosJogadores;
+  return todosJogadores.filter(j => j.epocas?.includes(epoca));
+}
+
+/* treinadores filtrados pela época do jogo actual */
+function treinadoresDaEpoca() {
+  const epoca = document.getElementById('jgEpoca')?.value;
+  if (!epoca) return todosTreinadores;
+  return todosTreinadores.filter(t => t.epocas?.includes(epoca));
+}
 
 /* ============================================================
    INIT
@@ -1232,7 +1287,7 @@ function limparFormJogo() {
   document.querySelectorAll('input[name="jglocal"]').forEach(r => r.checked = false);
   document.querySelectorAll('input[name="formacao"]').forEach(r => r.checked = false);
   document.getElementById('fm433').checked = true;
-  ['st-posse','st-remates','st-rematesos','st-cruzamentos','st-ataques','st-atc','st-ate','st-atd','st-cantos','st-forasjogo','st-faltas','st-amarelos','st-vermelhos'].forEach(id => document.getElementById(id).value = '');
+  ['st-posse','st-remates','st-rematesos','st-cruzamentos','st-ataques','st-atc','st-ate','st-atd','st-cantos','st-forasjogo','st-faltas','st-amarelos','st-vermelhos','adv-posse','adv-remates','adv-rematesos','adv-cruzamentos','adv-ataques','adv-atc','adv-ate','adv-atd','adv-cantos','adv-forasjogo','adv-faltas','adv-amarelos','adv-vermelhos'].forEach(id => document.getElementById(id).value = '');
   campoJogadores = {}; suplentesTemp = []; treinadoresTemp = []; golosTemp = []; subsTemp = [];
   renderizarSuplentes(); renderizarTreinadores(); renderizarGolos(); renderizarSubs();
   const tabs = document.querySelector('#modalJogo .modal-body');
@@ -1263,7 +1318,16 @@ function selecionarSlotCampo(slotIdx) {
   campoSlotAtual = slotIdx;
   const cont = document.getElementById('listaJogadoresModal');
   const jaNosCampo = Object.values(campoJogadores).map(j=>j.jogador_id);
+  const formacao = document.querySelector('input[name="formacao"]:checked')?.value || '4-3-3';
+  const posSlot = POSICOES_SLOT[formacao]?.[slotIdx];
+  const listaBase = jogadoresDaEpoca().sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
+
+  /* separar jogadores na posição certa dos restantes */
+  const naPosicao = listaBase.filter(j => j.posicoes?.includes(posSlot));
+  const outrasPosicoes = listaBase.filter(j => !j.posicoes?.includes(posSlot));
+
   cont.innerHTML = '';
+
   if (campoJogadores[slotIdx]) {
     const btn = document.createElement('button');
     btn.className = 'btn btn-danger btn-sm'; btn.style.marginBottom = '12px'; btn.style.width = '100%';
@@ -1271,18 +1335,44 @@ function selecionarSlotCampo(slotIdx) {
     btn.onclick = () => { delete campoJogadores[slotIdx]; fecharModal('modalSelecionarJogador'); atualizarCampo(); };
     cont.appendChild(btn);
   }
-  todosJogadores.forEach(j => {
+
+  /* aviso se época não seleccionada */
+  const epoca = document.getElementById('jgEpoca')?.value;
+  if (!epoca) {
+    const aviso = document.createElement('p');
+    aviso.style.cssText = 'font-size:12px;color:var(--amarelo);background:var(--amarelo-suave);padding:8px 12px;border-radius:6px;margin-bottom:12px';
+    aviso.textContent = '⚠️ Selecciona a época no separador Informação para filtrar os jogadores.';
+    cont.appendChild(aviso);
+  }
+
+  const renderBtn = (j) => {
     const btn = document.createElement('button');
-    btn.className = 'btn btn-ghost'; btn.style.justifyContent = 'flex-start'; btn.style.width = '100%';
-    btn.style.marginBottom = '4px';
+    btn.className = 'btn btn-ghost'; btn.style.justifyContent = 'flex-start'; btn.style.width = '100%'; btn.style.marginBottom = '4px';
     const iniciais = j.nome.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
     const jaUsado = jaNosCampo.includes(j.id) && campoJogadores[slotIdx]?.jogador_id !== j.id;
     btn.disabled = jaUsado; btn.style.opacity = jaUsado ? '0.4' : '1';
     btn.innerHTML = `<span style="width:30px;height:30px;border-radius:50%;background:var(--verde-suave);display:flex;align-items:center;justify-content:center;font-family:var(--fonte-display);font-size:10px;font-weight:800;color:var(--verde);margin-right:10px">${iniciais}</span>${j.nome} <span style="margin-left:auto;font-size:11px;opacity:0.5">${j.posicoes?.join('·')||''}</span>`;
     btn.onclick = () => { campoJogadores[slotIdx] = { jogador_id: j.id, nome: j.nome }; fecharModal('modalSelecionarJogador'); atualizarCampo(); };
     cont.appendChild(btn);
-  });
-  if (!todosJogadores.length) cont.innerHTML = '<p style="color:var(--cinza-texto);font-size:13px">Sem jogadores registados.</p>';
+  };
+
+  if (naPosicao.length) {
+    const titulo = document.createElement('div');
+    titulo.style.cssText = 'font-family:var(--fonte-display);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--verde);margin-bottom:6px;margin-top:4px';
+    titulo.textContent = posSlot ? `${posSlot} — posição recomendada` : 'Jogadores';
+    cont.appendChild(titulo);
+    naPosicao.forEach(renderBtn);
+  }
+
+  if (outrasPosicoes.length) {
+    const titulo = document.createElement('div');
+    titulo.style.cssText = 'font-family:var(--fonte-display);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--cinza-texto);margin-bottom:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--cinza-borda)';
+    titulo.textContent = 'Outras posições';
+    cont.appendChild(titulo);
+    outrasPosicoes.forEach(renderBtn);
+  }
+
+  if (!listaBase.length) cont.innerHTML = '<p style="color:var(--cinza-texto);font-size:13px">Sem jogadores para esta época.</p>';
   abrirModal('modalSelecionarJogador');
 }
 
@@ -1303,10 +1393,15 @@ function removerSuplente(i) { suplentesTemp.splice(i,1); renderizarSuplentes(); 
 
 /* treinadores */
 function renderizarTreinadores() {
+  const lista = treinadoresDaEpoca().sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
   const cont = document.getElementById('listaTreinadores');
   cont.innerHTML = treinadoresTemp.map((t,i) => `
     <div style="display:flex;gap:8px;align-items:center">
-      <input class="form-control" value="${t.nome||''}" placeholder="Nome do treinador" onchange="treinadoresTemp[${i}].nome=this.value">
+      <select class="form-control" onchange="treinadoresTemp[${i}].nome=this.options[this.selectedIndex].text">
+        <option value="">Selecionar treinador...</option>
+        ${lista.map(tr=>`<option value="${tr.id}" ${t.nome===tr.nome?'selected':''}>${tr.nome}</option>`).join('')}
+        ${lista.length===0?'<option disabled>Sem treinadores para esta época</option>':''}
+      </select>
       <button class="btn-remover-row" onclick="removerTreinador(${i})">✕</button>
     </div>`).join('');
 }
@@ -1315,6 +1410,7 @@ function removerTreinador(i) { treinadoresTemp.splice(i,1); renderizarTreinadore
 
 /* golos */
 function renderizarGolos() {
+  const lista = jogadoresDaEpoca().sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
   const cont = document.getElementById('listaGolos');
   cont.innerHTML = golosTemp.length ? golosTemp.map((g,i) => `
     <div class="golo-row">
@@ -1322,7 +1418,7 @@ function renderizarGolos() {
         <label class="form-label">Marcador</label>
         <select class="form-control" onchange="golosTemp[${i}].jogador_id=this.value">
           <option value="">Selecionar...</option>
-          ${todosJogadores.map(j=>`<option value="${j.id}" ${g.jogador_id===j.id?'selected':''}>${j.nome}</option>`).join('')}
+          ${lista.map(j=>`<option value="${j.id}" ${g.jogador_id===j.id?'selected':''}>${j.nome}</option>`).join('')}
           <option value="og">Autogolo (adversário)</option>
         </select>
       </div>
@@ -1330,7 +1426,7 @@ function renderizarGolos() {
         <label class="form-label">Assistente</label>
         <select class="form-control" onchange="golosTemp[${i}].assist_id=this.value">
           <option value="">Sem assistência</option>
-          ${todosJogadores.map(j=>`<option value="${j.id}" ${g.assist_id===j.id?'selected':''}>${j.nome}</option>`).join('')}
+          ${lista.map(j=>`<option value="${j.id}" ${g.assist_id===j.id?'selected':''}>${j.nome}</option>`).join('')}
         </select>
       </div>
       <div class="form-group" style="margin:0">
@@ -1353,6 +1449,7 @@ function removerGolo(i) { golosTemp.splice(i,1); renderizarGolos(); }
 
 /* substituições */
 function renderizarSubs() {
+  const lista = jogadoresDaEpoca().sort((a,b)=>a.nome.localeCompare(b.nome,'pt'));
   const cont = document.getElementById('listaSubs');
   cont.innerHTML = subsTemp.length ? subsTemp.map((s,i) => `
     <div class="sub-row">
@@ -1360,14 +1457,14 @@ function renderizarSubs() {
         <label class="form-label">Saiu</label>
         <select class="form-control" onchange="subsTemp[${i}].saiu_id=this.value">
           <option value="">Selecionar...</option>
-          ${todosJogadores.map(j=>`<option value="${j.id}" ${s.saiu_id===j.id?'selected':''}>${j.nome}</option>`).join('')}
+          ${lista.map(j=>`<option value="${j.id}" ${s.saiu_id===j.id?'selected':''}>${j.nome}</option>`).join('')}
         </select>
       </div>
       <div class="form-group" style="margin:0">
         <label class="form-label">Entrou</label>
         <select class="form-control" onchange="subsTemp[${i}].entrou_id=this.value">
           <option value="">Selecionar...</option>
-          ${todosJogadores.map(j=>`<option value="${j.id}" ${s.entrou_id===j.id?'selected':''}>${j.nome}</option>`).join('')}
+          ${lista.map(j=>`<option value="${j.id}" ${s.entrou_id===j.id?'selected':''}>${j.nome}</option>`).join('')}
         </select>
       </div>
       <div class="form-group" style="margin:0">
@@ -1417,6 +1514,19 @@ async function guardarJogo() {
     faltas: +document.getElementById('st-faltas').value||null,
     amarelos: +document.getElementById('st-amarelos').value||null,
     vermelhos: +document.getElementById('st-vermelhos').value||null,
+    adv_posse: +document.getElementById('adv-posse').value||null,
+    adv_remates: +document.getElementById('adv-remates').value||null,
+    adv_remates_os: +document.getElementById('adv-rematesos').value||null,
+    adv_cruzamentos: +document.getElementById('adv-cruzamentos').value||null,
+    adv_ataques: +document.getElementById('adv-ataques').value||null,
+    adv_ataques_centro: +document.getElementById('adv-atc').value||null,
+    adv_ataques_esq: +document.getElementById('adv-ate').value||null,
+    adv_ataques_dir: +document.getElementById('adv-atd').value||null,
+    adv_cantos: +document.getElementById('adv-cantos').value||null,
+    adv_forasjogo: +document.getElementById('adv-forasjogo').value||null,
+    adv_faltas: +document.getElementById('adv-faltas').value||null,
+    adv_amarelos: +document.getElementById('adv-amarelos').value||null,
+    adv_vermelhos: +document.getElementById('adv-vermelhos').value||null,
     golos: golosTemp.filter(g=>g.jogador_id),
     substituicoes: subsTemp.filter(s=>s.saiu_id&&s.entrou_id),
     jogadores_jogo
@@ -1448,6 +1558,10 @@ async function editarJogo(id) {
   if (j.formacao) { const r = document.querySelector(`input[name="formacao"][value="${j.formacao}"]`); if(r) r.checked=true; }
   ['posse','remates','remates_os','cruzamentos','ataques','ataques_centro','ataques_esq','ataques_dir','cantos','forasjogo','faltas','amarelos','vermelhos'].forEach(k => {
     const el = document.getElementById('st-'+k.replace('_','')); if(el&&j[k]) el.value=j[k];
+  });
+  ['adv_posse','adv_remates','adv_remates_os','adv_cruzamentos','adv_ataques','adv_ataques_centro','adv_ataques_esq','adv_ataques_dir','adv_cantos','adv_forasjogo','adv_faltas','adv_amarelos','adv_vermelhos'].forEach(k => {
+    const elId = k.replace('adv_','adv-').replace('_','');
+    const el = document.getElementById(elId); if(el&&j[k]) el.value=j[k];
   });
   if (j.jogadores_jogo) {
     j.jogadores_jogo.filter(jj=>jj.titular).forEach(jj => { campoJogadores[jj.posicao_slot] = { jogador_id: jj.jogador_id, nome: todosJogadores.find(x=>x.id===jj.jogador_id)?.nome||'?' }; });
