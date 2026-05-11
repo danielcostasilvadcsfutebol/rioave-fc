@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { EPOCAS_ORDENADAS, getJogosByEpoca, MOCK_RESUMO_EPOCAS, calcularKpis } from '@/lib/mock-data';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import {
+  EPOCAS_ORDENADAS, getJogosByEpoca, MOCK_RESUMO_EPOCAS,
+  calcularKpis, getEstatisticasAdversarios,
+} from '@/lib/mock-data';
 import type { JogoComRelacoes } from '@/types';
 
+// ── Utils ─────────────────────────────────────────────────────
 function fmt(n: number | null | undefined) {
   if (n == null) return '—';
   return n.toLocaleString('pt-PT');
@@ -15,6 +19,7 @@ function barColor(p: number) {
   return '#B0D9C4';
 }
 
+// ── Icons ─────────────────────────────────────────────────────
 function IcoSearch() {
   return (
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -44,6 +49,84 @@ function IcoArrow({ up }: { up: boolean }) {
   );
 }
 
+// ── Nav Dropdown ──────────────────────────────────────────────
+const NAV_ITEMS = [
+  { id: 'assistencias', label: 'Assistências nos Arcos', available: true },
+  { id: 'jogos-equipa', label: 'Jogos da Equipa', available: false },
+];
+
+function NavDropdown() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'baseline', gap: 4,
+          fontSize: 12, fontWeight: 600, color: 'var(--g500)',
+          padding: '5px 10px', borderRadius: 6, background: 'var(--g50)',
+          border: '1px solid var(--g100)', cursor: 'pointer',
+          fontFamily: 'var(--font-sora)', transition: 'all 0.15s',
+        }}
+      >
+        <span>Assistências</span>
+        <span style={{ fontSize: 9, fontWeight: 500, color: 'var(--g300)', letterSpacing: '0.04em' }}>nos Arcos</span>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ marginLeft: 2, color: 'var(--g400)' }}>
+          <path d={open ? 'M2 7l3-3 3 3' : 'M2 3l3 3 3-3'} />
+        </svg>
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+          background: 'var(--surface)', border: '1px solid var(--border)',
+          borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
+          minWidth: 200, overflow: 'hidden', zIndex: 100,
+        }}>
+          {NAV_ITEMS.map((item, i) => (
+            <div
+              key={item.id}
+              onClick={() => item.available && setOpen(false)}
+              style={{
+                padding: '10px 14px',
+                borderBottom: i < NAV_ITEMS.length - 1 ? '1px solid var(--border)' : 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                cursor: item.available ? 'pointer' : 'default',
+                background: item.available ? 'transparent' : 'var(--surface2)',
+                opacity: item.available ? 1 : 0.5,
+                transition: 'background 0.1s',
+              }}
+              onMouseEnter={e => { if (item.available) (e.currentTarget as HTMLElement).style.background = 'var(--g50)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = item.available ? 'transparent' : 'var(--surface2)'; }}
+            >
+              <span style={{ fontSize: 13, fontWeight: item.available ? 600 : 400, color: item.available ? 'var(--ink)' : 'var(--ink4)' }}>
+                {item.label}
+              </span>
+              {item.available && (
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--g500)', display: 'inline-block' }} />
+              )}
+              {!item.available && (
+                <span style={{ fontSize: 9, color: 'var(--ink4)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Brevemente</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Match Row ─────────────────────────────────────────────────
 function MatchRow({ jogo, isMax, isMin, expanded, onToggle }: {
   jogo: JogoComRelacoes; isMax: boolean; isMin: boolean;
   expanded: boolean; onToggle: () => void;
@@ -83,7 +166,7 @@ function MatchRow({ jogo, isMax, isMin, expanded, onToggle }: {
       {expanded && (
         <div className="expand-panel anim-slide">
           <div><div className="expand-item-label">Capacidade</div><div className="expand-item-value">{fmt(jogo.capacidade_jogo)}</div></div>
-          <div><div className="expand-item-label">Ocupação</div><div className="expand-item-value" style={{ color: 'var(--g500)' }}>{jogo.jogo_porta_fechada ? '—' : `${(jogo.pct_ocupacao ?? 0).toFixed(1)}%`}</div></div>
+          <div><div className="expand-item-label">Ocupação</div><div className="expand-item-value" style={{ color: 'var(--g500)' }}>{jogo.jogo_porta_fechada ? '—' : `${p.toFixed(1)}%`}</div></div>
           <div><div className="expand-item-label">Estádio</div><div className="expand-item-value">{jogo.estadio?.nome ?? 'Arcos'}</div></div>
           {jogo.notas && (
             <div style={{ gridColumn: '1 / -1' }}>
@@ -97,6 +180,145 @@ function MatchRow({ jogo, isMax, isMin, expanded, onToggle }: {
   );
 }
 
+// ── Adversários Tab ───────────────────────────────────────────
+type AdvSortKey = 'adversario' | 'visitas' | 'media' | 'maximo';
+
+function AdversariosSection() {
+  const [sortKey, setSortKey]   = useState<AdvSortKey>('media');
+  const [sortAsc, setSortAsc]   = useState(false);
+  const [search, setSearch]     = useState('');
+
+  const data = useMemo(() => getEstatisticasAdversarios(), []);
+
+  const sorted = useMemo(() => {
+    let list = [...data];
+    if (search.trim()) list = list.filter(a => a.adversario.toLowerCase().includes(search.toLowerCase()));
+    list.sort((a, b) => {
+      const va = a[sortKey]; const vb = b[sortKey];
+      if (typeof va === 'string' && typeof vb === 'string')
+        return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return sortAsc ? (va as number) - (vb as number) : (vb as number) - (va as number);
+    });
+    return list;
+  }, [data, sortKey, sortAsc, search]);
+
+  function toggleSort(key: AdvSortKey) {
+    if (sortKey === key) setSortAsc(a => !a);
+    else { setSortKey(key); setSortAsc(key === 'adversario'); }
+  }
+
+  const maxMedia = data.length ? data[0].media : 1;
+
+  return (
+    <div className="section-card anim-rise delay-3">
+      <div className="section-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <div className="section-title">Adversários nos Arcos</div>
+            <div style={{ fontSize: 11, color: 'var(--ink4)', marginTop: 2 }}>
+              {data.length} adversários · histórico desde 2006
+            </div>
+          </div>
+          <div className="search-wrap">
+            <span className="search-icon"><IcoSearch /></span>
+            <input
+              className="search-field"
+              placeholder="Pesquisar..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ width: 150 }}
+            />
+          </div>
+        </div>
+
+        {/* Sort buttons */}
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+          {([
+            ['adversario', 'Nome'],
+            ['visitas',    'Visitas'],
+            ['media',      'Média Esp.'],
+            ['maximo',     'Recorde'],
+          ] as [AdvSortKey, string][]).map(([key, label]) => (
+            <button key={key} onClick={() => toggleSort(key)} className={`sort-btn ${sortKey === key ? 'active' : ''}`}>
+              {label}<IcoSort active={sortKey === key} asc={sortAsc} />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Column headers */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 52px 80px 72px',
+        gap: 8, padding: '6px 20px',
+        borderBottom: '1px solid var(--border)', background: 'var(--surface2)',
+      }}>
+        {['Adversário', 'Vis.', 'Média', 'Rec.'].map(h => (
+          <span key={h} style={{ fontSize: 9, fontWeight: 700, color: 'var(--ink4)', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: h !== 'Adversário' ? 'right' : 'left' }}>
+            {h}
+          </span>
+        ))}
+      </div>
+
+      {/* Rows */}
+      {sorted.length === 0 ? (
+        <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--ink4)', fontSize: 13 }}>
+          Sem resultados para &ldquo;{search}&rdquo;
+        </div>
+      ) : sorted.map((adv, i) => {
+        const barW = maxMedia > 0 ? (adv.media / maxMedia) * 100 : 0;
+        return (
+          <div key={adv.adversario} style={{
+            display: 'grid', gridTemplateColumns: '1fr 52px 80px 72px',
+            gap: 8, padding: '10px 20px',
+            borderBottom: i < sorted.length - 1 ? '1px solid var(--border)' : 'none',
+            alignItems: 'center',
+            transition: 'background 0.1s',
+          }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--g50)'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+          >
+            {/* Adversário + mini bar */}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {adv.adversario}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                <div style={{ flex: 1, height: 3, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${barW}%`, background: barColor((adv.media / 5300) * 100), borderRadius: 99 }} />
+                </div>
+                <span style={{ fontSize: 9, color: 'var(--ink4)', whiteSpace: 'nowrap' }}>
+                  {adv.epocas} {adv.epocas === 1 ? 'época' : 'épocas'}
+                </span>
+              </div>
+            </div>
+
+            {/* Visitas */}
+            <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 600, color: 'var(--ink2)' }}>
+              {adv.visitas}×
+            </div>
+
+            {/* Média */}
+            <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 700, color: 'var(--g500)' }}>
+              {fmt(adv.media)}
+            </div>
+
+            {/* Recorde */}
+            <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--ink3)' }}>
+              {fmt(adv.maximo)}
+            </div>
+          </div>
+        );
+      })}
+
+      <div style={{ padding: '10px 20px', borderTop: '1px solid var(--border)', background: 'var(--surface2)', display: 'flex', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 11, color: 'var(--ink4)' }}>{sorted.length} adversários</span>
+        <span style={{ fontSize: 11, color: 'var(--ink4)' }}>Jogos com porta fechada excluídos</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Histórico Section ─────────────────────────────────────────
 function HistorySection() {
   const epocas = MOCK_RESUMO_EPOCAS.filter(e => e.total_assistencia > 0);
   const maxMedia = Math.max(...epocas.map(e => e.media_assistencia));
@@ -132,10 +354,12 @@ function HistorySection() {
   );
 }
 
+// ── Page ──────────────────────────────────────────────────────
+type Tab = 'jogos' | 'adversarios' | 'historico';
 type SortKey = 'jornada' | 'adversario' | 'assistencia' | 'pct_ocupacao';
 
 export default function HomePage() {
-  const [tab, setTab]           = useState<'jogos' | 'historico'>('jogos');
+  const [tab, setTab]           = useState<Tab>('jogos');
   const [epocaSel, setEpocaSel] = useState('2025/26');
   const [sortKey, setSortKey]   = useState<SortKey>('jornada');
   const [sortAsc, setSortAsc]   = useState(true);
@@ -165,10 +389,16 @@ export default function HomePage() {
   const resumoAnterior = MOCK_RESUMO_EPOCAS.find(e => e.ano_inicio === (resumoAtual?.ano_inicio ?? 2025) - 1);
   const diffMedia      = resumoAnterior ? kpis.media - resumoAnterior.media_assistencia : null;
 
+  const TABS = [
+    { id: 'jogos' as Tab,        label: 'Por Jogo' },
+    { id: 'adversarios' as Tab,  label: 'Adversários' },
+    { id: 'historico' as Tab,    label: 'Por Época' },
+  ];
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--surface3)' }}>
 
-      {/* Header */}
+      {/* ── Header ── */}
       <header className="app-header">
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 16px', height: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -180,15 +410,13 @@ export default function HomePage() {
               <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--ink4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Estatísticas</div>
             </div>
           </div>
-          <a href="#" style={{ fontSize: 12, fontWeight: 600, color: 'var(--g500)', padding: '5px 10px', borderRadius: 6, background: 'var(--g50)', textDecoration: 'none', display: 'flex', alignItems: 'baseline', gap: 4 }}>
-              Assistências<span style={{ fontSize: 9, fontWeight: 500, color: 'var(--g300)', letterSpacing: '0.04em' }}>nos Arcos</span>
-            </a>
+          <NavDropdown />
         </div>
       </header>
 
       <main style={{ maxWidth: 720, margin: '0 auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-        {/* Hero */}
+        {/* ── Hero ── */}
         <div className="hero-card anim-rise" style={{ padding: 24 }}>
           <div style={{ position: 'relative', zIndex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
@@ -210,7 +438,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Variação */}
+        {/* ── Variação ── */}
         {diffMedia !== null && resumoAnterior && (
           <div className="anim-rise delay-1" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: 'var(--shadow-xs)' }}>
             <div>
@@ -228,22 +456,24 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="anim-rise delay-2" style={{ display: 'flex', gap: 4 }}>
-          {([['jogos', null], ['historico', 'Histórico por Época']] as const).map(([t, label]) => (
-            <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: '1px solid', cursor: 'pointer', fontFamily: 'var(--font-sora)', transition: 'all 0.15s', borderColor: tab === t ? 'var(--g300)' : 'var(--border)', background: tab === t ? 'var(--g50)' : 'var(--surface)', color: tab === t ? 'var(--g500)' : 'var(--ink3)', display: 'flex', alignItems: 'baseline', gap: 4 }}>
-              {t === 'jogos'
-                ? <><span>Assistências</span><span style={{ fontSize: 9, fontWeight: 500, opacity: 0.7, letterSpacing: '0.04em' }}>nos Arcos</span></>
-                : label}
+        {/* ── Tabs ── */}
+        <div className="anim-rise delay-2" style={{ display: 'flex', gap: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 4 }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
+              flex: 1, padding: '7px 10px', borderRadius: 7, fontSize: 12, fontWeight: 600,
+              border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sora)', transition: 'all 0.15s',
+              background: tab === t.id ? 'var(--g500)' : 'transparent',
+              color: tab === t.id ? '#fff' : 'var(--ink3)',
+            }}>
+              {t.label}
             </button>
           ))}
         </div>
 
-        {/* Jogos tab */}
+        {/* ── TAB: Por Jogo ── */}
         {tab === 'jogos' && (
           <div className="section-card anim-rise delay-3">
             <div className="section-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
-              {/* Epoch selector */}
               <div style={{ width: '100%' }}>
                 <div className="section-title" style={{ marginBottom: 8 }}>Seleciona a Época</div>
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -254,7 +484,6 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
-              {/* Sort + search row */}
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                 {([['jornada', 'Por Jornada'], ['assistencia', 'Nº Espectadores']] as [SortKey, string][]).map(([key, label]) => (
                   <button key={key} onClick={() => toggleSort(key)} className={`sort-btn ${sortKey === key ? 'active' : ''}`}>{label}<IcoSort active={sortKey === key} asc={sortAsc} /></button>
@@ -266,7 +495,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Col headers */}
             <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr auto', gap: 12, padding: '6px 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface2)' }}>
               <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--ink4)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>J</span>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
@@ -292,14 +520,16 @@ export default function HomePage() {
 
             <div style={{ padding: '10px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', background: 'var(--surface2)' }}>
               <span style={{ fontSize: 11, color: 'var(--ink4)' }}>{sorted.length} jogos</span>
-              <span style={{ fontSize: 11, color: 'var(--ink4)' }}>Total filtrado: <strong style={{ color: 'var(--ink2)' }}>{fmt(sorted.reduce((s, j) => s + (j.assistencia ?? 0), 0))}</strong></span>
+              <span style={{ fontSize: 11, color: 'var(--ink4)' }}>Total: <strong style={{ color: 'var(--ink2)' }}>{fmt(sorted.reduce((s, j) => s + (j.assistencia ?? 0), 0))}</strong></span>
             </div>
           </div>
         )}
 
-        {tab === 'historico' && <HistorySection />}
+        {tab === 'adversarios' && <AdversariosSection />}
+        {tab === 'historico'   && <HistorySection />}
 
         <div style={{ textAlign: 'center', padding: '6px 0 16px', fontSize: 11, color: 'var(--ink4)' }}>
+          Dados coletados por Daniel Silva · Sócio 3883
         </div>
       </main>
     </div>
