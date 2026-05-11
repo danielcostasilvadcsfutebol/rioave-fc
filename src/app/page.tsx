@@ -184,11 +184,12 @@ function MatchRow({ jogo, isMax, isMin, expanded, onToggle }: {
 type AdvSortKey = 'adversario' | 'visitas' | 'media' | 'maximo';
 
 function AdversariosSection() {
-  const [sortKey, setSortKey]   = useState<AdvSortKey>('media');
-  const [sortAsc, setSortAsc]   = useState(false);
-  const [search, setSearch]     = useState('');
+  const [sortKey, setSortKey] = useState<AdvSortKey>('media');
+  const [sortAsc, setSortAsc] = useState(false);
+  const [search, setSearch]   = useState('');
 
-  const data = useMemo(() => getEstatisticasAdversarios(), []);
+  const data   = useMemo(() => getEstatisticasAdversarios(), []);
+  const maxMedia = data.length ? data[0].media : 1;
 
   const sorted = useMemo(() => {
     let list = [...data];
@@ -207,55 +208,67 @@ function AdversariosSection() {
     else { setSortKey(key); setSortAsc(key === 'adversario'); }
   }
 
-  const maxMedia = data.length ? data[0].media : 1;
+  // Column definitions for the header
+  const COLS: { key: AdvSortKey; label: string; align: 'left' | 'right'; width?: number }[] = [
+    { key: 'adversario', label: 'Adversário',  align: 'left' },
+    { key: 'visitas',    label: 'Visitas',      align: 'right', width: 60 },
+    { key: 'media',      label: 'Média',        align: 'right', width: 76 },
+    { key: 'maximo',     label: 'Recorde',      align: 'right', width: 76 },
+  ];
 
   return (
     <div className="section-card anim-rise delay-3">
-      <div className="section-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: 8 }}>
-          <div>
-            <div className="section-title">Adversários nos Arcos</div>
-            <div style={{ fontSize: 11, color: 'var(--ink4)', marginTop: 2 }}>
-              {data.length} adversários · histórico desde 2006
-            </div>
-          </div>
-          <div className="search-wrap">
-            <span className="search-icon"><IcoSearch /></span>
-            <input
-              className="search-field"
-              placeholder="Pesquisar..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{ width: 150 }}
-            />
+      {/* Header: title + search */}
+      <div className="section-header">
+        <div>
+          <div className="section-title">Adversários nos Arcos</div>
+          <div style={{ fontSize: 11, color: 'var(--ink4)', marginTop: 2 }}>
+            {sorted.length}{search ? ` de ${data.length}` : ''} adversários · desde 2006
           </div>
         </div>
-
-        {/* Sort buttons */}
-        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-          {([
-            ['adversario', 'Nome'],
-            ['visitas',    'Visitas'],
-            ['media',      'Média Esp.'],
-            ['maximo',     'Recorde'],
-          ] as [AdvSortKey, string][]).map(([key, label]) => (
-            <button key={key} onClick={() => toggleSort(key)} className={`sort-btn ${sortKey === key ? 'active' : ''}`}>
-              {label}<IcoSort active={sortKey === key} asc={sortAsc} />
-            </button>
-          ))}
+        <div className="search-wrap">
+          <span className="search-icon"><IcoSearch /></span>
+          <input
+            className="search-field"
+            placeholder="Pesquisar equipa..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ width: 170 }}
+            autoComplete="off"
+          />
         </div>
       </div>
 
-      {/* Column headers */}
+      {/* Clickable column headers */}
       <div style={{
-        display: 'grid', gridTemplateColumns: '1fr 52px 80px 72px',
-        gap: 8, padding: '6px 20px',
-        borderBottom: '1px solid var(--border)', background: 'var(--surface2)',
+        display: 'grid',
+        gridTemplateColumns: `1fr ${COLS.slice(1).map(c => `${c.width}px`).join(' ')}`,
+        padding: '7px 20px',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--surface2)',
+        gap: 8,
       }}>
-        {['Adversário', 'Vis.', 'Média', 'Rec.'].map(h => (
-          <span key={h} style={{ fontSize: 9, fontWeight: 700, color: 'var(--ink4)', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: h !== 'Adversário' ? 'right' : 'left' }}>
-            {h}
-          </span>
+        {COLS.map(col => (
+          <button
+            key={col.key}
+            onClick={() => toggleSort(col.key)}
+            style={{
+              display: 'flex', alignItems: 'center',
+              justifyContent: col.align === 'right' ? 'flex-end' : 'flex-start',
+              gap: 4,
+              background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+              fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+              color: sortKey === col.key ? 'var(--g500)' : 'var(--ink4)',
+              fontFamily: 'var(--font-sora)',
+              transition: 'color 0.15s',
+            }}
+          >
+            {col.label}
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"
+              style={{ opacity: sortKey === col.key ? 1 : 0.3, flexShrink: 0 }}>
+              <path d={sortKey === col.key && sortAsc ? 'M4 1L1 6h6L4 1z' : 'M4 7L1 2h6L4 7z'} />
+            </svg>
+          </button>
         ))}
       </div>
 
@@ -267,19 +280,20 @@ function AdversariosSection() {
       ) : sorted.map((adv, i) => {
         const barW = maxMedia > 0 ? (adv.media / maxMedia) * 100 : 0;
         return (
-          <div key={adv.adversario} style={{
-            display: 'grid', gridTemplateColumns: '1fr 52px 80px 72px',
-            gap: 8, padding: '10px 20px',
-            borderBottom: i < sorted.length - 1 ? '1px solid var(--border)' : 'none',
-            alignItems: 'center',
-            transition: 'background 0.1s',
-          }}
+          <div key={adv.adversario}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: `1fr ${COLS.slice(1).map(c => `${c.width}px`).join(' ')}`,
+              gap: 8, padding: '10px 20px',
+              borderBottom: i < sorted.length - 1 ? '1px solid var(--border)' : 'none',
+              alignItems: 'center', transition: 'background 0.1s',
+            }}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--g50)'}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
           >
-            {/* Adversário + mini bar */}
+            {/* Name + mini bar */}
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {adv.adversario}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
@@ -291,28 +305,16 @@ function AdversariosSection() {
                 </span>
               </div>
             </div>
-
-            {/* Visitas */}
-            <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 600, color: 'var(--ink2)' }}>
-              {adv.visitas}×
-            </div>
-
-            {/* Média */}
-            <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 700, color: 'var(--g500)' }}>
-              {fmt(adv.media)}
-            </div>
-
-            {/* Recorde */}
-            <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--ink3)' }}>
-              {fmt(adv.maximo)}
-            </div>
+            <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 600, color: 'var(--ink2)' }}>{adv.visitas}×</div>
+            <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 700, color: 'var(--g500)' }}>{fmt(adv.media)}</div>
+            <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--ink3)' }}>{fmt(adv.maximo)}</div>
           </div>
         );
       })}
 
       <div style={{ padding: '10px 20px', borderTop: '1px solid var(--border)', background: 'var(--surface2)', display: 'flex', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 11, color: 'var(--ink4)' }}>{sorted.length} adversários</span>
-        <span style={{ fontSize: 11, color: 'var(--ink4)' }}>Jogos com porta fechada excluídos</span>
+        <span style={{ fontSize: 11, color: 'var(--ink4)' }}>Porta fechada excluída</span>
       </div>
     </div>
   );
