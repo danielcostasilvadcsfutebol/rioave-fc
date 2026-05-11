@@ -1,30 +1,29 @@
-import type { Metadata } from 'next';
-import { Bebas_Neue, DM_Sans } from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
+import { Sora } from 'next/font/google';
 import './globals.css';
 
-const bebasNeue = Bebas_Neue({
-  weight: '400',
+const sora = Sora({
   subsets: ['latin'],
-  variable: '--font-display',
-  display: 'swap',
-});
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  variable: '--font-body',
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-sora',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: { default: 'Rio Ave FC · Estatísticas', template: '%s · Rio Ave FC Stats' },
   description: 'A maior plataforma estatística do Rio Ave FC.',
+};
+
+export const viewport: Viewport = {
   themeColor: '#006B3C',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt" className={`${bebasNeue.variable} ${dmSans.variable}`}>
-      <body className="min-h-screen bg-[#F8F9FA] font-body text-[#111111] antialiased">
+    <html lang="pt" className={sora.variable}>
+      <body className="min-h-screen antialiased" style={{ background: '#F0F2F5', fontFamily: 'var(--font-sora)' }}>
         {children}
       </body>
     </html>
