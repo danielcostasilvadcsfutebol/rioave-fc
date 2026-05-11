@@ -180,7 +180,9 @@ export default function HomePage() {
               <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--ink4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Estatísticas</div>
             </div>
           </div>
-          <a href="#" style={{ fontSize: 12, fontWeight: 600, color: 'var(--g500)', padding: '5px 10px', borderRadius: 6, background: 'var(--g50)', textDecoration: 'none' }}>Assistências</a>
+          <a href="#" style={{ fontSize: 12, fontWeight: 600, color: 'var(--g500)', padding: '5px 10px', borderRadius: 6, background: 'var(--g50)', textDecoration: 'none', display: 'flex', alignItems: 'baseline', gap: 4 }}>
+              Assistências<span style={{ fontSize: 9, fontWeight: 500, color: 'var(--g300)', letterSpacing: '0.04em' }}>nos Arcos</span>
+            </a>
         </div>
       </header>
 
@@ -216,7 +218,7 @@ export default function HomePage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
                 <span style={{ color: diffMedia >= 0 ? 'var(--g500)' : '#E03131' }}><IcoArrow up={diffMedia >= 0} /></span>
                 <span style={{ fontSize: 20, fontWeight: 800, color: diffMedia >= 0 ? 'var(--g500)' : '#E03131', letterSpacing: '-0.02em' }}>{diffMedia >= 0 ? '+' : ''}{fmt(diffMedia)}</span>
-                <span style={{ fontSize: 11, color: 'var(--ink4)' }}>esp. por jogo</span>
+                <span style={{ fontSize: 11, color: 'var(--ink4)' }}>Espectadores por jogo</span>
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -228,8 +230,12 @@ export default function HomePage() {
 
         {/* Tabs */}
         <div className="anim-rise delay-2" style={{ display: 'flex', gap: 4 }}>
-          {([['jogos', 'Assistências por Jogo'], ['historico', 'Histórico por Época']] as const).map(([t, label]) => (
-            <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: '1px solid', cursor: 'pointer', fontFamily: 'var(--font-sora)', transition: 'all 0.15s', borderColor: tab === t ? 'var(--g300)' : 'var(--border)', background: tab === t ? 'var(--g50)' : 'var(--surface)', color: tab === t ? 'var(--g500)' : 'var(--ink3)' }}>{label}</button>
+          {([['jogos', null], ['historico', 'Histórico por Época']] as const).map(([t, label]) => (
+            <button key={t} onClick={() => setTab(t)} style={{ padding: '7px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: '1px solid', cursor: 'pointer', fontFamily: 'var(--font-sora)', transition: 'all 0.15s', borderColor: tab === t ? 'var(--g300)' : 'var(--border)', background: tab === t ? 'var(--g50)' : 'var(--surface)', color: tab === t ? 'var(--g500)' : 'var(--ink3)', display: 'flex', alignItems: 'baseline', gap: 4 }}>
+              {t === 'jogos'
+                ? <><span>Assistências</span><span style={{ fontSize: 9, fontWeight: 500, opacity: 0.7, letterSpacing: '0.04em' }}>nos Arcos</span></>
+                : label}
+            </button>
           ))}
         </div>
 
@@ -250,7 +256,7 @@ export default function HomePage() {
               </div>
               {/* Sort + search row */}
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                {([['jornada', 'J#'], ['assistencia', 'Esp.'], ['pct_ocupacao', 'Ocup.']] as [SortKey, string][]).map(([key, label]) => (
+                {([['jornada', 'Por Jornada'], ['assistencia', 'Nº Espectadores']] as [SortKey, string][]).map(([key, label]) => (
                   <button key={key} onClick={() => toggleSort(key)} className={`sort-btn ${sortKey === key ? 'active' : ''}`}>{label}<IcoSort active={sortKey === key} asc={sortAsc} /></button>
                 ))}
                 <div className="search-wrap">
@@ -294,7 +300,7 @@ export default function HomePage() {
         {tab === 'historico' && <HistorySection />}
 
         <div style={{ textAlign: 'center', padding: '6px 0 16px', fontSize: 11, color: 'var(--ink4)' }}>
-          Dados recoletados por Daniel Silva · Sócio 3883
+          Dados coletados por Daniel Silva · Sócio 3883
         </div>
       </main>
     </div>
