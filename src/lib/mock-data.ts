@@ -453,3 +453,44 @@ export function calcularKpis(jogos: JogoComRelacoes[]) {
     pctMedia: cap > 0 ? ((media / cap) * 100).toFixed(1) : '—',
   };
 }
+
+// ─────────────────────────────────────────────────────────────
+// ESTATÍSTICAS POR ADVERSÁRIO (histórico completo)
+// ─────────────────────────────────────────────────────────────
+export interface EstatAdversario {
+  adversario: string;
+  visitas: number;
+  media: number;
+  maximo: number;
+  total: number;
+  epocas: number;
+}
+
+export function getEstatisticasAdversarios(): EstatAdversario[] {
+  const map = new Map<string, { total: number; visitas: number; maximo: number; epocasSet: Set<string> }>();
+
+  for (const epoca of EPOCAS_ORDENADAS) {
+    const d = DADOS[epoca];
+    for (const j of d.jogos) {
+      if (j.porta_fechada || j.assistencia === 0) continue;
+      const key = j.adversario.trim();
+      if (!map.has(key)) map.set(key, { total: 0, visitas: 0, maximo: 0, epocasSet: new Set() });
+      const e = map.get(key)!;
+      e.visitas++;
+      e.total += j.assistencia;
+      e.maximo = Math.max(e.maximo, j.assistencia);
+      e.epocasSet.add(epoca);
+    }
+  }
+
+  return Array.from(map.entries())
+    .map(([adversario, e]) => ({
+      adversario,
+      visitas: e.visitas,
+      media: Math.round(e.total / e.visitas),
+      maximo: e.maximo,
+      total: e.total,
+      epocas: e.epocasSet.size,
+    }))
+    .sort((a, b) => b.media - a.media);
+}
