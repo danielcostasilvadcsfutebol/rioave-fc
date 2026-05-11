@@ -300,7 +300,6 @@ export default function HomePage() {
         {tab === 'historico' && <HistorySection />}
 
         <div style={{ textAlign: 'center', padding: '6px 0 16px', fontSize: 11, color: 'var(--ink4)' }}>
-          
         </div>
       </main>
     </div>
