@@ -45,13 +45,13 @@ export interface Jogo {
   publicado_em: string | null;
   epoca?: Epoca;
   competicao?: Competicao;
-  estadio?: Estadio;
+  estadio?: Estadio | null;
 }
 
 export interface JogoComRelacoes extends Jogo {
   epoca: Epoca;
   competicao: Competicao;
-  estadio: Estadio | null;
+  estadio?: Estadio | null;
 }
 
 export interface ResumoEpoca {
