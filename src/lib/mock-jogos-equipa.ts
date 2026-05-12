@@ -23,16 +23,20 @@ export interface PartidaEquipa {
   epoca: string;
   competicao: Competicao;
   competicao_label: string;
-  jornada: string;          // ex: 'J1', 'J33', '3E', 'QF', 'SF'
-  data: string;             // ISO YYYY-MM-DD
-  hora: string;             // HH:MM
+  jornada: string;
+  data: string;
+  hora: string;
   local: Local;
   adversario: string;
   golos_ra: number;
   golos_adv: number;
   resultado: Resultado;
-  espectadores?: number;    // apenas jogos em casa no Estádio dos Arcos
-  estadio?: string;         // estadio do adversário quando (F)
+  espectadores?: number;
+  estadio?: string;
+  formacao_ra?: string;
+  formacao_adv?: string;
+  arbitro?: string;
+  hasDetail?: boolean;    // true quando há stats/eventos disponíveis
   publicado: boolean;
 }
 
@@ -179,13 +183,16 @@ const LIGA_2526: Omit<PartidaEquipa, 'id' | 'resultado' | 'publicado'>[] = [
 
   { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J33',
     data:'2026-05-11', hora:'20:15', local:'casa', adversario:'Sporting CP',
-    golos_ra:1, golos_adv:4, espectadores:3742 },
+    golos_ra:1, golos_adv:4, espectadores:3742,
+    formacao_ra:'4-4-2', formacao_adv:'4-2-3-1',
+    arbitro:'João Gonçalves',
+    hasDetail: true },
 ];
 
 const TACA_2526: Omit<PartidaEquipa, 'id' | 'resultado' | 'publicado'>[] = [
   { epoca:'25/26', competicao:'taca-pt', competicao_label:'Taça de Portugal', jornada:'3ª Elim.',
     data:'2025-10-19', hora:'15:00', local:'fora', adversario:'Sintrense',
-    golos_ra:3, golos_adv:2, estadio:'Estádio de Sintra' },
+    golos_ra:2, golos_adv:3, estadio:'Estádio de Sintra' },
 ];
 
 // ─── Exportação final ─────────────────────────────────────────
@@ -222,3 +229,130 @@ export function filtrarJogos(
     return true;
   });
 }
+
+
+// ─── Tipos para dados detalhados de jogo ─────────────────────
+export type EquipaEvento = 'ra' | 'adv';
+
+export interface EstatisticasJogo {
+  posse_bola:             [number, number];
+  remates:                [number, number];
+  remates_baliza:         [number, number];
+  remates_poste:          [number, number];
+  grandes_oportunidades:  [number, number];
+  assistencias:           [number, number];
+  cruzamentos:            [number, number];
+  cantos:                 [number, number];
+  livres:                 [number, number];
+  ataques:                [number, number];
+  ataques_centro:         [number, number];
+  ataques_esquerda:       [number, number];
+  ataques_direita:        [number, number];
+  defesas:                [number, number];
+  penaltis:               [number, number];
+  penaltis_defendidos:    [number, number];
+  foras_jogo:             [number, number];
+  faltas:                 [number, number];
+  amarelos:               [number, number];
+  vermelhos:              [number, number];
+}
+
+export type TipoEvento =
+  | 'golo' | 'golo_penalidade' | 'auto_golo'
+  | 'cartao_amarelo' | 'cartao_vermelho'
+  | 'substituicao';
+
+export interface EventoJogo {
+  minuto: number;
+  minuto_extra?: number;
+  tipo: TipoEvento;
+  equipa: EquipaEvento;
+  jogador: string;
+  jogador2?: string;
+  descricao?: string;
+  score_ra?: number;
+  score_adv?: number;
+}
+
+export interface JogadorTitular {
+  numero: number;
+  nome: string;
+  posicao?: string;
+  capitao?: boolean;
+}
+
+export const STATS_J33_SPORTING: EstatisticasJogo = {
+  posse_bola:            [41, 59],
+  remates:               [9,  15],
+  remates_baliza:        [2,   5],
+  remates_poste:         [0,   0],
+  grandes_oportunidades: [5,   5],
+  assistencias:          [1,   1],
+  cruzamentos:           [10, 18],
+  cantos:                [5,   6],
+  livres:                [2,   2],
+  ataques:               [25, 29],
+  ataques_centro:        [3,   1],
+  ataques_esquerda:      [9,  14],
+  ataques_direita:       [13, 14],
+  defesas:               [2,   1],
+  penaltis:              [0,   1],
+  penaltis_defendidos:   [0,   0],
+  foras_jogo:            [0,   0],
+  faltas:                [9,   7],
+  amarelos:              [3,   2],
+  vermelhos:             [0,   0],
+};
+
+export const EVENTOS_J33_SPORTING: EventoJogo[] = [
+  { minuto: 12, tipo:'golo',           equipa:'ra',  jogador:'Bezerra',      jogador2:'Monteiro T.',  score_ra:1, score_adv:0 },
+  { minuto: 13, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Bezerra',      descricao:'Conduta anti-desportiva' },
+  { minuto: 32, tipo:'cartao_amarelo', equipa:'adv', jogador:'O. Diamande',  descricao:'Conduta anti-desportiva' },
+  { minuto: 32, tipo:'cartao_amarelo', equipa:'adv', jogador:'Suárez L.',    descricao:'Simulação' },
+  { minuto: 33, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Petrasso F.',  descricao:'Puxão' },
+  { minuto: 35, tipo:'golo_penalidade',equipa:'adv', jogador:'Suárez L.',    score_ra:1, score_adv:1 },
+  { minuto: 42, tipo:'auto_golo',      equipa:'ra',  jogador:'Gustavo M.',   score_ra:1, score_adv:2 },
+  { minuto: 52, tipo:'cartao_vermelho',equipa:'ra',  jogador:'Petrasso F.',  descricao:'Má conduta (2º amarelo)' },
+  { minuto: 55, tipo:'substituicao',   equipa:'ra',  jogador:'Tambie',       jogador2:'Brabec J.' },
+  { minuto: 63, tipo:'substituicao',   equipa:'ra',  jogador:'Vrousai',      jogador2:'Tomé J.' },
+  { minuto: 65, tipo:'substituicao',   equipa:'adv', jogador:'L. Guilherme', jogador2:'Geny Catamo' },
+  { minuto: 65, tipo:'substituicao',   equipa:'adv', jogador:'Morita H.',    jogador2:'Quenda G.' },
+  { minuto: 66, tipo:'golo',           equipa:'adv', jogador:'Trincão',      jogador2:'Diomande O.', score_ra:1, score_adv:3 },
+  { minuto: 72, tipo:'substituicao',   equipa:'ra',  jogador:'Nelson',       jogador2:'Richards O.' },
+  { minuto: 72, tipo:'substituicao',   equipa:'ra',  jogador:'Bezerra',      jogador2:'Papakanellos A.' },
+  { minuto: 72, tipo:'substituicao',   equipa:'ra',  jogador:'Spikic',       jogador2:'Ntoi A.' },
+  { minuto: 82, tipo:'substituicao',   equipa:'adv', jogador:'Pedro G.',     jogador2:'E. Felicíssimo' },
+  { minuto: 82, tipo:'substituicao',   equipa:'adv', jogador:'D. Bragança',  jogador2:'Kochorashvili G.' },
+  { minuto: 83, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Ryan G.',      descricao:'Má conduta' },
+  { minuto: 85, tipo:'cartao_vermelho',equipa:'ra',  jogador:'Ryan G.',      descricao:'Má conduta (2º amarelo)' },
+  { minuto: 90, tipo:'golo',           equipa:'adv', jogador:'Quenda G.',    jogador2:'Araújo M.',   score_ra:1, score_adv:4 },
+  { minuto:90, minuto_extra:1, tipo:'substituicao', equipa:'adv', jogador:'Suárez L.', jogador2:'Nel R.' },
+];
+
+export const TITULARES_RA_J33: JogadorTitular[] = [
+  { numero:  1, nome:'Miszta',       posicao:'GR' },
+  { numero: 17, nome:'Vrousai',      posicao:'DC', capitao:true },
+  { numero: 21, nome:'Petrasso',     posicao:'DC' },
+  { numero: 44, nome:'Nikitscher',   posicao:'DC' },
+  { numero: 18, nome:'Spikic',       posicao:'DC' },
+  { numero:  6, nome:'Nelson',       posicao:'ME' },
+  { numero: 19, nome:'Gustavo M.',   posicao:'MI' },
+  { numero:  8, nome:'Ryan G.',      posicao:'MI' },
+  { numero: 11, nome:'Blesa',        posicao:'ME' },
+  { numero:  7, nome:'Bezerra',      posicao:'AV' },
+  { numero:  5, nome:'Tambie',       posicao:'AV' },
+];
+
+export const TITULARES_ADV_J33: JogadorTitular[] = [
+  { numero:  1, nome:'Rui Silva',    posicao:'GR' },
+  { numero: 72, nome:'E. Quaresma',  posicao:'DD' },
+  { numero:  5, nome:'G. Inácio',    posicao:'DC', capitao:true },
+  { numero: 23, nome:'D. Bragança',  posicao:'DC' },
+  { numero: 20, nome:'M. Araújo',    posicao:'DE' },
+  { numero:  8, nome:'Pedro G.',     posicao:'MDC' },
+  { numero:  3, nome:'Morita H.',    posicao:'MDC' },
+  { numero: 17, nome:'Trincão',      posicao:'MD' },
+  { numero: 26, nome:'O. Diamande',  posicao:'MAM' },
+  { numero: 31, nome:'L. Guilherme', posicao:'ME' },
+  { numero: 87, nome:'Suárez L.',    posicao:'AV' },
+];
