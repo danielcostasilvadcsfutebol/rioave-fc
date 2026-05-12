@@ -533,15 +533,7 @@ function JogosEquipaSection() {
   const filtered = useMemo(() => filtrarJogos(jogos, comp, local), [jogos, comp, local]);
   const stats    = useMemo(() => calcularStatsEpoca(jogos), [jogos]);
 
-  const SELECT_STYLE: React.CSSProperties = {
-    appearance: 'none', WebkitAppearance: 'none',
-    background: 'var(--surface2) url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%237B8089' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center',
-    border: '0.5px solid var(--bd)', borderRadius: 8,
-    padding: '7px 28px 7px 10px',
-    fontSize: 12, fontWeight: 600, color: 'var(--ink)', fontFamily: 'var(--font-sora)',
-    cursor: 'pointer', width: '100%', outline: 'none',
-    transition: 'border-color .15s',
-  };
+
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -574,14 +566,14 @@ function JogosEquipaSection() {
       <div style={{ background: 'var(--surface)', border: '0.5px solid var(--bd)', borderRadius: 12, padding: '10px 12px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 140 }}>
           <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--ink4)', textTransform: 'uppercase', letterSpacing: '.07em' }}>Competição</span>
-          <select style={{ ...SELECT_STYLE, borderColor: comp !== 'todas' ? 'var(--g5)' : 'var(--bd)', color: comp !== 'todas' ? 'var(--g5)' : 'var(--ink)', background: comp !== 'todas' ? 'var(--g0)' : 'var(--surface2)' }}
+          <select className="filter-select" style={{ borderColor: comp !== 'todas' ? 'var(--g5)' : 'var(--bd)', color: comp !== 'todas' ? 'var(--g5)' : 'var(--ink)' }}
             value={comp} onChange={e => setComp(e.target.value)}>
             {COMP_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 140 }}>
           <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--ink4)', textTransform: 'uppercase', letterSpacing: '.07em' }}>Local</span>
-          <select style={{ ...SELECT_STYLE, borderColor: local !== 'todos' ? 'var(--g5)' : 'var(--bd)', color: local !== 'todos' ? 'var(--g5)' : 'var(--ink)', background: local !== 'todos' ? 'var(--g0)' : 'var(--surface2)' }}
+          <select className="filter-select" style={{ borderColor: local !== 'todos' ? 'var(--g5)' : 'var(--bd)', color: local !== 'todos' ? 'var(--g5)' : 'var(--ink)' }}
             value={local} onChange={e => setLocal(e.target.value)}>
             {LOCAL_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
