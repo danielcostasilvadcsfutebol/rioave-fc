@@ -667,7 +667,7 @@ export default function HomePage() {
               <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--ink4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Estatísticas</div>
             </div>
           </div>
-          <NavDropdown onSelect={setActiveSection}/>
+          <NavDropdown onSelect={(id) => setActiveSection(id as 'assistencias' | 'jogos-equipa')}/>
         </div>
       </header>
 
