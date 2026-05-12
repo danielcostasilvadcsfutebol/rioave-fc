@@ -356,3 +356,27 @@ export const TITULARES_ADV_J33: JogadorTitular[] = [
   { numero: 31, nome:'L. Guilherme', posicao:'ME' },
   { numero: 87, nome:'Suárez L.',    posicao:'AV' },
 ];
+
+export const SUPLENTES_RA_J33: JogadorTitular[] = [
+  { numero: 30, nome:'Ennio Gouw' },
+  { numero: 77, nome:'Andreas Ntoi' },
+  { numero: 25, nome:'Antonios Papakanellos' },
+  { numero: 14, nome:'João Tomé' },
+  { numero: 55, nome:'Jakub Brabec' },
+  { numero: 24, nome:'Georgios Liavas' },
+  { numero: 40, nome:'Lomboto' },
+  { numero: 77, nome:'Omar Richards' },
+  { numero: 80, nome:'Olinho' },
+];
+
+export const SUPLENTES_ADV_J33: JogadorTitular[] = [
+  { numero: 71, nome:'João Virginia' },
+  { numero:  7, nome:'Geovany Quenda' },
+  { numero: 77, nome:'Geny Catamo' },
+  { numero: 18, nome:'Giorgi Kochorashvili' },
+  { numero: 14, nome:'Souleymane Faye' },
+  { numero: 70, nome:'Salvador Blopa' },
+  { numero: 73, nome:'Eduardo Felicíssimo' },
+  { numero: 90, nome:'Rafael Nel' },
+  { numero: 91, nome:'Ricardo Mangas' },
+];
