@@ -443,24 +443,31 @@ export interface EstatAdversario {
 }
 
 export interface HistoricoJogo {
-  epoca: string; jornada: number; assistencia: number; estadio_alternativo: boolean;
+  epoca: string; jornada: number; assistencia: number;
+  estadio_alternativo: boolean; porta_fechada: boolean;
+  ano_inicio: number;
 }
 
 export function getEstatisticasAdversarios(): EstatAdversario[] {
   const map = new Map<string, { total: number; visitas: number; maximo: number; epocasSet: Set<string> }>();
   for (const epoca of EPOCAS_ORDENADAS) {
     for (const j of DADOS[epoca].jogos) {
-      if (j.porta_fechada || j.assistencia === 0) continue;
+      // Conta TODOS os jogos, incluindo porta fechada (assistencia=0)
       const key = j.adversario.trim();
       if (!map.has(key)) map.set(key, { total: 0, visitas: 0, maximo: 0, epocasSet: new Set() });
       const e = map.get(key)!;
-      e.visitas++; e.total += j.assistencia;
-      e.maximo = Math.max(e.maximo, j.assistencia);
+      e.visitas++;
+      e.total += j.assistencia; // 0 para porta fechada
+      if (!j.porta_fechada) e.maximo = Math.max(e.maximo, j.assistencia);
       e.epocasSet.add(epoca);
     }
   }
   return Array.from(map.entries())
-    .map(([adversario, e]) => ({ adversario, visitas: e.visitas, media: Math.round(e.total / e.visitas), maximo: e.maximo, total: e.total, epocas: e.epocasSet.size }))
+    .map(([adversario, e]) => ({
+      adversario, visitas: e.visitas,
+      media: e.visitas > 0 ? Math.round(e.total / e.visitas) : 0,
+      maximo: e.maximo, total: e.total, epocas: e.epocasSet.size,
+    }))
     .sort((a, b) => b.media - a.media);
 }
 
@@ -468,9 +475,17 @@ export function getHistoricoAdversario(nome: string): HistoricoJogo[] {
   const results: HistoricoJogo[] = [];
   for (const epoca of EPOCAS_ORDENADAS) {
     for (const j of DADOS[epoca].jogos) {
-      if (j.adversario.trim() === nome.trim() && !j.porta_fechada && j.assistencia > 0)
-        results.push({ epoca, jornada: j.jornada, assistencia: j.assistencia, estadio_alternativo: j.estadio_alternativo ?? false });
+      // Inclui TODOS os jogos, mesmo porta fechada
+      if (j.adversario.trim() === nome.trim())
+        results.push({
+          epoca, jornada: j.jornada,
+          assistencia: j.assistencia,
+          estadio_alternativo: j.estadio_alternativo ?? false,
+          porta_fechada: j.porta_fechada ?? false,
+          ano_inicio: epocaToYear(epoca),
+        });
     }
   }
-  return results.sort((a, b) => b.assistencia - a.assistencia);
+  // Por defeito: ordem cronológica, mais recente primeiro
+  return results.sort((a, b) => b.ano_inicio - a.ano_inicio || b.jornada - a.jornada);
 }
