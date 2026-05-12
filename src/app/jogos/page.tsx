@@ -7,8 +7,39 @@ import {
   STATS_J33_SPORTING, EVENTOS_J33_SPORTING,
   TITULARES_RA_J33, TITULARES_ADV_J33,
   SUPLENTES_RA_J33, SUPLENTES_ADV_J33,
-  type PartidaEquipa, type EventoJogo,
+  STATS_J32_GIL, EVENTOS_J32_GIL,
+  TITULARES_RA_J32, TITULARES_ADV_J32,
+  SUPLENTES_RA_J32, SUPLENTES_ADV_J32,
+  type PartidaEquipa, type EventoJogo, type JogadorTitular,
+  type EstatisticasJogo,
 } from '@/lib/mock-jogos-equipa';
+
+// ── Detail data lookup ─────────────────────────────────────────
+interface GameDetail {
+  stats:  EstatisticasJogo;
+  eventos: EventoJogo[];
+  titRA:  JogadorTitular[];
+  titAdv: JogadorTitular[];
+  supRA:  JogadorTitular[];
+  supAdv: JogadorTitular[];
+  halfScore1: string;
+  halfScore2: string;
+}
+
+const GAME_DETAILS: Record<string, GameDetail> = {
+  '25-26-33': {
+    stats: STATS_J33_SPORTING, eventos: EVENTOS_J33_SPORTING,
+    titRA: TITULARES_RA_J33,  titAdv: TITULARES_ADV_J33,
+    supRA: SUPLENTES_RA_J33,  supAdv: SUPLENTES_ADV_J33,
+    halfScore1: '1 — 2', halfScore2: '0 — 2',
+  },
+  '25-26-32': {
+    stats: STATS_J32_GIL, eventos: EVENTOS_J32_GIL,
+    titRA: TITULARES_RA_J32,  titAdv: TITULARES_ADV_J32,
+    supRA: SUPLENTES_RA_J32,  supAdv: SUPLENTES_ADV_J32,
+    halfScore1: '0 — 0', halfScore2: '0 — 0',
+  },
+};
 
 // ── Icons ─────────────────────────────────────────────────────
 function IcoChevron({ open }: { open: boolean }) {
@@ -56,13 +87,16 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe }: {
   const fmtDate = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
   const badgeBg = partida.resultado === 'V' ? '#006B3C' : partida.resultado === 'E' ? '#6B7280' : '#DC2626';
 
-  const hasReal   = partida.hasDetail;
-  const eventos   = hasReal ? EVENTOS_J33_SPORTING : null;
-  const statsJogo = hasReal ? STATS_J33_SPORTING   : null;
-  const titRA     = hasReal ? TITULARES_RA_J33     : null;
-  const titAdv    = hasReal ? TITULARES_ADV_J33    : null;
-  const supRA     = hasReal ? SUPLENTES_RA_J33     : null;
-  const supAdv    = hasReal ? SUPLENTES_ADV_J33    : null;
+  const detail    = GAME_DETAILS[partida.id] ?? null;
+  const hasReal   = !!detail;
+  const eventos   = detail?.eventos   ?? null;
+  const statsJogo = detail?.stats     ?? null;
+  const titRA     = detail?.titRA     ?? null;
+  const titAdv    = detail?.titAdv    ?? null;
+  const supRA     = detail?.supRA     ?? null;
+  const supAdv    = detail?.supAdv    ?? null;
+  const halfScore1 = detail?.halfScore1 ?? '0 — 0';
+  const halfScore2 = detail?.halfScore2 ?? '0 — 0';
 
   // ── Events helpers ──────────────────────────────────────────
   function EventRow({ ev }: { ev: EventoJogo }) {
@@ -131,11 +165,11 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe }: {
     }
     const rows: React.ReactNode[] = [];
     let shownSecond = false;
-    rows.push(<HalfDivider key="first" label="1ª Parte" score="1 — 2"/>);
+    rows.push(<HalfDivider key="first" label="1ª Parte" score={halfScore1}/>);
     for (const ev of eventos) {
       const isSecond = ev.minuto > 45 && !ev.minuto_extra;
       if (isSecond && !shownSecond) {
-        rows.push(<HalfDivider key="second" label="2ª Parte" score="0 — 2"/>);
+        rows.push(<HalfDivider key="second" label="2ª Parte" score={halfScore2}/>);
         shownSecond = true;
       }
       rows.push(<EventRow key={`${ev.minuto}-${ev.tipo}-${ev.jogador}`} ev={ev}/>);
