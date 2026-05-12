@@ -475,3 +475,65 @@ export const SUPLENTES_ADV_J32: JogadorTitular[] = [
   { numero: 48, nome:'Antonio Espigares' },
   { numero: 39, nome:'Gustavo Varela' },
 ];
+
+// ─── Plantel derivado das fichas de jogo ─────────────────────
+export interface JogadorPlantel {
+  nome: string;
+  numero: number;
+  posicao?: string;
+  jogosTitular: number;
+  jogosSuplente: number;
+  jogosTotal: number;
+}
+
+// Mapa: todas as fichas de jogo disponíveis por época
+const FICHAS_RA: Record<string, { titulares: JogadorTitular[][]; suplentes: JogadorTitular[][] }> = {
+  '25/26': {
+    titulares: [TITULARES_RA_J32, TITULARES_RA_J33],
+    suplentes: [SUPLENTES_RA_J32, SUPLENTES_RA_J33],
+  },
+};
+
+const POSICAO_ORDER: Record<string, number> = {
+  GR:4, DC:3, DD:3, DE:3, MDC:2, MI:2, ME:2, MAD:1, MAM:1, MAE:1, AV:0,
+};
+
+export function getRosterRA(epoca: string): JogadorPlantel[] {
+  const fichas = FICHAS_RA[epoca];
+  if (!fichas) return [];
+  const map = new Map<string, JogadorPlantel>();
+
+  fichas.titulares.forEach(lista => {
+    lista.forEach(p => {
+      const k = p.nome.trim();
+      if (!map.has(k)) map.set(k, { nome: p.nome, numero: p.numero, posicao: p.posicao, jogosTitular: 0, jogosSuplente: 0, jogosTotal: 0 });
+      const e = map.get(k)!;
+      e.jogosTitular++;
+      e.jogosTotal++;
+      if (!e.posicao && p.posicao) e.posicao = p.posicao;
+    });
+  });
+
+  fichas.suplentes.forEach(lista => {
+    lista.forEach(p => {
+      const k = p.nome.trim();
+      if (!map.has(k)) map.set(k, { nome: p.nome, numero: p.numero, posicao: p.posicao, jogosTitular: 0, jogosSuplente: 0, jogosTotal: 0 });
+      const e = map.get(k)!;
+      // Avoid double-counting if already in titulares for this game
+      if (e.jogosTitular < fichas.titulares.filter(t => t.some(x => x.nome.trim() === k)).length) return;
+      e.jogosSuplente++;
+      e.jogosTotal++;
+    });
+  });
+
+  return Array.from(map.values()).sort((a, b) => {
+    const pa = POSICAO_ORDER[a.posicao ?? ''] ?? -1;
+    const pb = POSICAO_ORDER[b.posicao ?? ''] ?? -1;
+    if (pb !== pa) return pb - pa;
+    return b.jogosTotal - a.jogosTotal;
+  });
+}
+
+export const FICHAS_DISPONIVEIS: Record<string, number> = {
+  '25/26': FICHAS_RA['25/26']?.titulares.length ?? 0,
+};
