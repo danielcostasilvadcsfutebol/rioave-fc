@@ -179,7 +179,10 @@ const LIGA_2526: Omit<PartidaEquipa, 'id' | 'resultado' | 'publicado'>[] = [
 
   { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J32',
     data:'2026-05-03', hora:'20:30', local:'casa', adversario:'Gil Vicente',
-    golos_ra:0, golos_adv:0, espectadores:2801 },
+    golos_ra:0, golos_adv:0, espectadores:2801,
+    formacao_ra:'4-4-2', formacao_adv:'4-2-3-1',
+    arbitro:'Fábio Veríssimo',
+    hasDetail: true },
 
   { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J33',
     data:'2026-05-11', hora:'20:15', local:'casa', adversario:'Sporting CP',
@@ -379,4 +382,96 @@ export const SUPLENTES_ADV_J33: JogadorTitular[] = [
   { numero: 73, nome:'Eduardo Felicíssimo' },
   { numero: 90, nome:'Rafael Nel' },
   { numero: 91, nome:'Ricardo Mangas' },
+];
+
+// ─── Dados detalhados · J32 · Rio Ave 0-0 Gil Vicente ────────
+export const STATS_J32_GIL: EstatisticasJogo = {
+  posse_bola:            [50, 50],
+  remates:               [15, 16],
+  remates_baliza:        [ 2,  9],
+  remates_poste:         [ 0,  0],
+  grandes_oportunidades: [ 3,  6],
+  assistencias:          [ 0,  0],
+  cruzamentos:           [18, 25],
+  cantos:                [ 9,  7],
+  livres:                [ 3,  1],
+  ataques:               [30, 32],
+  ataques_centro:        [ 3,  2],
+  ataques_esquerda:      [18, 17],
+  ataques_direita:       [11, 13],
+  defesas:               [ 3,  3],
+  penaltis:              [ 0,  0],
+  penaltis_defendidos:   [ 0,  0],
+  foras_jogo:            [ 3,  1],
+  faltas:                [ 9, 13],
+  amarelos:              [ 1,  2],
+  vermelhos:             [ 0,  0],
+};
+
+export const EVENTOS_J32_GIL: EventoJogo[] = [
+  // ── 2ª Parte ──────────────────────────────────────
+  { minuto: 46, tipo:'substituicao',   equipa:'adv', jogador:'Martín',    jogador2:'Agustín Morales', descricao:'intervalo' },
+  { minuto: 58, tipo:'substituicao',   equipa:'adv', jogador:'Héctor',    jogador2:'G. Varela' },
+  { minuto: 63, tipo:'substituicao',   equipa:'ra',  jogador:'Spikic',    jogador2:'Olinho' },
+  { minuto: 63, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Ryan G.' },
+  { minuto: 69, tipo:'cartao_amarelo', equipa:'adv', jogador:'Zé Carlos' },
+  { minuto: 79, tipo:'substituicao',   equipa:'adv', jogador:'Zé Carlos', jogador2:'Bermejo' },
+  { minuto: 83, tipo:'substituicao',   equipa:'ra',  jogador:'Nelson',    jogador2:'Richards O.' },
+  { minuto: 83, tipo:'substituicao',   equipa:'ra',  jogador:'Vrousai',   jogador2:'Tomé J.' },
+  { minuto: 87, tipo:'substituicao',   equipa:'ra',  jogador:'Tamble',    jogador2:'Papakanellos A.' },
+  { minuto: 87, tipo:'substituicao',   equipa:'adv', jogador:'Murilo',    jogador2:'Carlos Eduardo' },
+  { minuto: 87, tipo:'substituicao',   equipa:'ra',  jogador:'Ryan G.',   jogador2:'Liavas G.' },
+  { minuto: 88, tipo:'cartao_amarelo', equipa:'adv', jogador:'Elimbi' },
+];
+
+export const TITULARES_RA_J32: JogadorTitular[] = [
+  { numero:  1, nome:'Miszta',       posicao:'GR' },
+  { numero: 17, nome:'Vrousai',      posicao:'DC', capitao:true },
+  { numero: 23, nome:'Petrasso',     posicao:'DC' },
+  { numero: 44, nome:'Nikitscher',   posicao:'DC' },
+  { numero: 18, nome:'Spikic',       posicao:'DC' },
+  { numero:  6, nome:'Nelson',       posicao:'ME' },
+  { numero: 39, nome:'Gustavo M.',   posicao:'MI' },
+  { numero:  8, nome:'Ryan G.',      posicao:'MI' },
+  { numero: 11, nome:'Blesa',        posicao:'ME' },
+  { numero:  7, nome:'Bezerra',      posicao:'AV' },
+  { numero:  9, nome:'Tamble',       posicao:'AV' },
+];
+
+export const SUPLENTES_RA_J32: JogadorTitular[] = [
+  { numero: 30, nome:'Ennio Gouw' },
+  { numero: 25, nome:'Rafael' },
+  { numero: 19, nome:'Papakanellos A.' },
+  { numero: 14, nome:'Tomé J.' },
+  { numero: 32, nome:'Brabec J.' },
+  { numero: 54, nome:'Liavas G.' },
+  { numero: 53, nome:'Lomboto' },
+  { numero: 77, nome:'Richards O.' },
+  { numero: 80, nome:'Olinho' },
+];
+
+export const TITULARES_ADV_J32: JogadorTitular[] = [
+  { numero: 99, nome:'D. Figueira',  posicao:'GR' },
+  { numero:  2, nome:'Zé Carlos',    posicao:'DD', capitao:true },
+  { numero: 39, nome:'Buatu M.',     posicao:'DC' },
+  { numero: 32, nome:'Martín',       posicao:'DC' },
+  { numero:  3, nome:'G. Konan',     posicao:'DE' },
+  { numero: 10, nome:'L. Esteves',   posicao:'MDC' },
+  { numero: 23, nome:'Héctor',       posicao:'MDC' },
+  { numero: 95, nome:'Santi G.',     posicao:'MAD' },
+  { numero: 77, nome:'Murilo',       posicao:'MAE' },
+  { numero:  6, nome:'Zé Carlos',    posicao:'MAM' },
+  { numero:  4, nome:'Elimbi',       posicao:'AV' },
+];
+
+export const SUPLENTES_ADV_J32: JogadorTitular[] = [
+  { numero: 30, nome:'Lucas Azevedo' },
+  { numero:  5, nome:'Facundo Cáseres' },
+  { numero: 11, nome:'Joelson Fernandes' },
+  { numero: 17, nome:'Sergio Lillo' },
+  { numero: 20, nome:'Hevertton Santos' },
+  { numero: 27, nome:'Agustín Morales' },
+  { numero: 29, nome:'Carlos Eduardo' },
+  { numero: 48, nome:'Antonio Espigares' },
+  { numero: 39, nome:'Gustavo Varela' },
 ];
