@@ -6,14 +6,24 @@ import {
   JOGOS_2526, filtrarJogos, calcularStatsEpoca,
   STATS_J33_SPORTING, EVENTOS_J33_SPORTING,
   TITULARES_RA_J33, TITULARES_ADV_J33,
+  SUPLENTES_RA_J33, SUPLENTES_ADV_J33,
   type PartidaEquipa, type EventoJogo,
 } from '@/lib/mock-jogos-equipa';
 
-// ── Utilities ─────────────────────────────────────────────────
+// ── Icons ─────────────────────────────────────────────────────
 function IcoChevron({ open }: { open: boolean }) {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
       <path d={open ? 'M3 9l4-4 4 4' : 'M3 5l4 4 4-4'}/>
+    </svg>
+  );
+}
+
+function IcoSub() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <path d="M11 1.5v12M8.5 4L11 1.5 13.5 4" stroke="#006B3C" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M4 13.5v-12M1.5 11L4 13.5 6.5 11" stroke="#DC2626" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
@@ -35,8 +45,7 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe }: {
   onDetalhe: (d: 'eventos' | 'stats' | 'formacao') => void;
 }) {
   const isHome = partida.local === 'casa';
-  const resMap = { V: { label: 'Vitória' }, E: { label: 'Empate' }, D: { label: 'Derrota' } };
-  const res    = resMap[partida.resultado];
+  const res    = { V: 'Vitória', E: 'Empate', D: 'Derrota' }[partida.resultado];
   const compClr = COMP_COLORS[partida.competicao] ?? COMP_COLORS['amigavel'];
 
   const scoreL = isHome ? partida.golos_ra  : partida.golos_adv;
@@ -44,7 +53,7 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe }: {
   const teamL  = isHome ? 'Rio Ave FC'       : partida.adversario;
   const teamR  = isHome ? partida.adversario : 'Rio Ave FC';
 
-  const fmtDate = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+  const fmtDate = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
   const badgeBg = partida.resultado === 'V' ? '#006B3C' : partida.resultado === 'E' ? '#6B7280' : '#DC2626';
 
   const hasReal   = partida.hasDetail;
@@ -52,48 +61,89 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe }: {
   const statsJogo = hasReal ? STATS_J33_SPORTING   : null;
   const titRA     = hasReal ? TITULARES_RA_J33     : null;
   const titAdv    = hasReal ? TITULARES_ADV_J33    : null;
+  const supRA     = hasReal ? SUPLENTES_RA_J33     : null;
+  const supAdv    = hasReal ? SUPLENTES_ADV_J33    : null;
 
+  // ── Events helpers ──────────────────────────────────────────
   function EventRow({ ev }: { ev: EventoJogo }) {
-    const isRA  = ev.equipa === 'ra';
-    const icon  = ['golo','golo_penalidade','auto_golo'].includes(ev.tipo) ? '⚽' : ev.tipo === 'cartao_amarelo' ? '🟨' : ev.tipo === 'cartao_vermelho' ? '🟥' : '↕';
+    const isRA = ev.equipa === 'ra';
+    const isGoal = ['golo', 'golo_penalidade', 'auto_golo'].includes(ev.tipo);
+    const isCard = ev.tipo === 'cartao_amarelo' || ev.tipo === 'cartao_vermelho';
+    const isSub  = ev.tipo === 'substituicao';
+
+    const icon = isGoal ? '⚽' : ev.tipo === 'cartao_amarelo' ? '🟨' : ev.tipo === 'cartao_vermelho' ? '🟥' : null;
     const score = ev.score_ra != null
-      ? <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 5px', borderRadius: 4, background: '#F5F5F5', marginLeft: 4 }}>{ev.score_ra}-{ev.score_adv}</span>
+      ? <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: '#F0F2F5', color: '#111318' }}>{ev.score_ra}-{ev.score_adv}</span>
       : null;
     const min = ev.minuto_extra ? `${ev.minuto}+${ev.minuto_extra}'` : `${ev.minuto}'`;
 
+    const nameStyle: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#111318' };
+    const detailStyle: React.CSSProperties = { fontSize: 10, color: '#9CA3AF' };
+
+    if (isRA) return (
+      <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 40px', alignItems: 'center', minHeight: 30, padding: '3px 0' }}>
+        <div style={{ textAlign: 'right', fontSize: 11, fontWeight: 700, color: '#9CA3AF' }}>{min}</div>
+        <div style={{ padding: '0 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
+          {isSub ? <IcoSub/> : <span style={{ fontSize: 14 }}>{icon}</span>}
+          <div>
+            <span style={nameStyle}>{ev.jogador}</span>
+            {ev.jogador2 && isSub && <span style={{ ...detailStyle, marginLeft: 4 }}>← {ev.jogador2}</span>}
+            {ev.jogador2 && !isSub && <span style={{ ...detailStyle, marginLeft: 4 }}>({ev.jogador2})</span>}
+            {ev.descricao && <span style={{ ...detailStyle, marginLeft: 4 }}>{ev.descricao}</span>}
+          </div>
+          {score && <div style={{ marginLeft: 4 }}>{score}</div>}
+        </div>
+        <div/>
+      </div>
+    );
+
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr 44px', alignItems: 'center', minHeight: 26, padding: '2px 0' }}>
-        {isRA ? (
-          <>
-            <div style={{ textAlign: 'right', fontSize: 11, fontWeight: 700, color: 'var(--ink4)' }}>{min}</div>
-            <div style={{ padding: '0 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span>{icon}</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)' }}>{ev.jogador}</span>
-              {ev.jogador2 && ev.tipo === 'substituicao' && <span style={{ fontSize: 10, color: 'var(--ink3)' }}>← {ev.jogador2}</span>}
-              {ev.jogador2 && ev.tipo !== 'substituicao' && <span style={{ fontSize: 10, color: 'var(--ink3)' }}>({ev.jogador2})</span>}
-              {ev.descricao && <span style={{ fontSize: 10, color: 'var(--ink3)' }}>{ev.descricao}</span>}
-              {score}
-            </div>
-            <div/>
-          </>
-        ) : (
-          <>
-            <div/>
-            <div style={{ padding: '0 8px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-              {score}
-              {ev.descricao && <span style={{ fontSize: 10, color: 'var(--ink3)' }}>{ev.descricao}</span>}
-              {ev.jogador2 && ev.tipo !== 'substituicao' && <span style={{ fontSize: 10, color: 'var(--ink3)' }}>({ev.jogador2})</span>}
-              {ev.jogador2 && ev.tipo === 'substituicao' && <span style={{ fontSize: 10, color: 'var(--ink3)' }}>{ev.jogador2} →</span>}
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)' }}>{ev.jogador}</span>
-              <span>{icon}</span>
-            </div>
-            <div style={{ textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--ink4)' }}>{min}</div>
-          </>
-        )}
+      <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 40px', alignItems: 'center', minHeight: 30, padding: '3px 0' }}>
+        <div/>
+        <div style={{ padding: '0 10px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
+          {score && <div>{score}</div>}
+          <div style={{ textAlign: 'right' }}>
+            {ev.descricao && <span style={{ ...detailStyle, marginRight: 4 }}>{ev.descricao}</span>}
+            {ev.jogador2 && isSub && <span style={{ ...detailStyle, marginRight: 4 }}>{ev.jogador2} →</span>}
+            {ev.jogador2 && !isSub && <span style={{ ...detailStyle, marginRight: 4 }}>({ev.jogador2})</span>}
+            <span style={nameStyle}>{ev.jogador}</span>
+          </div>
+          {isSub ? <IcoSub/> : <span style={{ fontSize: 14 }}>{icon}</span>}
+        </div>
+        <div style={{ textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#9CA3AF' }}>{min}</div>
       </div>
     );
   }
 
+  function HalfDivider({ label, score }: { label: string; score: string }) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0', padding: '6px 0', borderTop: '1px dashed #E4E7EC', borderBottom: '1px dashed #E4E7EC' }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.08em', flex: 1 }}>{label}</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#374151', background: '#F3F4F6', padding: '2px 8px', borderRadius: 6 }}>{score}</span>
+      </div>
+    );
+  }
+
+  // Build events with half dividers
+  function EventsList() {
+    if (!eventos || eventos.length === 0) {
+      return <div style={{ padding: '20px 0', textAlign: 'center', fontSize: 12, color: '#9CA3AF' }}>Eventos serão adicionados progressivamente.</div>;
+    }
+    const rows: React.ReactNode[] = [];
+    let shownSecond = false;
+    rows.push(<HalfDivider key="first" label="1ª Parte" score="1 — 2"/>);
+    for (const ev of eventos) {
+      const isSecond = ev.minuto > 45 && !ev.minuto_extra;
+      if (isSecond && !shownSecond) {
+        rows.push(<HalfDivider key="second" label="2ª Parte" score="0 — 2"/>);
+        shownSecond = true;
+      }
+      rows.push(<EventRow key={`${ev.minuto}-${ev.tipo}-${ev.jogador}`} ev={ev}/>);
+    }
+    return <>{rows}</>;
+  }
+
+  // Stats labels
   const STATS_LABELS: [keyof typeof STATS_J33_SPORTING, string][] = [
     ['posse_bola','% Posse de bola'],['remates','Remates'],['remates_baliza','Remates à baliza'],
     ['remates_poste','Remates ao poste'],['grandes_oportunidades','Grandes oportunidades'],
@@ -104,131 +154,173 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe }: {
     ['foras_jogo','Foras de jogo'],['faltas','Faltas'],['amarelos','Amarelos'],['vermelhos','Vermelhos'],
   ];
 
+  // Detail tab style
+  const detailTab = (d: 'eventos' | 'stats' | 'formacao'): React.CSSProperties => ({
+    flex: 1, padding: '9px 8px', fontSize: 11, fontWeight: 600, textAlign: 'center' as const,
+    cursor: 'pointer', fontFamily: 'var(--font-sora)', transition: 'all .15s',
+    border: '0.5px solid',
+    borderColor: detalhe === d ? '#006B3C' : '#E4E7EC',
+    background:  detalhe === d ? '#006B3C' : '#fff',
+    color:        detalhe === d ? '#fff' : '#7B8089',
+    borderRadius: 8,
+    margin: '0 3px',
+  });
+
   return (
-    <>
-      <div style={{ padding: '6px 14px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ padding: '2px 6px', borderRadius: 99, fontSize: 9, fontWeight: 700, background: compClr.bg, color: compClr.color }}>
+    // ── Bordered card per match ───────────────────────────────
+    <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 12, overflow: 'hidden', marginBottom: 10, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
+
+      {/* Header row */}
+      <div style={{ padding: '8px 14px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 9, fontWeight: 700, background: compClr.bg, color: compClr.color }}>
           {partida.competicao_label} · {partida.jornada}
         </span>
-        <span style={{ fontSize: 10, color: 'var(--ink4)' }}>{fmtDate(partida.data)} · {partida.hora}</span>
+        <span style={{ fontSize: 10, color: '#9CA3AF' }}>{fmtDate(partida.data)} · {partida.hora}</span>
       </div>
 
-      <div onClick={onToggle}
-        style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, padding: '8px 14px 6px', cursor: 'pointer', transition: 'background .12s', background: expanded ? 'var(--g0)' : 'transparent' }}
-        onMouseEnter={e => { if (!expanded) (e.currentTarget as HTMLElement).style.background = 'var(--g0)'; }}
+      {/* Teams + score */}
+      <div onClick={onToggle} style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, padding: '10px 14px 6px', cursor: 'pointer', transition: 'background .12s', background: expanded ? '#EEF7F2' : 'transparent' }}
+        onMouseEnter={e => { if (!expanded) (e.currentTarget as HTMLElement).style.background = '#F9FAFB'; }}
         onMouseLeave={e => { if (!expanded) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: isHome ? 'var(--g5)' : 'var(--ink)' }}>{teamL}</span>
-          <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 3, textTransform: 'uppercase', alignSelf: 'flex-start', background: 'var(--g1)', color: 'var(--g7)' }}>Casa</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: isHome ? '#006B3C' : '#111318' }}>{teamL}</span>
+          <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 3, textTransform: 'uppercase' as const, alignSelf: 'flex-start', background: '#EEF7F2', color: '#006B3C', letterSpacing: '.04em' }}>CASA</span>
         </div>
+
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink)', letterSpacing: -1 }}>{scoreL} – {scoreR}</div>
-          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, display: 'inline-block', marginTop: 2, background: badgeBg, color: '#fff' }}>{res.label}</span>
+          <div style={{ fontSize: 26, fontWeight: 800, color: '#111318', letterSpacing: -2, lineHeight: 1 }}>{scoreL} – {scoreR}</div>
+          <div style={{ marginTop: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99, display: 'inline-block', background: badgeBg, color: '#fff' }}>{res}</span>
+          </div>
+          <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 5 }}>Clica para mais dados</div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-end' }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: !isHome ? 'var(--g5)' : 'var(--ink)' }}>{teamR}</span>
-          <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 3, textTransform: 'uppercase', background: '#F1F3F5', color: 'var(--ink4)' }}>Fora</span>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end' }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: !isHome ? '#006B3C' : '#111318' }}>{teamR}</span>
+          <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 3, textTransform: 'uppercase' as const, background: '#F1F3F5', color: '#6B7280', letterSpacing: '.04em' }}>FORA</span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 14px 8px', fontSize: 10, color: 'var(--ink4)', borderBottom: '0.5px solid var(--bd)' }}>
+      {/* Footer info */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 14px 10px', fontSize: 10, color: '#9CA3AF', borderBottom: expanded ? '1px solid #E4E7EC' : 'none' }}>
         <span>{isHome ? 'Estádio dos Arcos' : (partida.estadio ?? 'Estádio do adversário')}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {partida.espectadores && <span style={{ fontWeight: 600 }}>{partida.espectadores.toLocaleString('pt-PT')} esp.</span>}
-          <span style={{ color: 'var(--ink3)' }}><IcoChevron open={expanded}/></span>
+          {partida.espectadores && <span style={{ fontWeight: 600, color: '#6B7280' }}>{partida.espectadores.toLocaleString('pt-PT')} esp.</span>}
+          <span style={{ color: '#9CA3AF' }}><IcoChevron open={expanded}/></span>
         </div>
       </div>
 
+      {/* Expanded detail */}
       {expanded && (
-        <div style={{ background: 'var(--surface2)', borderBottom: '0.5px solid var(--bd)' }}>
-          <div style={{ display: 'flex', borderBottom: '0.5px solid var(--bd)', background: 'var(--surface)' }}>
+        <div style={{ background: '#F9FAFB' }}>
+          {/* Tab bar */}
+          <div style={{ display: 'flex', padding: '10px 10px 6px', gap: 0 }}>
             {(['eventos', 'stats', 'formacao'] as const).map(d => (
-              <button key={d} onClick={() => onDetalhe(d)} style={{
-                flex: 1, padding: '7px', fontSize: 11, fontWeight: 600, textAlign: 'center',
-                border: 'none', cursor: 'pointer', fontFamily: 'var(--font-sora)', background: 'transparent',
-                color: detalhe === d ? 'var(--g5)' : 'var(--ink3)',
-                borderBottom: detalhe === d ? '2px solid var(--g5)' : '2px solid transparent',
-              }}>
-                {d === 'eventos' ? 'Eventos' : d === 'stats' ? 'Estatísticas' : 'Formações'}
+              <button key={d} onClick={() => onDetalhe(d)} style={detailTab(d)}>
+                {d === 'eventos' ? '⚡ Eventos' : d === 'stats' ? '📊 Estatísticas' : '👕 Formações'}
               </button>
             ))}
           </div>
 
+          {/* ── Eventos ── */}
           {detalhe === 'eventos' && (
-            <div style={{ padding: '8px 14px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr 44px', padding: '4px 0 6px', borderBottom: '0.5px solid var(--bd)', marginBottom: 4 }}>
-                <span style={{ textAlign: 'right', fontSize: 9, fontWeight: 700, color: 'var(--g5)', textTransform: 'uppercase', letterSpacing: '.06em' }}>RA</span>
+            <div style={{ padding: '4px 14px 12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 40px', padding: '6px 0', marginBottom: 4, borderBottom: '1px solid #E4E7EC' }}>
+                <span style={{ textAlign: 'right', fontSize: 9, fontWeight: 700, color: '#006B3C', textTransform: 'uppercase', letterSpacing: '.07em' }}>RA</span>
                 <span/>
-                <span style={{ fontSize: 9, fontWeight: 700, color: isHome ? 'var(--ink3)' : 'var(--g5)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{partida.adversario.split(' ')[0]}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: isHome ? '#6B7280' : '#006B3C', textTransform: 'uppercase', letterSpacing: '.07em' }}>{partida.adversario.split(' ')[0]}</span>
               </div>
-              {hasReal && eventos
-                ? eventos.map((ev, i) => <EventRow key={i} ev={ev}/>)
-                : <div style={{ padding: '16px 0', textAlign: 'center', fontSize: 12, color: 'var(--ink4)' }}>Eventos serão adicionados progressivamente.</div>
-              }
+              <EventsList/>
             </div>
           )}
 
+          {/* ── Estatísticas ── */}
           {detalhe === 'stats' && (
-            <div style={{ padding: '10px 14px' }}>
+            <div style={{ padding: '6px 14px 12px' }}>
               {hasReal && statsJogo ? (
                 <>
-                  <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 40px', gap: 8, paddingBottom: 7, borderBottom: '0.5px solid var(--bd)', marginBottom: 7 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', color: 'var(--g5)' }}>RA</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr 44px', gap: 8, paddingBottom: 8, borderBottom: '1.5px solid #E4E7EC', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', color: '#006B3C' }}>RA</span>
                     <span/>
-                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', color: '#DC2626', textAlign: 'right' }}>{partida.adversario.split(' ')[0]}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', color: '#DC2626', textAlign: 'right' }}>{partida.adversario.split(' ')[0]}</span>
                   </div>
-                  {STATS_LABELS.map(([key, label]) => {
+                  {STATS_LABELS.map(([key, label], idx) => {
                     const [vl, vr] = statsJogo[key];
                     const tot = Math.max(vl + vr, 1);
                     const pl  = Math.round(vl / tot * 100);
+                    const rowBg = idx % 2 === 0 ? '#fff' : '#F9FAFB'; // alternating rows
                     return (
-                      <div key={key} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 40px', gap: 8, alignItems: 'center', marginBottom: 5 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{key === 'posse_bola' ? `${vl}%` : vl}</div>
+                      <div key={key} style={{ display: 'grid', gridTemplateColumns: '44px 1fr 44px', gap: 8, alignItems: 'center', padding: '7px 6px', background: rowBg, borderRadius: 6 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#111318' }}>{key === 'posse_bola' ? `${vl}%` : vl}</div>
                         <div>
-                          <div style={{ fontSize: 10, color: 'var(--ink3)', textAlign: 'center', marginBottom: 3 }}>{label}</div>
-                          <div style={{ height: 4, background: 'var(--bd)', borderRadius: 99, overflow: 'hidden', display: 'flex' }}>
-                            <div style={{ background: 'var(--g5)', height: '100%', width: `${pl}%` }}/>
-                            <div style={{ background: '#DC2626', height: '100%', width: `${100 - pl}%`, marginLeft: 'auto' }}/>
+                          <div style={{ fontSize: 10, color: '#9CA3AF', textAlign: 'center', marginBottom: 4 }}>{label}</div>
+                          <div style={{ height: 5, background: '#E4E7EC', borderRadius: 99, overflow: 'hidden', display: 'flex' }}>
+                            <div style={{ background: '#006B3C', height: '100%', width: `${pl}%`, borderRadius: '99px 0 0 99px' }}/>
+                            <div style={{ background: '#DC2626', height: '100%', width: `${100 - pl}%`, marginLeft: 'auto', borderRadius: '0 99px 99px 0' }}/>
                           </div>
                         </div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)', textAlign: 'right' }}>{key === 'posse_bola' ? `${vr}%` : vr}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#111318', textAlign: 'right' }}>{key === 'posse_bola' ? `${vr}%` : vr}</div>
                       </div>
                     );
                   })}
                 </>
               ) : (
-                <div style={{ padding: '16px 0', textAlign: 'center', fontSize: 12, color: 'var(--ink4)' }}>Estatísticas serão adicionadas progressivamente.</div>
+                <div style={{ padding: '20px 0', textAlign: 'center', fontSize: 12, color: '#9CA3AF' }}>Estatísticas serão adicionadas progressivamente.</div>
               )}
             </div>
           )}
 
+          {/* ── Formações ── */}
           {detalhe === 'formacao' && (
-            <div style={{ padding: '10px 14px' }}>
+            <div style={{ padding: '6px 14px 12px' }}>
               {hasReal && titRA && titAdv ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  {[{ title: `Rio Ave FC · ${partida.formacao_ra}`, tits: titRA, color: 'var(--g5)' }, { title: `${partida.adversario} · ${partida.formacao_adv}`, tits: titAdv, color: '#1A5FA8' }].map(({ title, tits, color }) => (
-                    <div key={title} style={{ background: 'var(--bg)', borderRadius: 8, padding: '8px 10px' }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color, marginBottom: 6 }}>{title}</div>
-                      {tits.map(p => (
-                        <div key={p.numero} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '2px 0', borderBottom: '0.5px solid var(--bd)', fontSize: 11 }}>
-                          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink4)', minWidth: 16 }}>{p.numero}</span>
-                          <span style={{ color: 'var(--ink)', flex: 1 }}>{p.nome}{p.capitao ? ' (C)' : ''}</span>
-                          <span style={{ fontSize: 9, color: 'var(--ink4)' }}>{p.posicao}</span>
+                  {[
+                    { title: `Rio Ave FC`, scheme: partida.formacao_ra, tits: titRA, sups: supRA, color: '#006B3C' },
+                    { title: partida.adversario, scheme: partida.formacao_adv, tits: titAdv, sups: supAdv, color: '#1A5FA8' },
+                  ].map(({ title, scheme, tits, sups, color }) => (
+                    <div key={title} style={{ background: '#fff', border: '1px solid #E4E7EC', borderRadius: 10, overflow: 'hidden' }}>
+                      {/* Team header */}
+                      <div style={{ padding: '8px 10px', borderBottom: '1px solid #E4E7EC', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F9FAFB' }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color }}>{title}</span>
+                        {scheme && <span style={{ fontSize: 10, fontWeight: 600, color: '#9CA3AF', background: '#F0F2F5', padding: '2px 7px', borderRadius: 99 }}>{scheme}</span>}
+                      </div>
+                      {/* Titulares */}
+                      <div style={{ padding: '4px 0' }}>
+                        <div style={{ padding: '3px 10px 2px', fontSize: 9, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.08em' }}>Titulares</div>
+                        {tits?.map(p => (
+                          <div key={p.numero} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 10px', fontSize: 11 }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', minWidth: 18, textAlign: 'right' }}>{p.numero}</span>
+                            <span style={{ color: '#111318', flex: 1 }}>{p.nome}{p.capitao ? ' (C)' : ''}</span>
+                            {p.posicao && <span style={{ fontSize: 9, color: '#9CA3AF', background: '#F0F2F5', padding: '1px 5px', borderRadius: 4 }}>{p.posicao}</span>}
+                          </div>
+                        ))}
+                      </div>
+                      {/* Suplentes */}
+                      {sups && sups.length > 0 && (
+                        <div style={{ borderTop: '1px solid #E4E7EC', padding: '4px 0' }}>
+                          <div style={{ padding: '3px 10px 2px', fontSize: 9, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.08em' }}>Banco</div>
+                          {sups.map(p => (
+                            <div key={p.numero + p.nome} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 10px', fontSize: 11 }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', minWidth: 18, textAlign: 'right' }}>{p.numero}</span>
+                              <span style={{ color: '#6B7280', flex: 1 }}>{p.nome}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div style={{ padding: '16px 0', textAlign: 'center', fontSize: 12, color: 'var(--ink4)' }}>Formações serão adicionadas progressivamente.</div>
+                <div style={{ padding: '20px 0', textAlign: 'center', fontSize: 12, color: '#9CA3AF' }}>Formações serão adicionadas progressivamente.</div>
               )}
-              {partida.arbitro && <div style={{ marginTop: 8, fontSize: 11, color: 'var(--ink4)', textAlign: 'center' }}>Árbitro: {partida.arbitro}</div>}
+              {partida.arbitro && <div style={{ marginTop: 8, fontSize: 11, color: '#9CA3AF', textAlign: 'center' }}>Árbitro: {partida.arbitro}</div>}
             </div>
           )}
         </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -241,8 +333,14 @@ export default function JogosPage() {
 
   const jogos    = JOGOS_2526;
   const filtered = useMemo(() => filtrarJogos(jogos, comp, local), [jogos, comp, local]);
-  const stats    = useMemo(() => calcularStatsEpoca(jogos), [jogos]);
 
+  // ── Stats: always based on filtered selection ─────────────
+  const stats    = useMemo(() => calcularStatsEpoca(filtered), [filtered]);
+  const casaStats = useMemo(() => calcularStatsEpoca(filtrarJogos(jogos, comp, 'casa')), [jogos, comp]);
+  const foraStats = useMemo(() => calcularStatsEpoca(filtrarJogos(jogos, comp, 'fora')), [jogos, comp]);
+  const showBreakdown = local === 'todos';
+
+  // ── Grouping ──────────────────────────────────────────────
   const grouped = useMemo(() => {
     if (comp !== 'todas') return null;
     const map = new Map<string, { label: string; jogos: PartidaEquipa[] }>();
@@ -266,12 +364,14 @@ export default function JogosPage() {
     { value: 'casa',  label: 'Casa' },
     { value: 'fora',  label: 'Fora' },
   ];
+
+  // ── Fix #8: hardcoded colors so CSS vars can't break this ──
   const pill = (active: boolean): React.CSSProperties => ({
-    padding: '5px 12px', borderRadius: 99, fontSize: 11, fontWeight: 600,
-    border: '0.5px solid', cursor: 'pointer', fontFamily: 'var(--font-sora)',
-    borderColor: active ? 'var(--g5)' : 'var(--bd)',
-    background:  active ? 'var(--g5)' : 'var(--surface2)',
-    color:       active ? '#fff' : 'var(--ink3)',
+    padding: '5px 13px', borderRadius: 99, fontSize: 11, fontWeight: 600,
+    border: '1.5px solid', cursor: 'pointer', fontFamily: 'var(--font-sora)',
+    borderColor: active ? '#006B3C' : '#D1D5DB',
+    background:  active ? '#006B3C' : '#fff',
+    color:       active ? '#fff'    : '#6B7280',
     transition: 'all .12s',
   });
 
@@ -280,109 +380,124 @@ export default function JogosPage() {
     const ge = gJogos.filter(j => j.resultado === 'E').length;
     const gd = gJogos.filter(j => j.resultado === 'D').length;
     return (
-      <div style={{ marginBottom: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: 'var(--surface2)', borderRadius: '10px 10px 0 0', border: '0.5px solid var(--bd)', borderBottom: 'none' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink2)' }}>{label}</span>
-          <div style={{ display: 'flex', gap: 5 }}>
-            {([[gv, 'V', '#006B3C'], [ge, 'E', '#6B7280'], [gd, 'D', '#DC2626']] as [number, string, string][]).map(([n, l, c]) =>
-              n > 0 && <span key={l} style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 99, background: c, color: '#fff' }}>{n}{l}</span>
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#fff', borderRadius: '12px 12px 0 0', border: '1.5px solid #E4E7EC', borderBottom: 'none' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#111318' }}>{label}</span>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {([[gv,'V','#006B3C'],[ge,'E','#6B7280'],[gd,'D','#DC2626']] as [number,string,string][]).map(([n,l,c]) =>
+              n > 0 && <span key={l} style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 99, background: c, color: '#fff' }}>{n}{l}</span>
             )}
           </div>
         </div>
-        <div style={{ background: 'var(--surface)', border: '0.5px solid var(--bd)', borderRadius: '0 0 10px 10px', overflow: 'hidden' }}>
-          {gJogos.map(p => (
-            <PartidaRow key={p.id} partida={p}
-              expanded={expanded === p.id} detalhe={detalhe}
-              onToggle={() => setExpanded(x => x === p.id ? null : p.id)}
+        {gJogos.map(p => (
+          <div key={p.id} style={{ borderLeft: '1.5px solid #E4E7EC', borderRight: '1.5px solid #E4E7EC', borderBottom: '1.5px solid #E4E7EC', background: '#fff', borderRadius: p === gJogos[gJogos.length-1] ? '0 0 12px 12px' : 0, overflow: 'hidden' }}>
+            <PartidaRow partida={p}
+              expanded={expanded===p.id} detalhe={detalhe}
+              onToggle={() => setExpanded(x => x===p.id ? null : p.id)}
               onDetalhe={setDetalhe}
             />
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--surface3)' }}>
+    <div style={{ minHeight: '100vh', background: '#F0F2F5' }}>
       {/* Header */}
-      <header className="app-header">
-        <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 16px', height: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', color: 'var(--ink3)', fontSize: 12, fontWeight: 600 }}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M10 3L5 8l5 5"/></svg>
-              Início
-            </Link>
-            <span style={{ color: 'var(--bd)' }}>·</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 6, background: 'linear-gradient(135deg, var(--g7), var(--g3))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ color: '#fff', fontSize: 10, fontWeight: 800 }}>RA</span>
-              </div>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Jogos da Equipa</div>
-                <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--ink4)', letterSpacing: '.08em', textTransform: 'uppercase' }}>Rio Ave FC · 2025/26</div>
-              </div>
-            </div>
+      <header style={{ background: '#fff', borderBottom: '0.5px solid #E4E7EC', position: 'sticky', top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 16px', height: 52, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 5, textDecoration: 'none', color: '#6B7280', fontSize: 12, fontWeight: 600 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M10 3L5 8l5 5"/></svg>
+            Início
+          </Link>
+          <span style={{ color: '#E4E7EC' }}>·</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#111318' }}>Jogos da Equipa</div>
+            <div style={{ fontSize: 9, fontWeight: 600, color: '#B0B5BE', letterSpacing: '.08em', textTransform: 'uppercase' }}>Rio Ave FC · 2025/26</div>
           </div>
         </div>
       </header>
 
-      <main style={{ maxWidth: 720, margin: '0 auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <main style={{ maxWidth: 760, margin: '0 auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-        {/* Season banner */}
-        <div className="hero-card anim-rise" style={{ padding: 20 }}>
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.4)', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 6 }}>
-              Época 2025/26 · Todos os jogos
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 4 }}>
-              {[
-                { l: 'Jogos',    v: stats.total,   s: `${stats.v}V·${stats.e}E·${stats.d}D` },
-                { l: 'Vitórias', v: stats.v,       s: `${Math.round(stats.v / stats.total * 100)}%` },
-                { l: 'Golos',    v: stats.gm,      s: 'marcados' },
-                { l: 'Sofridos', v: stats.gs,      s: 'golos' },
-                { l: 'Pts Liga', v: stats.ligaPts, s: 'pontos' },
-              ].map(s => (
-                <div key={s.l} style={{ background: 'rgba(0,0,0,.2)', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 8, color: 'rgba(255,255,255,.4)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 2 }}>{s.l}</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-.5px', lineHeight: 1 }}>{s.v}</div>
-                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,.35)' }}>{s.s}</div>
+        {/* ── Season banner (updates with filters) ── */}
+        <div style={{ background: 'linear-gradient(135deg, #003D20, #005A30)', borderRadius: 14, padding: 20, color: '#fff' }}>
+          <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.4)', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 10 }}>
+            Época 2025/26 · {comp === 'todas' ? 'Todas as competições' : COMP_OPTS.find(o=>o.value===comp)?.label} · {local === 'todos' ? 'Casa + Fora' : local === 'casa' ? 'Casa' : 'Fora'}
+          </div>
+
+          {/* Main KPIs */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: showBreakdown ? 12 : 0 }}>
+            {[
+              { l: 'Jogos',    v: stats.total,   s: `${stats.v}V · ${stats.e}E · ${stats.d}D` },
+              { l: 'Vitórias', v: stats.v,       s: `${stats.total > 0 ? Math.round(stats.v/stats.total*100) : 0}%` },
+              { l: 'Golos',    v: stats.gm,      s: `sofridos: ${stats.gs}` },
+              { l: 'Pts Liga', v: stats.ligaPts, s: 'pontos' },
+            ].map(s => (
+              <div key={s.l} style={{ background: 'rgba(0,0,0,.2)', borderRadius: 9, padding: '9px 8px', textAlign: 'center' }}>
+                <div style={{ fontSize: 8, color: 'rgba(255,255,255,.4)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 2 }}>{s.l}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-.5px', lineHeight: 1 }}>{s.v}</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.35)', marginTop: 1 }}>{s.s}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Breakdown Casa/Fora when "Todos" selected ── */}
+          {showBreakdown && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {[{ label: '🏠 Casa', s: casaStats }, { label: '✈️ Fora', s: foraStats }].map(({ label, s }) => (
+                <div key={label} style={{ background: 'rgba(255,255,255,.08)', borderRadius: 9, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.6)', marginBottom: 6 }}>{label}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
+                    {[
+                      { l: 'Jogos', v: s.total },
+                      { l: 'V-E-D',  v: `${s.v}-${s.e}-${s.d}` },
+                      { l: 'Golos', v: s.gm },
+                      { l: 'Sofrid', v: s.gs },
+                    ].map(k => (
+                      <div key={k.l} style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', lineHeight: 1 }}>{k.v}</div>
+                        <div style={{ fontSize: 8, color: 'rgba(255,255,255,.35)', marginTop: 1 }}>{k.l}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Filters */}
-        <div style={{ background: 'var(--surface)', border: '0.5px solid var(--bd)', borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--ink4)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 6 }}>Competição</div>
-            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+        {/* ── Filters ── */}
+        <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 14, padding: '14px 16px' }}>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>Competição</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {COMP_OPTS.map(o => <button key={o.value} onClick={() => setComp(o.value)} style={pill(comp === o.value)}>{o.label}</button>)}
             </div>
           </div>
-          <div style={{ width: '0.5px', background: 'var(--bd)', alignSelf: 'stretch', margin: '0 2px' }}/>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--ink4)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 6 }}>Local</div>
-            <div style={{ display: 'flex', gap: 5 }}>
-              {LOCAL_OPTS.map(o => <button key={o.value} onClick={() => setLocal(o.value)} style={pill(local === o.value)}>{o.label}</button>)}
+          <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>Local</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {LOCAL_OPTS.map(o => <button key={o.value} onClick={() => setLocal(o.value)} style={pill(local === o.value)}>{o.label}</button>)}
+              </div>
             </div>
-          </div>
-          <div style={{ marginLeft: 'auto', alignSelf: 'flex-end', fontSize: 11, color: 'var(--ink4)' }}>
-            {filtered.length} jogo{filtered.length !== 1 ? 's' : ''}
+            <span style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500 }}>{filtered.length} jogo{filtered.length !== 1 ? 's' : ''}</span>
           </div>
         </div>
 
-        {/* Match list */}
+        {/* ── Match list ── */}
         {filtered.length === 0 ? (
-          <div style={{ background: 'var(--surface)', border: '0.5px solid var(--bd)', borderRadius: 12, padding: '40px 20px', textAlign: 'center', color: 'var(--ink4)', fontSize: 13 }}>
-            Nenhum jogo encontrado.
+          <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 14, padding: '40px 20px', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>
+            Nenhum jogo encontrado com estes filtros.
           </div>
         ) : grouped ? (
           Array.from(grouped.entries()).map(([compKey, { label, jogos: gJogos }]) => (
             <MatchGroup key={compKey} label={label} jogos={gJogos}/>
           ))
         ) : (
-          <div style={{ background: 'var(--surface)', border: '0.5px solid var(--bd)', borderRadius: 12, overflow: 'hidden' }}>
+          <>
             {filtered.map(p => (
               <PartidaRow key={p.id} partida={p}
                 expanded={expanded === p.id} detalhe={detalhe}
@@ -390,10 +505,10 @@ export default function JogosPage() {
                 onDetalhe={setDetalhe}
               />
             ))}
-          </div>
+          </>
         )}
 
-        <div style={{ textAlign: 'center', padding: '4px 0 12px', fontSize: 11, color: 'var(--ink4)' }}>
+        <div style={{ textAlign: 'center', padding: '4px 0 16px', fontSize: 11, color: '#B0B5BE' }}>
           Dados coletados por Daniel Silva · Sócio 3883
         </div>
       </main>
