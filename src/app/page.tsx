@@ -5,6 +5,10 @@ import {
   EPOCAS_ORDENADAS, getJogosByEpoca, MOCK_RESUMO_EPOCAS,
   calcularKpis, getEstatisticasAdversarios, getHistoricoAdversario,
 } from '@/lib/mock-data';
+import {
+  JOGOS_2526, filtrarJogos, calcularStatsEpoca,
+  type PartidaEquipa, type Competicao,
+} from '@/lib/mock-jogos-equipa';
 import type { JogoComRelacoes } from '@/types';
 
 // ── Utils ─────────────────────────────────────────────────────
@@ -79,10 +83,10 @@ function ColHeader<K extends string>({
 // ── Nav Dropdown ──────────────────────────────────────────────
 const NAV_ITEMS = [
   { id: 'assistencias', label: 'Assistências nos Arcos', available: true },
-  { id: 'jogos-equipa', label: 'Jogos da Equipa', available: false },
+  { id: 'jogos-equipa', label: 'Jogos da Equipa', available: true },
 ];
 
-function NavDropdown() {
+function NavDropdown({ onSelect }: { onSelect: (id: string) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -113,7 +117,7 @@ function NavDropdown() {
           minWidth: 210, overflow: 'hidden', zIndex: 100,
         }}>
           {NAV_ITEMS.map((item, i) => (
-            <div key={item.id} onClick={() => item.available && setOpen(false)} style={{
+            <div key={item.id} onClick={() => { if (item.available) { setOpen(false); onSelect(item.id); } }} style={{
               padding: '10px 14px',
               borderBottom: i < NAV_ITEMS.length - 1 ? '1px solid var(--border)' : 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -214,7 +218,7 @@ function AdversariosSection() {
   const COLS: { key: AdvSortKey; label: string; align: 'left' | 'right'; w?: number }[] = [
     { key: 'adversario', label: 'Adversário', align: 'left' },
     { key: 'visitas',    label: 'Visitas',    align: 'right', w: 60  },
-    { key: 'media',      label: 'Média',      align: 'right', w: 72  },
+    { key: 'media',      label: 'Esp. Arcos', align: 'right', w: 80  },
     { key: 'maximo',     label: 'Recorde',    align: 'right', w: 72  },
   ];
   const gridCols = `1fr ${COLS.slice(1).map(c => `${c.w}px`).join(' ')}`;
@@ -286,7 +290,7 @@ function AdversariosSection() {
                   </span>
                 </div>
               </div>
-              <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 600, color: 'var(--ink2)' }}>{adv.visitas}×</div>
+              <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--ink2)' }}>{adv.visitas}<span style={{fontSize:10,color:'var(--ink4)'}}>×</span></div>
               <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 700, color: 'var(--g500)' }}>{fmt(adv.media)}</div>
               <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 600, color: 'var(--ink3)' }}>{fmt(adv.maximo)}</div>
             </div>
@@ -371,7 +375,7 @@ function AdversariosSection() {
 
       <div style={{ padding: '10px 20px', borderTop: '1px solid var(--border)', background: 'var(--surface2)', display: 'flex', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 11, color: 'var(--ink4)' }}>{sorted.length} adversários</span>
-        <span style={{ fontSize: 11, color: 'var(--ink4)' }}>Inclui jogos à porta fechada (0 esp.)</span>
+        <span style={{ fontSize: 11, color: 'var(--ink4)' }}>Espectadores · jogos nos Arcos · 2025/26</span>
       </div>
     </div>
   );
@@ -414,7 +418,205 @@ function HistorySection() {
 type Tab      = 'jogos' | 'adversarios' | 'historico';
 type SortKey  = 'jornada' | 'adversario' | 'assistencia' | 'pct_ocupacao';
 
+
+// ── Jogos da Equipa Section ───────────────────────────────────
+const COMP_OPTS = [
+  { value: 'todas',    label: 'Todas as competições' },
+  { value: 'liga',     label: 'Liga Portugal Betclic' },
+  { value: 'taca-pt',  label: 'Taça de Portugal' },
+  { value: 'taca-liga',label: 'Taça da Liga' },
+  { value: 'europa',   label: 'Liga Conferência UEFA' },
+  { value: 'amigavel', label: 'Amigáveis' },
+];
+
+const LOCAL_OPTS = [
+  { value: 'todos', label: 'Todos os jogos' },
+  { value: 'casa',  label: 'Em casa' },
+  { value: 'fora',  label: 'Fora' },
+];
+
+const COMP_COLORS: Record<string, { bg: string; color: string }> = {
+  'liga':     { bg: '#EBF4FF', color: '#1A5FA8' },
+  'taca-pt':  { bg: '#FFF4E5', color: '#A05C00' },
+  'taca-liga':{ bg: '#F3EFFF', color: '#5B34C0' },
+  'europa':   { bg: '#E5F5FF', color: '#0B6B9E' },
+  'amigavel': { bg: '#F5F5F5', color: '#7B8089' },
+};
+
+function PartidaRow({ partida, expanded, onToggle }: {
+  partida: PartidaEquipa; expanded: boolean; onToggle: () => void;
+}) {
+  const isHome  = partida.local === 'casa';
+  const resMap  = { V: { label: 'Vitória', cls: 'r-v' }, E: { label: 'Empate', cls: 'r-e' }, D: { label: 'Derrota', cls: 'r-d' } };
+  const res     = resMap[partida.resultado];
+  const compClr = COMP_COLORS[partida.competicao] ?? COMP_COLORS['amigavel'];
+
+  // Score display: always home-away (if casa: RA-ADV, if fora: ADV-RA)
+  const scoreL  = isHome ? partida.golos_ra : partida.golos_adv;
+  const scoreR  = isHome ? partida.golos_adv : partida.golos_ra;
+  const teamL   = isHome ? 'Rio Ave FC' : partida.adversario;
+  const teamR   = isHome ? partida.adversario : 'Rio Ave FC';
+  const isRALeft = isHome;
+
+  const fmtDate = (d: string) => {
+    const dt = new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString('pt-PT', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
+  return (
+    <>
+      {/* Header row */}
+      <div style={{ padding: '6px 16px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ padding: '2px 6px', borderRadius: 99, fontSize: 9, fontWeight: 700, background: compClr.bg, color: compClr.color }}>
+          {partida.competicao_label} · {partida.jornada}
+        </span>
+        <span style={{ fontSize: 10, color: 'var(--ink4)' }}>{fmtDate(partida.data)} · {partida.hora}</span>
+      </div>
+
+      {/* Main match row */}
+      <div
+        onClick={onToggle}
+        style={{
+          display: 'grid', gridTemplateColumns: '1fr auto 1fr',
+          alignItems: 'center', gap: 8, padding: '8px 16px 6px',
+          cursor: 'pointer', transition: 'background .12s',
+          background: expanded ? 'var(--g0)' : 'transparent',
+        }}
+        onMouseEnter={e => { if (!expanded) (e.currentTarget as HTMLElement).style.background = 'var(--g0)'; }}
+        onMouseLeave={e => { if (!expanded) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+      >
+        {/* Left team */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: isRALeft ? 'var(--g5)' : 'var(--ink)' }}>{teamL}</span>
+          <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 3, textTransform: 'uppercase', alignSelf: 'flex-start', background: 'var(--g1)', color: 'var(--g7)' }}>Casa</span>
+        </div>
+
+        {/* Score center */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink)', letterSpacing: -1 }}>{scoreL} – {scoreR}</div>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, display: 'inline-block', marginTop: 2,
+            background: partida.resultado === 'V' ? 'var(--g1)' : partida.resultado === 'E' ? '#F1F3F5' : 'var(--r1)',
+            color: partida.resultado === 'V' ? 'var(--g7)' : partida.resultado === 'E' ? 'var(--ink3)' : 'var(--r5)',
+          }}>{res.label}</span>
+        </div>
+
+        {/* Right team */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-end' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: !isRALeft ? 'var(--g5)' : 'var(--ink)' }}>{teamR}</span>
+          <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 3, textTransform: 'uppercase', background: '#F1F3F5', color: 'var(--ink4)' }}>Fora</span>
+        </div>
+      </div>
+
+      {/* Footer info */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 16px 8px', fontSize: 10, color: 'var(--ink4)', borderBottom: '0.5px solid var(--bd)' }}>
+        <span>{isHome ? 'Estádio dos Arcos' : (partida.estadio ?? 'Estádio do adversário')}</span>
+        {partida.espectadores && <span style={{ fontWeight: 600 }}>{partida.espectadores.toLocaleString('pt-PT')} esp.</span>}
+        <span style={{ color: 'var(--ink3)' }}><IcoChevron open={expanded}/></span>
+      </div>
+
+      {/* Expanded detail placeholder */}
+      {expanded && (
+        <div style={{ background: 'var(--surface2)', borderBottom: '0.5px solid var(--bd)', padding: '14px 16px', textAlign: 'center', fontSize: 12, color: 'var(--ink3)' }}>
+          Estatísticas e eventos serão adicionados progressivamente.
+        </div>
+      )}
+    </>
+  );
+}
+
+function JogosEquipaSection() {
+  const [comp, setComp]       = useState<string>('todas');
+  const [local, setLocal]     = useState<string>('todos');
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const jogos    = JOGOS_2526;
+  const filtered = useMemo(() => filtrarJogos(jogos, comp, local), [jogos, comp, local]);
+  const stats    = useMemo(() => calcularStatsEpoca(jogos), [jogos]);
+
+  const SELECT_STYLE: React.CSSProperties = {
+    appearance: 'none', WebkitAppearance: 'none',
+    background: 'var(--surface2) url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%237B8089' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center',
+    border: '0.5px solid var(--bd)', borderRadius: 8,
+    padding: '7px 28px 7px 10px',
+    fontSize: 12, fontWeight: 600, color: 'var(--ink)', fontFamily: 'var(--font-sora)',
+    cursor: 'pointer', width: '100%', outline: 'none',
+    transition: 'border-color .15s',
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+      {/* Season banner */}
+      <div className="hero-card anim-rise" style={{ padding: 20 }}>
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,.4)', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 6 }}>
+            Época 2025/26 · Todos os jogos
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 4 }}>
+            {[
+              { l: 'Jogos',    v: stats.total, s: `${stats.v}V·${stats.e}E·${stats.d}D` },
+              { l: 'Vitórias', v: stats.v, s: `${Math.round(stats.v/stats.total*100)}%` },
+              { l: 'Golos',    v: stats.gm, s: 'marcados' },
+              { l: 'Sofridos', v: stats.gs, s: 'golos' },
+              { l: 'Pontos Liga', v: stats.ligaPts, s: 'Liga Betclic' },
+            ].map(s => (
+              <div key={s.l} style={{ background: 'rgba(0,0,0,.2)', borderRadius: 8, padding: '8px 6px', textAlign: 'center' }}>
+                <div style={{ fontSize: 8, color: 'rgba(255,255,255,.4)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 2 }}>{s.l}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-.5px', lineHeight: 1 }}>{s.v}</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.35)' }}>{s.s}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div style={{ background: 'var(--surface)', border: '0.5px solid var(--bd)', borderRadius: 12, padding: '10px 12px', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 140 }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--ink4)', textTransform: 'uppercase', letterSpacing: '.07em' }}>Competição</span>
+          <select style={{ ...SELECT_STYLE, borderColor: comp !== 'todas' ? 'var(--g5)' : 'var(--bd)', color: comp !== 'todas' ? 'var(--g5)' : 'var(--ink)', background: comp !== 'todas' ? 'var(--g0)' : 'var(--surface2)' }}
+            value={comp} onChange={e => setComp(e.target.value)}>
+            {COMP_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, minWidth: 140 }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--ink4)', textTransform: 'uppercase', letterSpacing: '.07em' }}>Local</span>
+          <select style={{ ...SELECT_STYLE, borderColor: local !== 'todos' ? 'var(--g5)' : 'var(--bd)', color: local !== 'todos' ? 'var(--g5)' : 'var(--ink)', background: local !== 'todos' ? 'var(--g0)' : 'var(--surface2)' }}
+            value={local} onChange={e => setLocal(e.target.value)}>
+            {LOCAL_OPTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <span style={{ fontSize: 11, color: 'var(--ink3)', paddingBottom: 8, whiteSpace: 'nowrap' }}>
+          {filtered.length} jogo{filtered.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+
+      {/* Match list */}
+      {filtered.length === 0 ? (
+        <div style={{ background: 'var(--surface)', border: '0.5px solid var(--bd)', borderRadius: 12, padding: '40px 20px', textAlign: 'center', color: 'var(--ink3)', fontSize: 13 }}>
+          Nenhum jogo encontrado com estes filtros.
+        </div>
+      ) : (
+        <div style={{ background: 'var(--surface)', border: '0.5px solid var(--bd)', borderRadius: 12, overflow: 'hidden' }}>
+          {filtered.map(p => (
+            <PartidaRow
+              key={p.id} partida={p}
+              expanded={expanded === p.id}
+              onToggle={() => setExpanded(x => x === p.id ? null : p.id)}
+            />
+          ))}
+        </div>
+      )}
+
+      <div style={{ textAlign: 'center', padding: '4px 0 12px', fontSize: 11, color: 'var(--ink4)' }}>
+        Dados coletados por Daniel Silva · Sócio 3883
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
+  const [activeSection, setActiveSection] = useState<'assistencias' | 'jogos-equipa'>('assistencias');
   const [tab, setTab]           = useState<Tab>('jogos');
   const [epocaSel, setEpocaSel] = useState('25/26');
   const [sortKey, setSortKey]   = useState<SortKey>('jornada');
@@ -473,11 +675,13 @@ export default function HomePage() {
               <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--ink4)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Estatísticas</div>
             </div>
           </div>
-          <NavDropdown/>
+          <NavDropdown onSelect={setActiveSection}/>
         </div>
       </header>
 
       <main style={{ maxWidth: 720, margin: '0 auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {activeSection === 'jogos-equipa' && <JogosEquipaSection />}
+        {activeSection === 'assistencias' && <>
 
         {/* Hero */}
         <div className="hero-card anim-rise" style={{ padding: 24 }}>
@@ -594,6 +798,7 @@ export default function HomePage() {
         <div style={{ textAlign: 'center', padding: '6px 0 16px', fontSize: 11, color: 'var(--ink4)' }}>
           Dados coletados por Daniel Silva · Sócio 3883
         </div>
+        </>}
       </main>
     </div>
   );
