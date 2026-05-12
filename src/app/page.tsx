@@ -182,11 +182,15 @@ function MatchRow({ jogo, isMax, isMin, expanded, onToggle }: {
 // ── Adversários Section ───────────────────────────────────────
 type AdvSortKey = 'adversario' | 'visitas' | 'media' | 'maximo';
 
+type HistSortKey = 'epoca' | 'assistencia';
+
 function AdversariosSection() {
-  const [sortKey, setSortKey]   = useState<AdvSortKey>('media');
-  const [sortAsc, setSortAsc]   = useState(false);
-  const [search, setSearch]     = useState('');
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [sortKey, setSortKey]     = useState<AdvSortKey>('media');
+  const [sortAsc, setSortAsc]     = useState(false);
+  const [search, setSearch]       = useState('');
+  const [expanded, setExpanded]   = useState<string | null>(null);
+  const [histSort, setHistSort]   = useState<HistSortKey>('epoca');
+  const [histAsc, setHistAsc]     = useState(false); // mais recente primeiro
 
   const data     = useMemo(() => getEstatisticasAdversarios(), []);
   const maxMedia = data.length ? data[0].media : 1;
@@ -246,7 +250,7 @@ function AdversariosSection() {
         const barW     = maxMedia > 0 ? (adv.media / maxMedia) * 100 : 0;
         const isOpen   = expanded === adv.adversario;
         const historico = isOpen ? getHistoricoAdversario(adv.adversario) : [];
-        const histMax  = historico.length ? historico[0].assistencia : 1;
+        // histMax calculated inside expanded panel
 
         return (
           <div key={adv.adversario}>
@@ -288,43 +292,86 @@ function AdversariosSection() {
             </div>
 
             {/* Expand: historical matchups */}
-            {isOpen && (
-              <div className="anim-slide" style={{ background: 'var(--surface2)', borderBottom: '1px solid var(--border)', padding: '10px 20px 12px' }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-                  Histórico de confrontos · {adv.adversario}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  {historico.map(h => {
-                    const barW2 = histMax > 0 ? (h.assistencia / histMax) * 100 : 0;
-                    return (
-                      <div key={`${h.epoca}-${h.jornada}`} style={{ display: 'grid', gridTemplateColumns: '48px 1fr 60px', gap: 10, alignItems: 'center' }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink3)', textAlign: 'right' }}>{h.epoca}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <div style={{ flex: 1, height: 5, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${barW2}%`, background: barColor((h.assistencia / 5300) * 100), borderRadius: 99 }}/>
+            {isOpen && (() => {
+              const historicoSorted = [...historico].sort((a, b) => {
+                if (histSort === 'assistencia') {
+                  return histAsc ? a.assistencia - b.assistencia : b.assistencia - a.assistencia;
+                }
+                // Ordem cronológica por ano
+                return histAsc
+                  ? a.ano_inicio - b.ano_inicio  // ascendente (mais antigo primeiro)
+                  : b.ano_inicio - a.ano_inicio; // descendente (mais recente primeiro)
+              });
+              const histMaxVal = Math.max(...historico.filter(h => !h.porta_fechada).map(h => h.assistencia), 1);
+              return (
+                <div className="anim-slide" style={{ background: 'var(--surface2)', borderBottom: '1px solid var(--border)', padding: '10px 20px 12px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--ink4)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+                    Histórico de confrontos · {adv.adversario}
+                  </div>
+
+                  {/* Clickable column headers */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '48px 1fr 68px', gap: 10, marginBottom: 6, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
+                    {([
+                      ['epoca',       'Época',      'left'],
+                      ['assistencia', 'Espectadores', 'right'],
+                    ] as [HistSortKey, string, string][]).map(([key, label, align]) => (
+                      <button key={key}
+                        onClick={() => { if (histSort === key) setHistAsc(a => !a); else { setHistSort(key); setHistAsc(key === 'epoca' ? false : false); }}}
+                        style={{
+                          gridColumn: key === 'assistencia' ? '3' : key === 'epoca' ? '1' : '2',
+                          display: 'flex', alignItems: 'center', gap: 3,
+                          justifyContent: align === 'right' ? 'flex-end' : 'flex-start',
+                          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                          fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+                          color: histSort === key ? 'var(--g500)' : 'var(--ink4)',
+                          fontFamily: 'var(--font-sora)',
+                        }}
+                      >
+                        {label}
+                        <svg width="7" height="7" viewBox="0 0 8 8" fill="currentColor" style={{ opacity: histSort === key ? 1 : 0.3 }}>
+                          <path d={histSort === key && histAsc ? 'M4 1L1 6h6L4 1z' : 'M4 7L1 2h6L4 7z'}/>
+                        </svg>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    {historicoSorted.map(h => {
+                      const barW2 = histMaxVal > 0 && !h.porta_fechada ? (h.assistencia / histMaxVal) * 100 : 0;
+                      return (
+                        <div key={`${h.epoca}-${h.jornada}`} style={{ display: 'grid', gridTemplateColumns: '48px 1fr 68px', gap: 10, alignItems: 'center' }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink3)', textAlign: 'right' }}>{h.epoca}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {h.porta_fechada ? (
+                              <span className="chip chip-gray" style={{ fontSize: 9 }}>Porta fechada</span>
+                            ) : (
+                              <div style={{ flex: 1, height: 5, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${barW2}%`, background: barColor((h.assistencia / 5300) * 100), borderRadius: 99 }}/>
+                              </div>
+                            )}
+                            {h.estadio_alternativo && !h.porta_fechada && <span style={{ fontSize: 9, color: '#856404', fontWeight: 600 }}>Alt.</span>}
                           </div>
-                          {h.estadio_alternativo && <span style={{ fontSize: 9, color: '#856404', fontWeight: 600 }}>Alt.</span>}
+                          <span style={{ fontSize: 12, fontWeight: 700, color: h.porta_fechada ? 'var(--ink4)' : 'var(--ink)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                            {h.porta_fechada ? '0' : fmt(h.assistencia)}
+                          </span>
                         </div>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                          {fmt(h.assistencia)}
-                        </span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                  <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--ink4)' }}>
+                    <span>{historico.length} jogos · Total: <strong style={{ color: 'var(--ink2)' }}>{fmt(historico.reduce((s, h) => s + h.assistencia, 0))}</strong></span>
+                    <span>Média: <strong style={{ color: 'var(--g500)' }}>{fmt(adv.media)}</strong> esp.</span>
+                  </div>
                 </div>
-                <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--ink4)' }}>
-                  <span>Total: <strong style={{ color: 'var(--ink2)' }}>{fmt(historico.reduce((s, h) => s + h.assistencia, 0))}</strong></span>
-                  <span>Média: <strong style={{ color: 'var(--g500)' }}>{fmt(adv.media)}</strong> esp.</span>
-                </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         );
       })}
 
       <div style={{ padding: '10px 20px', borderTop: '1px solid var(--border)', background: 'var(--surface2)', display: 'flex', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 11, color: 'var(--ink4)' }}>{sorted.length} adversários</span>
-        <span style={{ fontSize: 11, color: 'var(--ink4)' }}>Porta fechada excluída</span>
+        <span style={{ fontSize: 11, color: 'var(--ink4)' }}>Inclui jogos à porta fechada (0 esp.)</span>
       </div>
     </div>
   );
