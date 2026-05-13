@@ -316,7 +316,7 @@ export const EVENTOS_J33_SPORTING: EventoJogo[] = [
   { minuto: 35, tipo:'golo_penalidade',equipa:'adv', jogador:'Suárez L.',    score_ra:1, score_adv:1 },
   { minuto: 42, tipo:'auto_golo',      equipa:'ra',  jogador:'Gustavo M.',   score_ra:1, score_adv:2 },
   { minuto: 52, tipo:'cartao_vermelho',equipa:'ra',  jogador:'Petrasso F.',  descricao:'Má conduta (2º amarelo)' },
-  { minuto: 55, tipo:'substituicao',   equipa:'ra',  jogador:'Tambie',       jogador2:'Brabec J.' },
+  { minuto: 55, tipo:'substituicao',   equipa:'ra',  jogador:'Tamble',       jogador2:'Brabec J.' },
   { minuto: 63, tipo:'substituicao',   equipa:'ra',  jogador:'Vrousai',      jogador2:'Tomé J.' },
   { minuto: 65, tipo:'substituicao',   equipa:'adv', jogador:'L. Guilherme', jogador2:'Geny Catamo' },
   { minuto: 65, tipo:'substituicao',   equipa:'adv', jogador:'Morita H.',    jogador2:'Quenda G.' },
@@ -343,7 +343,7 @@ export const TITULARES_RA_J33: JogadorTitular[] = [
   { numero:  8, nome:'Ryan G.',      posicao:'MI' },
   { numero: 11, nome:'Blesa',        posicao:'ME' },
   { numero:  7, nome:'Bezerra',      posicao:'AV' },
-  { numero:  5, nome:'Tambie',       posicao:'AV' },
+  { numero:  9, nome:'Tamble',       posicao:'AV' },
 ];
 
 export const TITULARES_ADV_J33: JogadorTitular[] = [
@@ -476,64 +476,192 @@ export const SUPLENTES_ADV_J32: JogadorTitular[] = [
   { numero: 39, nome:'Gustavo Varela' },
 ];
 
-// ─── Plantel derivado das fichas de jogo ─────────────────────
-export interface JogadorPlantel {
-  nome: string;
-  numero: number;
-  posicao?: string;
-  jogosTitular: number;
-  jogosSuplente: number;
-  jogosTotal: number;
+// ─── Ficha de jogo para cálculo de stats ─────────────────────
+export interface FichaData {
+  gameId: string; jornada: string; data: string;
+  adversario: string; local: 'casa' | 'fora';
+  resultado: 'V' | 'E' | 'D';
+  golos_ra: number; golos_adv: number;
+  titulares: JogadorTitular[];
+  suplentes: JogadorTitular[];
+  eventos: EventoJogo[];
 }
 
-// Mapa: todas as fichas de jogo disponíveis por época
-const FICHAS_RA: Record<string, { titulares: JogadorTitular[][]; suplentes: JogadorTitular[][] }> = {
-  '25/26': {
-    titulares: [TITULARES_RA_J32, TITULARES_RA_J33],
-    suplentes: [SUPLENTES_RA_J32, SUPLENTES_RA_J33],
-  },
+// Todas as fichas disponíveis por época
+export const FICHAS_RA: Record<string, FichaData[]> = {
+  '25/26': [
+    { gameId:'25-26-32', jornada:'J32', data:'2026-05-03',
+      adversario:'Gil Vicente', local:'casa', resultado:'E', golos_ra:0, golos_adv:0,
+      titulares:TITULARES_RA_J32, suplentes:SUPLENTES_RA_J32, eventos:EVENTOS_J32_GIL },
+    { gameId:'25-26-33', jornada:'J33', data:'2026-05-11',
+      adversario:'Sporting CP', local:'casa', resultado:'D', golos_ra:1, golos_adv:4,
+      titulares:TITULARES_RA_J33, suplentes:SUPLENTES_RA_J33, eventos:EVENTOS_J33_SPORTING },
+  ],
 };
 
-const POSICAO_ORDER: Record<string, number> = {
-  GR:4, DC:3, DD:3, DE:3, MDC:2, MI:2, ME:2, MAD:1, MAM:1, MAE:1, AV:0,
+export const TOTAL_JOGOS_EPOCA: Record<string, number> = { '25/26': 34 };
+
+// ─── Plantel derivado das fichas de jogo ─────────────────────
+export interface JogadorPlantel {
+  nome: string; numero: number; posicao?: string;
+  jogosTitular: number; jogosSuplente: number; jogosTotal: number;
+}
+
+const POS_ORDER: Record<string, number> = {
+  GR:100, DC:80, DD:80, DE:80, MDC:60, MI:60, ME:60, MAD:40, MAM:40, MAE:40, AV:20,
 };
 
 export function getRosterRA(epoca: string): JogadorPlantel[] {
-  const fichas = FICHAS_RA[epoca];
-  if (!fichas) return [];
+  const fichas = FICHAS_RA[epoca] ?? [];
   const map = new Map<string, JogadorPlantel>();
 
-  fichas.titulares.forEach(lista => {
-    lista.forEach(p => {
-      const k = p.nome.trim();
-      if (!map.has(k)) map.set(k, { nome: p.nome, numero: p.numero, posicao: p.posicao, jogosTitular: 0, jogosSuplente: 0, jogosTotal: 0 });
-      const e = map.get(k)!;
-      e.jogosTitular++;
-      e.jogosTotal++;
-      if (!e.posicao && p.posicao) e.posicao = p.posicao;
-    });
-  });
+  function getOrCreate(nome: string, numero: number, posicao?: string) {
+    const k = nome.trim();
+    if (!map.has(k)) map.set(k, { nome:k, numero, posicao, jogosTitular:0, jogosSuplente:0, jogosTotal:0 });
+    return map.get(k)!;
+  }
 
-  fichas.suplentes.forEach(lista => {
-    lista.forEach(p => {
-      const k = p.nome.trim();
-      if (!map.has(k)) map.set(k, { nome: p.nome, numero: p.numero, posicao: p.posicao, jogosTitular: 0, jogosSuplente: 0, jogosTotal: 0 });
-      const e = map.get(k)!;
-      // Avoid double-counting if already in titulares for this game
-      if (e.jogosTitular < fichas.titulares.filter(t => t.some(x => x.nome.trim() === k)).length) return;
-      e.jogosSuplente++;
-      e.jogosTotal++;
+  for (const f of fichas) {
+    // Titulares
+    f.titulares.forEach(p => { const e = getOrCreate(p.nome, p.numero, p.posicao); e.jogosTitular++; e.jogosTotal++; });
+
+    // Suplentes que efetivamente entraram (via evento substituicao)
+    const entrou = new Set(
+      f.eventos
+        .filter(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2)
+        .map(e => e.jogador2!.trim())
+    );
+    f.suplentes.forEach(p => {
+      if (entrou.has(p.nome.trim())) {
+        const e = getOrCreate(p.nome, p.numero, p.posicao);
+        e.jogosSuplente++;
+        e.jogosTotal++;
+      }
     });
-  });
+  }
 
   return Array.from(map.values()).sort((a, b) => {
-    const pa = POSICAO_ORDER[a.posicao ?? ''] ?? -1;
-    const pb = POSICAO_ORDER[b.posicao ?? ''] ?? -1;
+    const pa = POS_ORDER[a.posicao ?? ''] ?? 0;
+    const pb = POS_ORDER[b.posicao ?? ''] ?? 0;
     if (pb !== pa) return pb - pa;
     return b.jogosTotal - a.jogosTotal;
   });
 }
 
-export const FICHAS_DISPONIVEIS: Record<string, number> = {
-  '25/26': FICHAS_RA['25/26']?.titulares.length ?? 0,
-};
+// ─── Stats por jogador ────────────────────────────────────────
+export interface PartidaStat {
+  gameId: string; jornada: string; data: string;
+  adversario: string; local: 'casa' | 'fora';
+  resultado: 'V' | 'E' | 'D'; golos_ra: number; golos_adv: number;
+  foiTitular: boolean; entrou: boolean; minutosJogados: number;
+  golosMarcados: number; assistencias: number;
+  cartoesAmarelos: number; cartoesVermelhos: number;
+  golosSofridosEmCampo: number;
+}
+
+export interface JogadorStats {
+  nome: string; numero: number; posicao?: string; isGR: boolean;
+  epoca: string;
+  jogosTotal: number; jogosTitular: number; jogosSuplente: number;
+  minutosJogados: number;
+  golosMarcados: number; assistencias: number;
+  cartoesAmarelos: number; cartoesVermelhos: number;
+  golosSofridosEmCampo: number;
+  vitorias: number; empates: number; derrotas: number;
+  vitoriasTitular: number;
+  partidas: PartidaStat[];
+}
+
+function minuto(e: EventoJogo) { return e.minuto + (e.minuto_extra ?? 0); }
+
+function calcMinutos(nome: string, titulares: JogadorTitular[], eventos: EventoJogo[]): number {
+  const k = nome.trim();
+  const isTit = titulares.some(p => p.nome.trim() === k);
+  if (isTit) {
+    const saiu = eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador.trim() === k);
+    return saiu ? minuto(saiu) : 90;
+  }
+  const entrou = eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k);
+  return entrou ? Math.max(0, 90 - minuto(entrou)) : 0;
+}
+
+function estavaCampo(nome: string, min: number, titulares: JogadorTitular[], eventos: EventoJogo[]): boolean {
+  const k = nome.trim();
+  const isTit = titulares.some(p => p.nome.trim() === k);
+  if (isTit) {
+    const saiu = eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador.trim() === k);
+    return !saiu || minuto(saiu) > min;
+  }
+  const entrou = eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k);
+  return entrou ? minuto(entrou) <= min : false;
+}
+
+export function getPlayerStats(nome: string, epoca: string): JogadorStats | null {
+  const fichas = FICHAS_RA[epoca] ?? [];
+  const k = nome.trim();
+
+  // Find player info
+  let numero = 0; let posicao: string | undefined;
+  for (const f of fichas) {
+    const p = [...f.titulares, ...f.suplentes].find(p => p.nome.trim() === k);
+    if (p) { numero = p.numero; posicao = p.posicao; break; }
+  }
+  if (!numero && !posicao) return null;
+
+  const isGR = posicao === 'GR';
+  const partidas: PartidaStat[] = [];
+
+  for (const f of fichas) {
+    const mins = calcMinutos(k, f.titulares, f.eventos);
+    if (mins === 0) continue; // didn't play
+
+    const foiTitular = f.titulares.some(p => p.nome.trim() === k);
+    const entrou     = !foiTitular;
+
+    // Goals + assists
+    const goalTypes = ['golo','golo_penalidade'];
+    const golosMarcados = f.eventos.filter(e => goalTypes.includes(e.tipo) && e.equipa === 'ra' && e.jogador.trim() === k).length;
+    const assistencias  = f.eventos.filter(e => goalTypes.includes(e.tipo) && e.equipa === 'ra' && e.jogador2?.trim() === k).length;
+
+    // Cards
+    const cartoesAmarelos  = f.eventos.filter(e => e.tipo === 'cartao_amarelo'  && e.equipa === 'ra' && e.jogador.trim() === k).length;
+    const cartoesVermelhos = f.eventos.filter(e => e.tipo === 'cartao_vermelho' && e.equipa === 'ra' && e.jogador.trim() === k).length;
+
+    // Goals conceded while on field
+    const goalsConceded = f.eventos.filter(e => {
+      const isAdvGoal = (e.tipo === 'golo' || e.tipo === 'golo_penalidade') && e.equipa === 'adv';
+      const isOwnGoal = e.tipo === 'auto_golo' && e.equipa === 'ra';
+      if (!isAdvGoal && !isOwnGoal) return false;
+      return estavaCampo(k, minuto(e), f.titulares, f.eventos);
+    }).length;
+
+    partidas.push({
+      gameId: f.gameId, jornada: f.jornada, data: f.data,
+      adversario: f.adversario, local: f.local, resultado: f.resultado,
+      golos_ra: f.golos_ra, golos_adv: f.golos_adv,
+      foiTitular, entrou, minutosJogados: mins,
+      golosMarcados, assistencias, cartoesAmarelos, cartoesVermelhos,
+      golosSofridosEmCampo: goalsConceded,
+    });
+  }
+
+  const jogosTotal     = partidas.length;
+  const jogosTitular   = partidas.filter(p => p.foiTitular).length;
+  const jogosSuplente  = partidas.filter(p => p.entrou).length;
+  const minutosJogados = partidas.reduce((s, p) => s + p.minutosJogados, 0);
+  const vitorias       = partidas.filter(p => p.resultado === 'V').length;
+  const empates        = partidas.filter(p => p.resultado === 'E').length;
+  const derrotas       = partidas.filter(p => p.resultado === 'D').length;
+  const vitoriasTitular = partidas.filter(p => p.foiTitular && p.resultado === 'V').length;
+
+  return {
+    nome: k, numero, posicao, isGR, epoca,
+    jogosTotal, jogosTitular, jogosSuplente, minutosJogados,
+    golosMarcados: partidas.reduce((s, p) => s + p.golosMarcados, 0),
+    assistencias: partidas.reduce((s, p) => s + p.assistencias, 0),
+    cartoesAmarelos: partidas.reduce((s, p) => s + p.cartoesAmarelos, 0),
+    cartoesVermelhos: partidas.reduce((s, p) => s + p.cartoesVermelhos, 0),
+    golosSofridosEmCampo: partidas.reduce((s, p) => s + p.golosSofridosEmCampo, 0),
+    vitorias, empates, derrotas, vitoriasTitular, partidas,
+  };
+}
