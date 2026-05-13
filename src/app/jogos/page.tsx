@@ -68,12 +68,13 @@ const COMP_COLORS: Record<string, { bg: string; color: string }> = {
 };
 
 // ── PartidaRow ────────────────────────────────────────────────
-function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe }: {
+function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }: {
   partida: PartidaEquipa;
   expanded: boolean;
   detalhe: 'eventos' | 'stats' | 'formacao';
   onToggle: () => void;
   onDetalhe: (d: 'eventos' | 'stats' | 'formacao') => void;
+  cardBg?: string;
 }) {
   const isHome = partida.local === 'casa';
   const res    = { V: 'Vitória', E: 'Empate', D: 'Derrota' }[partida.resultado];
@@ -99,69 +100,109 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe }: {
   const halfScore2 = detail?.halfScore2 ?? '0 — 0';
 
   // ── Events helpers ──────────────────────────────────────────
-  function EventRow({ ev }: { ev: EventoJogo }) {
-    const isRA = ev.equipa === 'ra';
-    const isGoal = ['golo', 'golo_penalidade', 'auto_golo'].includes(ev.tipo);
-    const isCard = ev.tipo === 'cartao_amarelo' || ev.tipo === 'cartao_vermelho';
-    const isSub  = ev.tipo === 'substituicao';
 
-    const icon = isGoal ? '⚽' : ev.tipo === 'cartao_amarelo' ? '🟨' : ev.tipo === 'cartao_vermelho' ? '🟥' : null;
+  // Pre-compute which red cards are 2nd yellows
+  function isDoubleYellow(ev: EventoJogo): boolean {
+    if (ev.tipo !== 'cartao_vermelho' || !eventos) return false;
+    return eventos.some(e =>
+      e.tipo === 'cartao_amarelo' && e.equipa === ev.equipa &&
+      e.jogador === ev.jogador && e.minuto < ev.minuto
+    );
+  }
+
+  function CardIcon({ type, double }: { type: 'yellow'|'red'; double?: boolean }) {
+    if (double) return (
+      <div style={{ display:'flex', alignItems:'center', gap:3 }}>
+        <div style={{ position:'relative', width:20, height:14 }}>
+          <div style={{ position:'absolute', left:0, width:10, height:13, borderRadius:2, background:'#EF9F27', border:'0.5px solid rgba(0,0,0,.15)' }}/>
+          <div style={{ position:'absolute', left:6, width:10, height:13, borderRadius:2, background:'#EF9F27', border:'0.5px solid rgba(0,0,0,.15)' }}/>
+        </div>
+        <span style={{ fontSize:9, color:'#9CA3AF' }}>→</span>
+        <div style={{ width:10, height:13, borderRadius:2, background:'#DC2626', border:'0.5px solid rgba(0,0,0,.15)' }}/>
+      </div>
+    );
+    return <div style={{ width:11, height:14, borderRadius:2, background: type==='yellow'?'#EF9F27':'#DC2626', border:'0.5px solid rgba(0,0,0,.15)', flexShrink:0 }}/>;
+  }
+
+  function EventRow({ ev }: { ev: EventoJogo }) {
+    const isRA   = ev.equipa === 'ra';
+    const isGoal = ['golo','golo_penalidade','auto_golo'].includes(ev.tipo);
+    const isSub  = ev.tipo === 'substituicao';
+    const isYellow = ev.tipo === 'cartao_amarelo';
+    const isRed    = ev.tipo === 'cartao_vermelho';
+    const isCard   = isYellow || isRed;
+    const isDbl    = isRed && isDoubleYellow(ev);
+
     const score = ev.score_ra != null
-      ? <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: '#F0F2F5', color: '#111318' }}>{ev.score_ra}-{ev.score_adv}</span>
+      ? <span style={{ fontSize:11, fontWeight:800, padding:'2px 7px', borderRadius:5, background:'rgba(0,0,0,.07)', color:'#111318', marginLeft:4, letterSpacing:'-.3px' }}>{ev.score_ra}–{ev.score_adv}</span>
       : null;
     const min = ev.minuto_extra ? `${ev.minuto}+${ev.minuto_extra}'` : `${ev.minuto}'`;
 
-    const nameStyle: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#111318' };
-    const detailStyle: React.CSSProperties = { fontSize: 10, color: '#9CA3AF' };
+    // Goal rows get a shaded background
+    const rowBg = isGoal
+      ? (isRA ? 'rgba(0,107,60,.06)' : 'rgba(220,38,38,.05)')
+      : 'transparent';
+
+    const iconEl = isGoal ? <span style={{ fontSize:16 }}>⚽</span>
+      : isSub ? <IcoSub/>
+      : isCard ? <CardIcon type={isYellow?'yellow':'red'} double={isDbl}/>
+      : null;
+
+    const nameStyle: React.CSSProperties = {
+      fontSize: 12, fontWeight: isGoal ? 700 : 600, color: '#111318',
+    };
+    // For goals: show assist info; for subs: show player in/out; cards: no description
+    const detail = isGoal && ev.jogador2 ? (
+      <span style={{ fontSize:10, color:'#9CA3AF', marginLeft:4 }}>assist. {ev.jogador2}</span>
+    ) : isSub && ev.jogador2 ? (
+      <span style={{ fontSize:10, color:'#9CA3AF', marginLeft:4 }}>← {ev.jogador2}</span>
+    ) : null;
 
     if (isRA) return (
-      <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 40px', alignItems: 'center', minHeight: 30, padding: '3px 0' }}>
-        <div style={{ textAlign: 'right', fontSize: 11, fontWeight: 700, color: '#9CA3AF' }}>{min}</div>
-        <div style={{ padding: '0 10px', display: 'flex', alignItems: 'center', gap: 5 }}>
-          {isSub ? <IcoSub/> : <span style={{ fontSize: 14 }}>{icon}</span>}
-          <div>
-            <span style={nameStyle}>{ev.jogador}</span>
-            {ev.jogador2 && isSub && <span style={{ ...detailStyle, marginLeft: 4 }}>← {ev.jogador2}</span>}
-            {ev.jogador2 && !isSub && <span style={{ ...detailStyle, marginLeft: 4 }}>({ev.jogador2})</span>}
-            {ev.descricao && <span style={{ ...detailStyle, marginLeft: 4 }}>{ev.descricao}</span>}
-          </div>
-          {score && <div style={{ marginLeft: 4 }}>{score}</div>}
+      <div style={{ display:'grid', gridTemplateColumns:'40px 1fr 40px', alignItems:'center', minHeight:isGoal?36:28, padding:'3px 4px', background:rowBg, borderRadius:6 }}>
+        <div style={{ textAlign:'right', fontSize:11, fontWeight:700, color:'#9CA3AF' }}>{min}</div>
+        <div style={{ padding:'0 8px', display:'flex', alignItems:'center', gap:5 }}>
+          {iconEl}
+          <span style={nameStyle}>{ev.jogador}</span>
+          {detail}
+          {score}
         </div>
         <div/>
       </div>
     );
 
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 40px', alignItems: 'center', minHeight: 30, padding: '3px 0' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'40px 1fr 40px', alignItems:'center', minHeight:isGoal?36:28, padding:'3px 4px', background:rowBg, borderRadius:6 }}>
         <div/>
-        <div style={{ padding: '0 10px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 5 }}>
-          {score && <div>{score}</div>}
-          <div style={{ textAlign: 'right' }}>
-            {ev.descricao && <span style={{ ...detailStyle, marginRight: 4 }}>{ev.descricao}</span>}
-            {ev.jogador2 && isSub && <span style={{ ...detailStyle, marginRight: 4 }}>{ev.jogador2} →</span>}
-            {ev.jogador2 && !isSub && <span style={{ ...detailStyle, marginRight: 4 }}>({ev.jogador2})</span>}
-            <span style={nameStyle}>{ev.jogador}</span>
-          </div>
-          {isSub ? <IcoSub/> : <span style={{ fontSize: 14 }}>{icon}</span>}
+        <div style={{ padding:'0 8px', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:5 }}>
+          {score}
+          {detail && (
+            isSub
+              ? <span style={{ fontSize:10, color:'#9CA3AF' }}>{ev.jogador2} →</span>
+              : isGoal && ev.jogador2
+                ? <span style={{ fontSize:10, color:'#9CA3AF' }}>assist. {ev.jogador2}</span>
+                : null
+          )}
+          <span style={nameStyle}>{ev.jogador}</span>
+          {iconEl}
         </div>
-        <div style={{ textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#9CA3AF' }}>{min}</div>
+        <div style={{ textAlign:'left', fontSize:11, fontWeight:700, color:'#9CA3AF' }}>{min}</div>
       </div>
     );
   }
 
   function HalfDivider({ label, score }: { label: string; score: string }) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0', padding: '6px 0', borderTop: '1px dashed #E4E7EC', borderBottom: '1px dashed #E4E7EC' }}>
-        <span style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.08em', flex: 1 }}>{label}</span>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#374151', background: '#F3F4F6', padding: '2px 8px', borderRadius: 6 }}>{score}</span>
+      <div style={{ display:'flex', alignItems:'center', gap:8, margin:'10px 0 6px', padding:'6px 10px', background:'#F0F2F5', borderRadius:8 }}>
+        <span style={{ fontSize:10, fontWeight:700, color:'#6B7280', textTransform:'uppercase', letterSpacing:'.08em', flex:1 }}>{label}</span>
+        <span style={{ fontSize:12, fontWeight:800, color:'#374151', background:'#fff', padding:'2px 10px', borderRadius:6, border:'1px solid #E4E7EC' }}>{score}</span>
       </div>
     );
   }
 
-  // Build events with half dividers
   function EventsList() {
     if (!eventos || eventos.length === 0) {
-      return <div style={{ padding: '20px 0', textAlign: 'center', fontSize: 12, color: '#9CA3AF' }}>Eventos serão adicionados progressivamente.</div>;
+      return <div style={{ padding:'20px 0', textAlign:'center', fontSize:12, color:'#9CA3AF' }}>Eventos serão adicionados progressivamente.</div>;
     }
     const rows: React.ReactNode[] = [];
     let shownSecond = false;
@@ -177,8 +218,7 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe }: {
     return <>{rows}</>;
   }
 
-  // Stats labels
-  const STATS_LABELS: [keyof typeof STATS_J33_SPORTING, string][] = [
+    const STATS_LABELS: [keyof typeof STATS_J33_SPORTING, string][] = [
     ['posse_bola','% Posse de bola'],['remates','Remates'],['remates_baliza','Remates à baliza'],
     ['remates_poste','Remates ao poste'],['grandes_oportunidades','Grandes oportunidades'],
     ['assistencias','Assistências'],['cruzamentos','Cruzamentos'],['cantos','Cantos'],
@@ -202,7 +242,7 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe }: {
 
   return (
     // ── Bordered card per match ───────────────────────────────
-    <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 12, overflow: 'hidden', marginBottom: 10, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
+    <div style={{ background: cardBg ?? '#fff', border: '1.5px solid #E4E7EC', borderRadius: 12, overflow: 'hidden', marginBottom: 10, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
 
       {/* Header row */}
       <div style={{ padding: '8px 14px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -308,48 +348,69 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe }: {
           {/* ── Formações ── */}
           {detalhe === 'formacao' && (
             <div style={{ padding: '6px 14px 12px' }}>
-              {hasReal && titRA && titAdv ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  {[
-                    { title: `Rio Ave FC`, scheme: partida.formacao_ra, tits: titRA, sups: supRA, color: '#006B3C' },
-                    { title: partida.adversario, scheme: partida.formacao_adv, tits: titAdv, sups: supAdv, color: '#1A5FA8' },
-                  ].map(({ title, scheme, tits, sups, color }) => (
-                    <div key={title} style={{ background: '#fff', border: '1px solid #E4E7EC', borderRadius: 10, overflow: 'hidden' }}>
-                      {/* Team header */}
-                      <div style={{ padding: '8px 10px', borderBottom: '1px solid #E4E7EC', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F9FAFB' }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color }}>{title}</span>
-                        {scheme && <span style={{ fontSize: 10, fontWeight: 600, color: '#9CA3AF', background: '#F0F2F5', padding: '2px 7px', borderRadius: 99 }}>{scheme}</span>}
-                      </div>
-                      {/* Titulares */}
-                      <div style={{ padding: '4px 0' }}>
-                        <div style={{ padding: '3px 10px 2px', fontSize: 9, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.08em' }}>Titulares</div>
-                        {tits?.map(p => (
-                          <div key={p.numero} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 10px', fontSize: 11 }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', minWidth: 18, textAlign: 'right' }}>{p.numero}</span>
-                            <span style={{ color: '#111318', flex: 1 }}>{p.nome}{p.capitao ? ' (C)' : ''}</span>
-                            {p.posicao && <span style={{ fontSize: 9, color: '#9CA3AF', background: '#F0F2F5', padding: '1px 5px', borderRadius: 4 }}>{p.posicao}</span>}
-                          </div>
-                        ))}
-                      </div>
-                      {/* Suplentes */}
-                      {sups && sups.length > 0 && (
-                        <div style={{ borderTop: '1px solid #E4E7EC', padding: '4px 0' }}>
-                          <div style={{ padding: '3px 10px 2px', fontSize: 9, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.08em' }}>Banco</div>
-                          {sups.map(p => (
-                            <div key={p.numero + p.nome} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 10px', fontSize: 11 }}>
-                              <span style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', minWidth: 18, textAlign: 'right' }}>{p.numero}</span>
-                              <span style={{ color: '#6B7280', flex: 1 }}>{p.nome}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+              {hasReal && titRA && titAdv ? (() => {
+                const evs = eventos ?? [];
+                const ann = (pNome: string, eq: 'ra'|'adv') => {
+                  const e = evs.filter(x => x.equipa === eq);
+                  const y = e.filter(x => x.tipo==='cartao_amarelo' && x.jogador===pNome).length;
+                  const r = e.filter(x => x.tipo==='cartao_vermelho' && x.jogador===pNome).length;
+                  const out = e.find(x => x.tipo==='substituicao' && x.jogador===pNome);
+                  const inn = e.find(x => x.tipo==='substituicao' && x.jogador2===pNome);
+                  return { y, r, dbl: r>0&&y>0, out, inn };
+                };
+                const TRow = ({ p, eq }: { p: { numero:number; nome:string; posicao?:string; capitao?:boolean }; eq:'ra'|'adv' }) => {
+                  const a = ann(p.nome, eq);
+                  return (
+                    <div style={{ display:'flex', alignItems:'center', gap:4, padding:'3px 10px', fontSize:11 }}>
+                      <span style={{ fontSize:10, fontWeight:700, color:'#9CA3AF', minWidth:18, textAlign:'right' }}>{p.numero}</span>
+                      <span style={{ color:'#111318', flex:1 }}>{p.nome}{p.capitao?' (C)':''}</span>
+                      {!a.dbl && a.y>0 && <div style={{ width:9,height:11,borderRadius:1.5,background:'#EF9F27',flexShrink:0 }}/>}
+                      {a.dbl && <><div style={{ position:'relative',width:17,height:11,flexShrink:0 }}><div style={{ position:'absolute',left:0,width:9,height:11,borderRadius:1.5,background:'#EF9F27' }}/><div style={{ position:'absolute',left:5,width:9,height:11,borderRadius:1.5,background:'#EF9F27' }}/></div><div style={{ width:9,height:11,borderRadius:1.5,background:'#DC2626',flexShrink:0 }}/></>}
+                      {a.r>0&&!a.dbl && <div style={{ width:9,height:11,borderRadius:1.5,background:'#DC2626',flexShrink:0 }}/>}
+                      {a.out && <span style={{ fontSize:9,fontWeight:700,color:'#DC2626',background:'rgba(220,38,38,.08)',padding:'1px 4px',borderRadius:4,flexShrink:0 }}>↓{a.out.minuto}{a.out.minuto_extra?`+${a.out.minuto_extra}`:''}&apos;</span>}
+                      {p.posicao && <span style={{ fontSize:8,color:'#9CA3AF',background:'#F0F2F5',padding:'1px 4px',borderRadius:3 }}>{p.posicao}</span>}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ padding: '20px 0', textAlign: 'center', fontSize: 12, color: '#9CA3AF' }}>Formações serão adicionadas progressivamente.</div>
+                  );
+                };
+                const BRow = ({ p, eq }: { p: { numero:number; nome:string }; eq:'ra'|'adv' }) => {
+                  const a = ann(p.nome, eq);
+                  return (
+                    <div style={{ display:'flex', alignItems:'center', gap:4, padding:'3px 10px', fontSize:11, opacity: a.inn?1:.55 }}>
+                      <span style={{ fontSize:10,fontWeight:700,color:'#9CA3AF',minWidth:18,textAlign:'right' }}>{p.numero}</span>
+                      <span style={{ color: a.inn?'#111318':'#6B7280', flex:1 }}>{p.nome}</span>
+                      {a.inn && <span style={{ fontSize:9,fontWeight:700,color:'#006B3C',background:'rgba(0,107,60,.08)',padding:'1px 4px',borderRadius:4,flexShrink:0 }}>↑{a.inn.minuto}{a.inn.minuto_extra?`+${a.inn.minuto_extra}`:''}&apos;</span>}
+                    </div>
+                  );
+                };
+                return (
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    {([
+                      { title:'Rio Ave FC', scheme:partida.formacao_ra, tits:titRA, sups:supRA, color:'#006B3C', eq:'ra' as const },
+                      { title:partida.adversario, scheme:partida.formacao_adv, tits:titAdv, sups:supAdv, color:'#1A5FA8', eq:'adv' as const },
+                    ] as const).map(({ title, scheme, tits, sups, color, eq }) => (
+                      <div key={title} style={{ background:'#fff', border:'1px solid #E4E7EC', borderRadius:10, overflow:'hidden' }}>
+                        <div style={{ padding:'8px 10px', borderBottom:'1px solid #E4E7EC', display:'flex', justifyContent:'space-between', alignItems:'center', background:'#F9FAFB' }}>
+                          <span style={{ fontSize:12, fontWeight:700, color }}>{title}</span>
+                          {scheme && <span style={{ fontSize:10, fontWeight:600, color:'#9CA3AF', background:'#F0F2F5', padding:'2px 7px', borderRadius:99 }}>{scheme}</span>}
+                        </div>
+                        <div style={{ padding:'4px 0' }}>
+                          <div style={{ padding:'3px 10px 2px', fontSize:9, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'.08em' }}>Titulares</div>
+                          {tits?.map(p => <TRow key={p.numero} p={p} eq={eq}/>)}
+                        </div>
+                        {sups && sups.length > 0 && (
+                          <div style={{ borderTop:'1px solid #E4E7EC', padding:'4px 0' }}>
+                            <div style={{ padding:'3px 10px 2px', fontSize:9, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'.08em' }}>Banco</div>
+                            {sups.map(p => <BRow key={p.numero+p.nome} p={p} eq={eq}/>)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })() : (
+                <div style={{ padding:'20px 0', textAlign:'center', fontSize:12, color:'#9CA3AF' }}>Formações serão adicionadas progressivamente.</div>
               )}
-              {partida.arbitro && <div style={{ marginTop: 8, fontSize: 11, color: '#9CA3AF', textAlign: 'center' }}>Árbitro: {partida.arbitro}</div>}
+              {partida.arbitro && <div style={{ marginTop:8, fontSize:11, color:'#9CA3AF', textAlign:'center' }}>Árbitro: {partida.arbitro}</div>}
             </div>
           )}
         </div>
@@ -423,15 +484,18 @@ export default function JogosPage() {
             )}
           </div>
         </div>
-        {gJogos.map(p => (
-          <div key={p.id} style={{ borderLeft: '1.5px solid #E4E7EC', borderRight: '1.5px solid #E4E7EC', borderBottom: '1.5px solid #E4E7EC', background: '#fff', borderRadius: p === gJogos[gJogos.length-1] ? '0 0 12px 12px' : 0, overflow: 'hidden' }}>
-            <PartidaRow partida={p}
-              expanded={expanded===p.id} detalhe={detalhe}
-              onToggle={() => setExpanded(x => x===p.id ? null : p.id)}
-              onDetalhe={setDetalhe}
-            />
-          </div>
-        ))}
+        {gJogos.map((p, mapIdx) => {
+          const bg = mapIdx % 2 === 0 ? '#fff' : '#F8FBF9';
+          return (
+            <div key={p.id} style={{ borderLeft: '1.5px solid #E4E7EC', borderRight: '1.5px solid #E4E7EC', borderBottom: '1.5px solid #E4E7EC', background: bg, borderRadius: p === gJogos[gJogos.length-1] ? '0 0 12px 12px' : 0, overflow: 'hidden' }}>
+              <PartidaRow partida={p} cardBg={bg}
+                expanded={expanded === p.id} detalhe={detalhe}
+                onToggle={() => setExpanded(x => x === p.id ? null : p.id)}
+                onDetalhe={setDetalhe}
+              />
+            </div>
+          );
+        }))}
       </div>
     );
   }
@@ -532,10 +596,13 @@ export default function JogosPage() {
           ))
         ) : (
           <>
-            {filtered.map(p => (
-              <PartidaRow key={p.id} partida={p}
-                expanded={expanded === p.id} detalhe={detalhe}
-                onToggle={() => setExpanded(x => x === p.id ? null : p.id)}
+            {filtered.map((p, idx) => (
+            <PartidaRow key={p.id} partida={p} cardBg={idx%2===0?'#fff':'#F8FBF9'}
+              expanded={expanded === p.id} detalhe={detalhe}
+              onToggle={() => setExpanded(x => x === p.id ? null : p.id)}
+              onDetalhe={setDetalhe}
+            />
+          ))
                 onDetalhe={setDetalhe}
               />
             ))}
