@@ -38,16 +38,6 @@ function IcoPlantel() {
     </svg>
   );
 }
-function IcoNoticias() {
-  return (
-    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-      <rect x="3" y="5" width="22" height="22" rx="4" stroke="#006B3C" strokeWidth="2"/>
-      <path d="M8 11h12M8 15h12M8 19h8" stroke="#006B3C" strokeWidth="1.8" strokeLinecap="round"/>
-      <circle cx="26" cy="8" r="5" fill="#EEF7F2" stroke="#006B3C" strokeWidth="1.5"/>
-      <path d="M26 6v3M26 10v.5" stroke="#006B3C" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  );
-}
 
 interface CardProps {
   href: string;
@@ -125,13 +115,6 @@ export default function LandingPage() {
       title: 'Plantel',
       description: 'Jogadores que integraram as fichas de jogo em cada temporada. Titularidades, convocatórias e posições.',
       tags: ['Jogadores', 'Temporada', '2025/26'],
-    },
-    {
-      href: '/noticias', icon: <IcoNoticias/>,
-      title: 'Notícias',
-      description: 'Artigos e crónicas do blog Reis do Ave, atualizados automaticamente a cada nova publicação.',
-      tags: ['Blog', 'reisdoave.blogspot.com'],
-      badge: 'Auto',
     },
   ];
 
