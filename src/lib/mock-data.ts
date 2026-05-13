@@ -130,33 +130,29 @@ export interface EstatAdversario {
 }
 
 export function getEstatisticasAdversarios(): EstatAdversario[] {
-  const map = new Map<string, {
-    totalVisitas: number;
-    arcosVisitas: number;
-    arcosTotal: number;
-    arcosMaximo: number;
-  }>();
+  // Apenas jogos em CASA nos Arcos
+  const map = new Map<string, { total: number; maximo: number; totalEsp: number }>();
 
   for (const j of JOGOS_2526) {
+    if (j.local !== 'casa') continue; // Só jogos em casa!
     const key = j.adversario.trim();
-    if (!map.has(key)) map.set(key, { totalVisitas: 0, arcosVisitas: 0, arcosTotal: 0, arcosMaximo: 0 });
+    if (!map.has(key)) map.set(key, { total: 0, maximo: 0, totalEsp: 0 });
     const e = map.get(key)!;
-    e.totalVisitas++;
-    if (j.local === 'casa' && j.espectadores) {
-      e.arcosVisitas++;
-      e.arcosTotal  += j.espectadores;
-      e.arcosMaximo  = Math.max(e.arcosMaximo, j.espectadores);
+    e.total++;
+    if (j.espectadores) {
+      e.totalEsp += j.espectadores;
+      e.maximo    = Math.max(e.maximo, j.espectadores);
     }
   }
 
   return Array.from(map.entries())
     .map(([adversario, e]) => ({
       adversario,
-      visitas:    e.totalVisitas,
-      jogos_arcos: e.arcosVisitas,
-      media:  e.arcosVisitas > 0 ? Math.round(e.arcosTotal / e.arcosVisitas) : 0,
-      maximo: e.arcosMaximo,
-      total:  e.arcosTotal,
+      visitas:     e.total,
+      jogos_arcos: e.total,
+      media:  e.total > 0 ? Math.round(e.totalEsp / e.total) : 0,
+      maximo: e.maximo,
+      total:  e.totalEsp,
       epocas: 1,
     }))
     .sort((a, b) => b.maximo - a.maximo);
