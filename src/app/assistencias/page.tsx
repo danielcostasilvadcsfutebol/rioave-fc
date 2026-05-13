@@ -273,7 +273,7 @@ function HistorySection() {
 }
 
 // ── Main page ─────────────────────────────────────────────────
-type Tab = 'jogos' | 'adversarios' | 'historico';
+type Tab = 'jogos' | 'adversarios' | 'historico' | 'estat-equipa' | 'estat-jogadores';
 
 export default function AssistenciasPage() {
   const [tab, setTab]           = useState<Tab>('jogos');
@@ -306,9 +306,11 @@ export default function AssistenciasPage() {
   const diffMedia      = resumoAnterior ? kpis.media - resumoAnterior.media_assistencia : null;
 
   const TABS = [
-    { id: 'jogos' as Tab,       label: 'Por Jogo' },
-    { id: 'adversarios' as Tab, label: 'Adversários' },
-    { id: 'historico' as Tab,   label: 'Por Época' },
+    { id: 'jogos' as Tab,         label: 'Por Jogo' },
+    { id: 'adversarios' as Tab,   label: 'Adversários' },
+    { id: 'historico' as Tab,     label: 'Por Época' },
+    { id: 'estat-equipa' as Tab,  label: 'Estat. Equipa' },
+    { id: 'estat-jogadores' as Tab, label: 'Estat. Jogadores' },
   ];
 
   const JOGO_COLS: { key: SortKey; label: string; align: 'left' | 'right' }[] = [
@@ -438,6 +440,32 @@ export default function AssistenciasPage() {
 
         {tab === 'adversarios' && <AdversariosSection/>}
         {tab === 'historico'   && <HistorySection/>}
+        {tab === 'estat-equipa' && (
+          <div className="section-card anim-rise">
+            <div className="section-header">
+              <div className="section-title">Estatística da Equipa</div>
+              <span className="chip chip-gray">Em construção</span>
+            </div>
+            <div style={{ padding:'40px 20px', textAlign:'center', color:'var(--ink4)' }}>
+              <div style={{ fontSize:32, marginBottom:12 }}>🏗️</div>
+              <div style={{ fontSize:14, fontWeight:600, color:'var(--ink2)', marginBottom:6 }}>Secção em construção</div>
+              <div style={{ fontSize:12 }}>Estatísticas coletivas da equipa: forma recente, desempenho em casa vs fora, médias de golos e mais.</div>
+            </div>
+          </div>
+        )}
+        {tab === 'estat-jogadores' && (
+          <div className="section-card anim-rise">
+            <div className="section-header">
+              <div className="section-title">Estatística dos Jogadores</div>
+              <span className="chip chip-gray">Em construção</span>
+            </div>
+            <div style={{ padding:'40px 20px', textAlign:'center', color:'var(--ink4)' }}>
+              <div style={{ fontSize:32, marginBottom:12 }}>🏗️</div>
+              <div style={{ fontSize:14, fontWeight:600, color:'var(--ink2)', marginBottom:6 }}>Secção em construção</div>
+              <div style={{ fontSize:12 }}>Rankings de jogadores: goleadores, assistentes, minutos jogados, disciplina e mais.</div>
+            </div>
+          </div>
+        )}
 
         <div style={{ textAlign: 'center', padding: '6px 0 16px', fontSize: 11, color: 'var(--ink4)' }}>
           Dados coletados por Daniel Silva · Sócio 3883
