@@ -4,10 +4,18 @@ import Link from 'next/link';
 import { getFichasEpocaDB } from '@/lib/db';
 import { getRosterRA, getPlayerStats, TOTAL_JOGOS_EPOCA, type JogadorPlantel, type FichaData } from '@/lib/mock-jogos-equipa';
 
+// Normaliza posições antigas para formato simplificado
+function normPos(pos?: string): string | undefined {
+  if (!pos) return undefined;
+  if (['DD','DC','DE'].includes(pos)) return 'DEF';
+  if (['MDC','MI','ME','MAD','MAM','MAE','MC'].includes(pos)) return 'MED';
+  return pos;
+}
 const POS_GROUP: Record<string,string> = {
-  GR:'Guarda-Redes', DC:'Defesas', DD:'Defesas', DE:'Defesas',
+  GR:'Guarda-Redes', DEF:'Defesas', MED:'Médios', AV:'Avançados',
+  // Legacy support
+  DC:'Defesas', DD:'Defesas', DE:'Defesas',
   MDC:'Médios', MI:'Médios', ME:'Médios', MAD:'Médios', MAM:'Médios', MAE:'Médios', MC:'Médios',
-  AV:'Avançados',
 };
 const GROUP_ORDER = ['Guarda-Redes','Defesas','Médios','Avançados'];
 const GBG: Record<string,string> = {'Guarda-Redes':'#EBF4FF','Defesas':'#EEF7F2','Médios':'#FFF4E5','Avançados':'#FCEBEB'};
@@ -37,7 +45,7 @@ export default function PlantelPage() {
       if (!map.has(k)) map.set(k, { nome:k, numero, posicao, jogosTitular:0, jogosSuplente:0, jogosTotal:0 });
       return map.get(k)!;
     }
-    const POS_ORDER: Record<string,number> = { GR:100, DC:80, DD:80, DE:80, MDC:60, MI:60, ME:60, MAD:40, MAM:40, MAE:40, MC:40, AV:20 };
+    const POS_ORDER: Record<string,number> = { GR:100, DEF:80, DC:80, DD:80, DE:80, MED:60, MDC:60, MI:60, ME:60, MAD:60, MAM:60, MAE:60, MC:60, AV:20 };
     for (const f of fichas) {
       f.titulares.forEach(p => { const e = getOrCreate(p.nome, p.numero, p.posicao); e.jogosTitular++; e.jogosTotal++; });
       const entrou = new Set(f.eventos.filter(e => e.tipo==='substituicao' && e.equipa==='ra' && e.jogador2).map(e => e.jogador2!.trim()));
@@ -75,7 +83,7 @@ export default function PlantelPage() {
     const map = new Map<string, JogadorPlantel[]>();
     for (const g of GROUP_ORDER) map.set(g, []);
     for (const p of filtered) {
-      const g = POS_GROUP[p.posicao??'']??'Outros';
+      const g = POS_GROUP[normPos(p.posicao)??p.posicao??'']??POS_GROUP[p.posicao??'']??'Outros';
       if (!map.has(g)) map.set(g, []);
       map.get(g)!.push(p);
     }
@@ -148,7 +156,7 @@ export default function PlantelPage() {
                         <Link href={`/plantel/${encodeURIComponent(p.nome)}`} style={{textDecoration:'none'}}>
                           <span style={{fontSize:13,fontWeight:600,color:'#006B3C',cursor:'pointer',textDecoration:'underline',textDecorationStyle:'dotted',textUnderlineOffset:3}}>{p.nome}</span>
                         </Link>
-                        {p.posicao&&<span style={{marginLeft:5,fontSize:8,fontWeight:700,padding:'1px 4px',borderRadius:3,background:GBG[group]??'#F0F2F5',color:GBT[group]??'#6B7280',textTransform:'uppercase',letterSpacing:'.04em'}}>{p.posicao}</span>}
+                        {p.posicao&&<span style={{marginLeft:5,fontSize:8,fontWeight:700,padding:'1px 4px',borderRadius:3,background:GBG[group]??'#F0F2F5',color:GBT[group]??'#6B7280',textTransform:'uppercase',letterSpacing:'.04em'}}>{normPos(p.posicao)}</span>}
                       </div>
                       <div style={{textAlign:'center'}}>
                         <div style={{fontSize:12,fontWeight:700,color:'#374151',lineHeight:1}}>{s?`${s.minutosJogados}'`:'—'}</div>
