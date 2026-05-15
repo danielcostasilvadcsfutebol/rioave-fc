@@ -172,3 +172,37 @@ export async function deleteFicha(id: string) {
 export async function upsertEstatisticas(stats: Record<string,unknown> & { jogo_id: string }) {
   return supabase.from('estatisticas_jogo').upsert(stats);
 }
+
+// ── Fichas completas de uma época (para stats de jogadores) ──
+export async function getFichasEpocaDB(epoca: string): Promise<import('./mock-jogos-equipa').FichaData[]> {
+  const { data: jogos } = await supabase
+    .from('jogos').select('*').eq('epoca', epoca).eq('has_detail', true);
+  if (!jogos?.length) return [];
+
+  const results = await Promise.all(jogos.map(async jogo => {
+    const [{ data: fichas }, { data: evts }] = await Promise.all([
+      supabase.from('fichas_jogo').select('*').eq('jogo_id', jogo.id).order('ordem'),
+      supabase.from('eventos_jogo').select('*').eq('jogo_id', jogo.id).order('ordem'),
+    ]);
+    const mapP = (r: Record<string,unknown>) => ({
+      numero: r.numero as number, nome: r.nome as string,
+      posicao: r.posicao as string | undefined,
+      capitao: Boolean(r.capitao),
+    });
+    return {
+      gameId: jogo.id, jornada: jogo.jornada, data: jogo.data,
+      adversario: jogo.adversario, local: jogo.local as 'casa'|'fora',
+      resultado: jogo.resultado as 'V'|'E'|'D',
+      golos_ra: jogo.golos_ra, golos_adv: jogo.golos_adv,
+      titulares: (fichas??[]).filter(f=>f.equipa==='ra'&&f.tipo==='titular').map(mapP),
+      suplentes: (fichas??[]).filter(f=>f.equipa==='ra'&&f.tipo==='suplente').map(mapP),
+      eventos: (evts??[]).map(e => ({
+        minuto: e.minuto, minuto_extra: e.minuto_extra??undefined,
+        tipo: e.tipo, equipa: e.equipa, jogador: e.jogador,
+        jogador2: e.jogador2??undefined,
+        score_ra: e.score_ra??undefined, score_adv: e.score_adv??undefined,
+      })),
+    };
+  }));
+  return results;
+}
