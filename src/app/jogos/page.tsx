@@ -10,6 +10,12 @@ import {
   STATS_J32_GIL, EVENTOS_J32_GIL,
   TITULARES_RA_J32, TITULARES_ADV_J32,
   SUPLENTES_RA_J32, SUPLENTES_ADV_J32,
+  STATS_J31_VITORIA, EVENTOS_J31_VITORIA,
+  TITULARES_RA_J31, TITULARES_ADV_J31,
+  SUPLENTES_RA_J31, SUPLENTES_ADV_J31,
+  STATS_J30_AFS, EVENTOS_J30_AFS,
+  TITULARES_RA_J30, TITULARES_ADV_J30,
+  SUPLENTES_RA_J30, SUPLENTES_ADV_J30,
   type PartidaEquipa, type EventoJogo, type JogadorTitular,
   type EstatisticasJogo,
 } from '@/lib/mock-jogos-equipa';
@@ -38,6 +44,18 @@ const GAME_DETAILS: Record<string, GameDetail> = {
     titRA: TITULARES_RA_J32,  titAdv: TITULARES_ADV_J32,
     supRA: SUPLENTES_RA_J32,  supAdv: SUPLENTES_ADV_J32,
     halfScore1: '0 — 0', halfScore2: '0 — 0',
+  },
+  '25-26-31': {
+    stats: STATS_J31_VITORIA, eventos: EVENTOS_J31_VITORIA,
+    titRA: TITULARES_RA_J31,  titAdv: TITULARES_ADV_J31,
+    supRA: SUPLENTES_RA_J31,  supAdv: SUPLENTES_ADV_J31,
+    halfScore1: '0 — 0', halfScore2: '0 — 2',
+  },
+  '25-26-30': {
+    stats: STATS_J30_AFS, eventos: EVENTOS_J30_AFS,
+    titRA: TITULARES_RA_J30,  titAdv: TITULARES_ADV_J30,
+    supRA: SUPLENTES_RA_J30,  supAdv: SUPLENTES_ADV_J30,
+    halfScore1: '1 — 1', halfScore2: '1 — 1',
   },
 };
 
@@ -495,7 +513,7 @@ export default function JogosPage() {
               />
             </div>
           );
-        }))}
+        })}
       </div>
     );
   }
