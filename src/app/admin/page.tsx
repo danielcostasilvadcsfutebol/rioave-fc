@@ -48,7 +48,14 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!auth) return;
-    supabase.from('jogos').select('id,jornada,data,adversario,local,golos_ra,golos_adv,resultado,has_detail,espectadores,formacao_ra,formacao_adv,arbitro,hora,estadio').order('data',{ascending:false}).then(({data}) => setJogos(data??[]));
+    supabase.from('jogos')
+      .select('id,jornada,data,adversario,local,golos_ra,golos_adv,resultado,has_detail,espectadores,formacao_ra,formacao_adv,arbitro,hora,estadio')
+      .order('data',{ascending:false})
+      .then(({data, error}) => {
+        if (error) { alert('Erro Supabase: ' + error.message); return; }
+        setJogos(data ?? []);
+        if (!data?.length) alert('Sem dados. URL: ' + process.env.NEXT_PUBLIC_SUPABASE_URL);
+      });
   }, [auth]);
 
   useEffect(() => {
