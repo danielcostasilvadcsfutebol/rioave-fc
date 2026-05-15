@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase-client';
 
 const ADMIN_PASSWORD = 'rioave2025';
 const TIPOS_EVENTO = ['golo','golo_penalidade','auto_golo','cartao_amarelo','cartao_vermelho','substituicao'];
-const POSICOES = ['GR','DC','DD','DE','MDC','MI','ME','MAD','MAM','MAE','MC','AV'];
+const POSICOES = ['GR','DEF','MED','AV'];
 const STATS_COLS = [
   ['posse_bola','% Posse de bola'],['remates','Remates'],['remates_baliza','Remates à baliza'],
   ['remates_poste','Remates ao poste'],['grandes_oportunidades','Grandes oportunidades'],
