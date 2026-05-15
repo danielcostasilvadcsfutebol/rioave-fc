@@ -534,12 +534,6 @@ export interface PartidaEquipa {
   publicado: boolean;
 }
 
-// ─── Helper ──────────────────────────────────────────────────
-function resultado(ra: number, adv: number): Resultado {
-  if (ra > adv) return 'V';
-  if (ra === adv) return 'E';
-  return 'D';
-}
 
 // ─── 2025/26 · Liga Portugal Betclic ─────────────────────────
 // Nota: J1 (F) Benfica foi remarcado — realizado em 2025-09-23
