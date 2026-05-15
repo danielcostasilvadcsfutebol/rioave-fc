@@ -676,15 +676,15 @@ export function getPlayerStats(nome: string, epoca: string): JogadorStats | null
   const golosSofridosEmCampo = partidas.reduce((s, p) => s + p.golosSofridosEmCampo, 0);
 
   // Minutes available = 90 × games in squad (played or bench)
-  const fichas = FICHAS_RA[epoca] ?? [];
-  const jogosBanco = fichas.filter(f =>
+  const fichasEpoca = FICHAS_RA[epoca] ?? [];
+  const jogosBanco = fichasEpoca.filter(f =>
     !f.titulares.some(p => p.nome.trim() === k) &&
     f.suplentes.some(p => p.nome.trim() === k)
   ).length - jogosSuplente; // bench but didn't enter
   const minutosDisponiveis = (jogosTotal + Math.max(0, jogosBanco)) * 90;
 
   // Goals scored by RA with player on field
-  const golsEquipaEmCampo = fichas.reduce((sum, f) => {
+  const golsEquipaEmCampo = fichasEpoca.reduce((sum, f) => {
     const mins = calcMinutos(k, f.titulares, f.eventos);
     if (mins === 0) return sum;
     return sum + f.eventos.filter(e => {
