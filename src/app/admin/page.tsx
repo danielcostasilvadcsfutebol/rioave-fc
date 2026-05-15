@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase-client';
 
 const ADMIN_PASSWORD = 'rioave2025';
 const TIPOS_EVENTO = ['golo','golo_penalidade','auto_golo','cartao_amarelo','cartao_vermelho','substituicao'];
