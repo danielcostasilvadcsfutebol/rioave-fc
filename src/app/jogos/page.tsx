@@ -12,6 +12,14 @@ function IcoSub() {
   return <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M11 1.5v12M8.5 4L11 1.5 13.5 4" stroke="#006B3C" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 13.5v-12M1.5 11L4 13.5 6.5 11" stroke="#DC2626" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>;
 }
 
+
+// Normaliza posições para GR / DEF / MED / AV
+function normPos(pos?: string): string | undefined {
+  if (!pos) return undefined;
+  if (['DD','DC','DE'].includes(pos)) return 'DEF';
+  if (['MDC','MI','ME','MAD','MAM','MAE','MC'].includes(pos)) return 'MED';
+  return pos;
+}
 const COMP_COLORS: Record<string,{bg:string;color:string}> = {
   'liga':{bg:'#EBF4FF',color:'#1A5FA8'},'taca-pt':{bg:'#FFF4E5',color:'#A05C00'},
   'taca-liga':{bg:'#F3EFFF',color:'#5B34C0'},'europa':{bg:'#E5F5FF',color:'#0B6B9E'},
@@ -210,7 +218,7 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
                       </div>
                       <div style={{padding:'4px 0'}}>
                         <div style={{padding:'3px 10px 2px',fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em'}}>Titulares</div>
-                        {tits.map(p=>{const a=ann(p.nome,eventos,eq);return(<div key={p.numero} style={{display:'flex',alignItems:'center',gap:4,padding:'3px 10px',fontSize:11}}><span style={{fontSize:10,fontWeight:700,color:'#9CA3AF',minWidth:18,textAlign:'right'}}>{p.numero}</span><span style={{color:'#111318',flex:1}}>{p.nome}{p.capitao?' (C)':''}</span>{!a.dbl&&a.y>0&&<div style={{width:9,height:11,borderRadius:1.5,background:'#EF9F27',flexShrink:0}}/>}{a.dbl&&<><div style={{position:'relative',width:17,height:11,flexShrink:0}}><div style={{position:'absolute',left:0,width:9,height:11,borderRadius:1.5,background:'#EF9F27'}}/><div style={{position:'absolute',left:5,width:9,height:11,borderRadius:1.5,background:'#EF9F27'}}/></div><div style={{width:9,height:11,borderRadius:1.5,background:'#DC2626'}}/></>}{a.r>0&&!a.dbl&&<div style={{width:9,height:11,borderRadius:1.5,background:'#DC2626',flexShrink:0}}/>}{a.out&&<span style={{fontSize:9,fontWeight:700,color:'#DC2626',background:'rgba(220,38,38,.08)',padding:'1px 4px',borderRadius:4,flexShrink:0}}>↓{a.out.minuto}&apos;</span>}{p.posicao&&<span style={{fontSize:8,color:'#9CA3AF',background:'#F0F2F5',padding:'1px 4px',borderRadius:3}}>{p.posicao}</span>}</div>);})}
+                        {tits.map(p=>{const a=ann(p.nome,eventos,eq);return(<div key={p.numero} style={{display:'flex',alignItems:'center',gap:4,padding:'3px 10px',fontSize:11}}><span style={{fontSize:10,fontWeight:700,color:'#9CA3AF',minWidth:18,textAlign:'right'}}>{p.numero}</span><span style={{color:'#111318',flex:1}}>{p.nome}{p.capitao?' (C)':''}</span>{!a.dbl&&a.y>0&&<div style={{width:9,height:11,borderRadius:1.5,background:'#EF9F27',flexShrink:0}}/>}{a.dbl&&<><div style={{position:'relative',width:17,height:11,flexShrink:0}}><div style={{position:'absolute',left:0,width:9,height:11,borderRadius:1.5,background:'#EF9F27'}}/><div style={{position:'absolute',left:5,width:9,height:11,borderRadius:1.5,background:'#EF9F27'}}/></div><div style={{width:9,height:11,borderRadius:1.5,background:'#DC2626'}}/></>}{a.r>0&&!a.dbl&&<div style={{width:9,height:11,borderRadius:1.5,background:'#DC2626',flexShrink:0}}/>}{a.out&&<span style={{fontSize:9,fontWeight:700,color:'#DC2626',background:'rgba(220,38,38,.08)',padding:'1px 4px',borderRadius:4,flexShrink:0}}>↓{a.out.minuto}&apos;</span>}{p.posicao&&<span style={{fontSize:8,color:'#9CA3AF',background:'#F0F2F5',padding:'1px 4px',borderRadius:3}}>{normPos(p.posicao)}</span>}</div>);})}
                       </div>
                       {sups.length>0&&<div style={{borderTop:'1px solid #E4E7EC',padding:'4px 0'}}><div style={{padding:'3px 10px 2px',fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em'}}>Banco</div>{sups.map(p=>{const a=ann(p.nome,eventos,eq);return(<div key={p.numero+p.nome} style={{display:'flex',alignItems:'center',gap:4,padding:'3px 10px',fontSize:11,opacity:a.inn?1:.55}}><span style={{fontSize:10,fontWeight:700,color:'#9CA3AF',minWidth:18,textAlign:'right'}}>{p.numero}</span><span style={{color:a.inn?'#111318':'#6B7280',flex:1}}>{p.nome}</span>{a.inn&&<span style={{fontSize:9,fontWeight:700,color:'#006B3C',background:'rgba(0,107,60,.08)',padding:'1px 4px',borderRadius:4,flexShrink:0}}>↑{a.inn.minuto}&apos;</span>}</div>);})}</div>}
                     </div>
