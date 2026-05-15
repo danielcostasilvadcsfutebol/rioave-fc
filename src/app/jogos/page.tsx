@@ -615,12 +615,9 @@ export default function JogosPage() {
         ) : (
           <>
             {filtered.map((p, idx) => (
-            <PartidaRow key={p.id} partida={p} cardBg={idx%2===0?'#fff':'#F8FBF9'}
-              expanded={expanded === p.id} detalhe={detalhe}
-              onToggle={() => setExpanded(x => x === p.id ? null : p.id)}
-              onDetalhe={setDetalhe}
-            />
-          ))
+              <PartidaRow key={p.id} partida={p} cardBg={idx%2===0?'#fff':'#F8FBF9'}
+                expanded={expanded === p.id} detalhe={detalhe}
+                onToggle={() => setExpanded(x => x === p.id ? null : p.id)}
                 onDetalhe={setDetalhe}
               />
             ))}
