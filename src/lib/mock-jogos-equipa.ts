@@ -171,11 +171,15 @@ const LIGA_2526: Omit<PartidaEquipa, 'id' | 'resultado' | 'publicado'>[] = [
 
   { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J30',
     data:'2026-04-17', hora:'20:45', local:'casa', adversario:'AFS',
-    golos_ra:2, golos_adv:2, espectadores:2158 },
+    golos_ra:2, golos_adv:2, espectadores:2158,
+    formacao_ra:'4-2-3-1', formacao_adv:'4-3-3',
+    arbitro:'a confirmar', hasDetail:true },
 
   { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J31',
     data:'2026-04-25', hora:'20:30', local:'fora', adversario:'Vitória SC',
-    golos_ra:0, golos_adv:2, estadio:'Estádio D. Afonso Henriques' },
+    golos_ra:0, golos_adv:2, estadio:'Estádio D. Afonso Henriques',
+    formacao_ra:'4-2-3-1', formacao_adv:'4-2-3-1',
+    arbitro:'a confirmar', hasDetail:true },
 
   { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J32',
     data:'2026-05-03', hora:'20:30', local:'casa', adversario:'Gil Vicente',
@@ -490,6 +494,12 @@ export interface FichaData {
 // Todas as fichas disponíveis por época
 export const FICHAS_RA: Record<string, FichaData[]> = {
   '25/26': [
+    { gameId:'25-26-30', jornada:'J30', data:'2026-04-17',
+      adversario:'AFS', local:'casa', resultado:'E', golos_ra:2, golos_adv:2,
+      titulares:TITULARES_RA_J30, suplentes:SUPLENTES_RA_J30, eventos:EVENTOS_J30_AFS },
+    { gameId:'25-26-31', jornada:'J31', data:'2026-04-25',
+      adversario:'Vitória SC', local:'fora', resultado:'D', golos_ra:0, golos_adv:2,
+      titulares:TITULARES_RA_J31, suplentes:SUPLENTES_RA_J31, eventos:EVENTOS_J31_VITORIA },
     { gameId:'25-26-32', jornada:'J32', data:'2026-05-03',
       adversario:'Gil Vicente', local:'casa', resultado:'E', golos_ra:0, golos_adv:0,
       titulares:TITULARES_RA_J32, suplentes:SUPLENTES_RA_J32, eventos:EVENTOS_J32_GIL },
@@ -563,10 +573,15 @@ export interface JogadorStats {
   nome: string; numero: number; posicao?: string; isGR: boolean;
   epoca: string;
   jogosTotal: number; jogosTitular: number; jogosSuplente: number;
+  jogosBanco: number;           // in squad but didn't play
   minutosJogados: number;
-  golosMarcados: number; assistencias: number;
+  minutosDisponiveis: number;   // 90 × games in squad
+  golosMarcados: number; assistencias: number; contribuicoes: number;
   cartoesAmarelos: number; cartoesVermelhos: number;
   golosSofridosEmCampo: number;
+  golsEquipaEmCampo: number;    // RA goals while player on field
+  diferencaEmCampo: number;     // golsEquipa - golosSofridos
+  cleanSheets: number;
   vitorias: number; empates: number; derrotas: number;
   vitoriasTitular: number;
   partidas: PartidaStat[];
@@ -654,14 +669,239 @@ export function getPlayerStats(nome: string, epoca: string): JogadorStats | null
   const derrotas       = partidas.filter(p => p.resultado === 'D').length;
   const vitoriasTitular = partidas.filter(p => p.foiTitular && p.resultado === 'V').length;
 
+  const golosMarcados        = partidas.reduce((s, p) => s + p.golosMarcados, 0);
+  const assistencias         = partidas.reduce((s, p) => s + p.assistencias, 0);
+  const cartoesAmarelos      = partidas.reduce((s, p) => s + p.cartoesAmarelos, 0);
+  const cartoesVermelhos     = partidas.reduce((s, p) => s + p.cartoesVermelhos, 0);
+  const golosSofridosEmCampo = partidas.reduce((s, p) => s + p.golosSofridosEmCampo, 0);
+
+  // Minutes available = 90 × games in squad (played or bench)
+  const fichas = FICHAS_RA[epoca] ?? [];
+  const jogosBanco = fichas.filter(f =>
+    !f.titulares.some(p => p.nome.trim() === k) &&
+    f.suplentes.some(p => p.nome.trim() === k)
+  ).length - jogosSuplente; // bench but didn't enter
+  const minutosDisponiveis = (jogosTotal + Math.max(0, jogosBanco)) * 90;
+
+  // Goals scored by RA with player on field
+  const golsEquipaEmCampo = fichas.reduce((sum, f) => {
+    const mins = calcMinutos(k, f.titulares, f.eventos);
+    if (mins === 0) return sum;
+    return sum + f.eventos.filter(e => {
+      if (!(['golo','golo_penalidade'].includes(e.tipo) && e.equipa === 'ra')) return false;
+      return estavaCampo(k, minuto(e), f.titulares, f.eventos);
+    }).length;
+  }, 0);
+
+  const cleanSheets = partidas.filter(p => p.golosSofridosEmCampo === 0).length;
+
   return {
     nome: k, numero, posicao, isGR, epoca,
-    jogosTotal, jogosTitular, jogosSuplente, minutosJogados,
-    golosMarcados: partidas.reduce((s, p) => s + p.golosMarcados, 0),
-    assistencias: partidas.reduce((s, p) => s + p.assistencias, 0),
-    cartoesAmarelos: partidas.reduce((s, p) => s + p.cartoesAmarelos, 0),
-    cartoesVermelhos: partidas.reduce((s, p) => s + p.cartoesVermelhos, 0),
-    golosSofridosEmCampo: partidas.reduce((s, p) => s + p.golosSofridosEmCampo, 0),
+    jogosTotal, jogosTitular, jogosSuplente, jogosBanco: Math.max(0, jogosBanco),
+    minutosJogados, minutosDisponiveis,
+    golosMarcados, assistencias, contribuicoes: golosMarcados + assistencias,
+    cartoesAmarelos, cartoesVermelhos,
+    golosSofridosEmCampo, golsEquipaEmCampo,
+    diferencaEmCampo: golsEquipaEmCampo - golosSofridosEmCampo,
+    cleanSheets,
     vitorias, empates, derrotas, vitoriasTitular, partidas,
   };
 }
+
+// ─── Dados detalhados · J31 · Vitória SC 2-0 Rio Ave ─────────
+// (jogo fora — RA no lado direito da formação)
+export const STATS_J31_VITORIA: EstatisticasJogo = {
+  posse_bola:            [46, 54],
+  remates:               [ 5, 11],
+  remates_baliza:        [ 4,  3],
+  remates_poste:         [ 0,  0],
+  grandes_oportunidades: [ 3,  5],
+  assistencias:          [ 0,  1],
+  cruzamentos:           [ 9, 20],
+  cantos:                [ 5,  3],
+  livres:                [ 1,  0],
+  ataques:               [26, 32],
+  ataques_centro:        [ 3,  6],
+  ataques_esquerda:      [11, 12],
+  ataques_direita:       [12, 14],
+  defesas:               [ 1,  4],
+  penaltis:              [ 0,  0],
+  penaltis_defendidos:   [ 0,  0],
+  foras_jogo:            [ 2,  1],
+  faltas:                [13,  7],
+  amarelos:              [ 4,  4],
+  vermelhos:             [ 0,  0],
+};
+
+export const EVENTOS_J31_VITORIA: EventoJogo[] = [
+  // ── 1ª Parte (0-0) ───────────────────────────────────────
+  { minuto: 28, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Ntoi A.' },
+  { minuto: 57, tipo:'cartao_amarelo', equipa:'adv', jogador:'G.Silva' },
+  { minuto: 58, tipo:'substituicao',   equipa:'adv', jogador:'M.Maga',    jogador2:'Strata T.' },
+  { minuto: 58, tipo:'substituicao',   equipa:'adv', jogador:'Camara Jr', jogador2:'M.Nogueira' },
+  { minuto: 58, tipo:'substituicao',   equipa:'adv', jogador:'D.Sousa',   jogador2:'G.Nogueira' },
+  { minuto: 59, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Gustavo M.' },
+  { minuto: 60, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Nikitscher' },
+  { minuto: 62, tipo:'cartao_amarelo', equipa:'adv', jogador:'T.Balieiro' },
+  { minuto: 68, tipo:'substituicao',   equipa:'adv', jogador:'Saviolo',   jogador2:'Arcanjo T.' },
+  { minuto: 69, tipo:'substituicao',   equipa:'ra',  jogador:'Olinho',    jogador2:'Ryan G.' },
+  { minuto: 69, tipo:'substituicao',   equipa:'ra',  jogador:'Spikic',    jogador2:'Tomé J.' },
+  { minuto: 72, tipo:'golo',           equipa:'adv', jogador:'Samu',      score_ra:0, score_adv:1 },
+  { minuto: 77, tipo:'substituicao',   equipa:'ra',  jogador:'Nelson',    jogador2:'Richards O.' },
+  { minuto: 77, tipo:'substituicao',   equipa:'ra',  jogador:'Nikitscher',jogador2:'Tamble' },
+  { minuto: 79, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Bezerra' },
+  { minuto: 80, tipo:'cartao_amarelo', equipa:'adv', jogador:'Samu' },
+  { minuto: 81, tipo:'substituicao',   equipa:'adv', jogador:'G.Silva',   jogador2:'N.Oliveira' },
+  { minuto: 86, tipo:'substituicao',   equipa:'ra',  jogador:'Bezerra',   jogador2:'Lomboto' },
+  { minuto: 90, minuto_extra:2, tipo:'cartao_amarelo', equipa:'adv', jogador:'Strata T.' },
+  { minuto: 90, minuto_extra:5, tipo:'golo', equipa:'adv', jogador:'Strata T.', score_ra:0, score_adv:2 },
+];
+
+export const TITULARES_RA_J31: JogadorTitular[] = [
+  { numero:  1, nome:'Miszta',       posicao:'GR' },
+  { numero: 17, nome:'Vrousai',      posicao:'DD', capitao:true },
+  { numero: 32, nome:'Brabec J.',    posicao:'DC' },
+  { numero: 44, nome:'Nikitscher',   posicao:'DC' },
+  { numero: 18, nome:'Spikic',       posicao:'DE' },
+  { numero: 39, nome:'Gustavo M.',   posicao:'MDC' },
+  { numero:  5, nome:'Ntoi A.',      posicao:'MDC' },
+  { numero:  6, nome:'Nelson',       posicao:'MAD' },
+  { numero: 11, nome:'Blesa',        posicao:'MAM' },
+  { numero: 80, nome:'Olinho',       posicao:'MAE' },
+  { numero:  7, nome:'Bezerra',      posicao:'AV' },
+];
+
+export const SUPLENTES_RA_J31: JogadorTitular[] = [
+  { numero: 99, nome:'Ennio Gouw' },
+  { numero:  8, nome:'Ryan G.' },
+  { numero:  9, nome:'Tamble' },
+  { numero: 20, nome:'Tomé J.' },
+  { numero: 23, nome:'Petrasso' },
+  { numero: 25, nome:'Rafael' },
+  { numero: 54, nome:'Liavas G.' },
+  { numero: 63, nome:'Lomboto' },
+  { numero: 77, nome:'Richards O.' },
+];
+
+export const TITULARES_ADV_J31: JogadorTitular[] = [
+  { numero:  2, nome:'M.Maga',       posicao:'GR' },
+  { numero: 16, nome:'Beni',         posicao:'DD' },
+  { numero: 19, nome:'Camara Jr',    posicao:'DC' },
+  { numero: 27, nome:'Charles',      posicao:'DC' },
+  { numero:  4, nome:'O.Rivas',      posicao:'DE' },
+  { numero: 11, nome:'G.Silva',      posicao:'MDC' },
+  { numero: 28, nome:'T.Balieiro',   posicao:'MDC' },
+  { numero: 48, nome:'Saviolo',      posicao:'MAD' },
+  { numero: 20, nome:'Samu',         posicao:'MAM', capitao:true },
+  { numero: 23, nome:'D.Sousa',      posicao:'MAE' },
+  { numero: 13, nome:'J.Mendes',     posicao:'AV' },
+];
+
+export const SUPLENTES_ADV_J31: JogadorTitular[] = [
+  { numero: 25, nome:'Juan Reyes' },
+  { numero:  6, nome:'Matija Mitrovic' },
+  { numero:  7, nome:'Nélson Oliveira' },
+  { numero: 17, nome:'Lebedenko' },
+  { numero: 10, nome:'Telmo Arcanjo' },
+  { numero: 26, nome:'Rodrigo Abascal' },
+  { numero: 30, nome:'Gonçalo Nogueira' },
+  { numero: 66, nome:'Tony Strata' },
+  { numero: 88, nome:'João Nogueira' },
+];
+
+// ─── Dados detalhados · J30 · Rio Ave 2-2 AFS ────────────────
+export const STATS_J30_AFS: EstatisticasJogo = {
+  posse_bola:            [64, 36],
+  remates:               [21, 12],
+  remates_baliza:        [ 8,  7],
+  remates_poste:         [ 0,  0],
+  grandes_oportunidades: [11,  6],
+  assistencias:          [ 0,  2],
+  cruzamentos:           [21, 11],
+  cantos:                [ 4,  9],
+  livres:                [ 2,  0],
+  ataques:               [43, 24],
+  ataques_centro:        [ 4,  3],
+  ataques_esquerda:      [20, 14],
+  ataques_direita:       [19,  7],
+  defesas:               [ 5,  6],
+  penaltis:              [ 0,  0],
+  penaltis_defendidos:   [ 0,  0],
+  foras_jogo:            [ 3,  2],
+  faltas:                [ 9, 12],
+  amarelos:              [ 1,  2],
+  vermelhos:             [ 0,  0],
+};
+
+export const EVENTOS_J30_AFS: EventoJogo[] = [
+  // ── 1ª Parte (1-1) ───────────────────────────────────────
+  { minuto: 18, tipo:'golo',           equipa:'ra',  jogador:'Olinho',      score_ra:1, score_adv:0 },
+  { minuto: 32, tipo:'golo',           equipa:'adv', jogador:'Tomané',      score_ra:1, score_adv:1 },
+  // ── 2ª Parte (1-1) ───────────────────────────────────────
+  { minuto: 64, tipo:'substituicao',   equipa:'ra',  jogador:'Ryan G.',     jogador2:'Tamble' },
+  { minuto: 64, tipo:'substituicao',   equipa:'adv', jogador:'Rivas',       jogador2:'Kiki Afonso' },
+  { minuto: 64, tipo:'substituicao',   equipa:'adv', jogador:'O.Perea',     jogador2:'Guilherme S.' },
+  { minuto: 66, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Ntoi A.' },
+  { minuto: 68, tipo:'golo',           equipa:'adv', jogador:'Pedro Lima',  score_ra:1, score_adv:2 },
+  { minuto: 74, tipo:'substituicao',   equipa:'ra',  jogador:'Spikic',      jogador2:'Papakanellos A.' },
+  { minuto: 79, tipo:'golo',           equipa:'ra',  jogador:'Ntoi A.',     score_ra:2, score_adv:2 },
+  { minuto: 86, tipo:'substituicao',   equipa:'ra',  jogador:'Bezerra',     jogador2:'Lomboto' },
+  { minuto: 86, tipo:'substituicao',   equipa:'ra',  jogador:'Olinho',      jogador2:'Nikitscher' },
+  { minuto: 86, tipo:'substituicao',   equipa:'adv', jogador:'Gustavo',     jogador2:'Algobia' },
+  { minuto: 90, tipo:'cartao_amarelo', equipa:'adv', jogador:'Tomané' },
+  { minuto: 90, minuto_extra:1, tipo:'substituicao', equipa:'adv', jogador:'Tunde',  jogador2:'Diego Duarte' },
+  { minuto: 90, minuto_extra:1, tipo:'substituicao', equipa:'adv', jogador:'Tomané', jogador2:'Nenê' },
+  { minuto: 90, minuto_extra:3, tipo:'cartao_amarelo', equipa:'adv', jogador:'Paulo Vítor' },
+];
+
+export const TITULARES_RA_J30: JogadorTitular[] = [
+  { numero:  1, nome:'Miszta',       posicao:'GR' },
+  { numero: 17, nome:'Vrousai',      posicao:'DD', capitao:true },
+  { numero: 18, nome:'Spikic',       posicao:'DC' },
+  { numero: 32, nome:'Brabec J.',    posicao:'DC' },
+  { numero:  5, nome:'Ntoi A.',      posicao:'DE' },
+  { numero: 39, nome:'Gustavo M.',   posicao:'MDC' },
+  { numero: 80, nome:'Olinho',       posicao:'MDC' },
+  { numero:  6, nome:'Nelson',       posicao:'MAD' },
+  { numero:  8, nome:'Ryan G.',      posicao:'MAM' },
+  { numero: 11, nome:'Blesa',        posicao:'MAE' },
+  { numero:  7, nome:'Bezerra',      posicao:'AV' },
+];
+
+export const SUPLENTES_RA_J30: JogadorTitular[] = [
+  { numero: 99, nome:'Ennio Gouw' },
+  { numero:  9, nome:'Tamble' },
+  { numero: 19, nome:'Papakanellos A.' },
+  { numero: 20, nome:'Tomé J.' },
+  { numero: 23, nome:'Petrasso' },
+  { numero: 25, nome:'Rafael' },
+  { numero: 44, nome:'Nikitscher' },
+  { numero: 54, nome:'Liavas G.' },
+  { numero: 77, nome:'Richards O.' },
+];
+
+export const TITULARES_ADV_J30: JogadorTitular[] = [
+  { numero:  1, nome:'Adriel',       posicao:'GR' },
+  { numero: 12, nome:'Rivas',        posicao:'DD' },
+  { numero: 14, nome:'O.Perea',      posicao:'DC' },
+  { numero: 42, nome:'Devenish',     posicao:'DC', capitao:true },
+  { numero:  3, nome:'Paulo Vítor',  posicao:'DE' },
+  { numero: 70, nome:'Roni',         posicao:'MC' },
+  { numero:  8, nome:'Pedro Lima',   posicao:'MC' },
+  { numero:  7, nome:'Tomané',       posicao:'MC' },
+  { numero: 97, nome:'M.Pivô',       posicao:'AD' },
+  { numero: 23, nome:'Gustavo',      posicao:'AV' },
+  { numero: 11, nome:'Tunde',        posicao:'AE' },
+];
+
+export const SUPLENTES_ADV_J30: JogadorTitular[] = [
+  { numero: 88, nome:'Pedro Trigueira' },
+  { numero: 18, nome:'Nenê' },
+  { numero: 19, nome:'Tiago Hernandes' },
+  { numero: 20, nome:'Diego Duarte' },
+  { numero: 21, nome:'Guilherme S.' },
+  { numero: 24, nome:'Kiki Afonso' },
+  { numero: 26, nome:'Carlos Ponck' },
+  { numero: 27, nome:'Algobia' },
+  { numero: 33, nome:'Aderllan Santos' },
+];
