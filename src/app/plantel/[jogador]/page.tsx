@@ -6,6 +6,13 @@ import { getFichasEpocaDB } from '@/lib/db';
 import type { FichaData } from '@/lib/mock-jogos-equipa';
 
 // Re-use the computePlayerStats logic inline
+function normPos(pos?: string): string | undefined {
+  if (!pos) return undefined;
+  if (['DD','DC','DE'].includes(pos)) return 'DEF';
+  if (['MDC','MI','ME','MAD','MAM','MAE','MC'].includes(pos)) return 'MED';
+  return pos;
+}
+
 function computeStats(nome: string, fichas: FichaData[]) {
   const k = nome.trim();
   let numero=0; let posicao: string|undefined;
@@ -116,7 +123,7 @@ export default function JogadorPage() {
           </Link>
           <span style={{color:'#E4E7EC'}}>·</span>
           <div style={{fontSize:13,fontWeight:700,color:'#111318'}}>{s.nome}</div>
-          {s.posicao&&<span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:6,background:'#EEF7F2',color:'#006B3C'}}>{s.posicao}</span>}
+          {s.posicao&&<span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:6,background:'#EEF7F2',color:'#006B3C'}}>{normPos(s.posicao)}</span>}
         </div>
       </header>
       <main style={{maxWidth:820,margin:'0 auto',padding:'16px',display:'flex',flexDirection:'column',gap:14}}>
@@ -125,7 +132,7 @@ export default function JogadorPage() {
           <div style={{display:'flex',alignItems:'center',gap:18,flexWrap:'wrap'}}>
             <div style={{width:68,height:68,borderRadius:14,background:'rgba(255,255,255,.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,fontWeight:800,color:'rgba(255,255,255,.8)',flexShrink:0}}>{s.numero}</div>
             <div style={{flex:1}}>
-              <div style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,.4)',letterSpacing:'.07em',textTransform:'uppercase',marginBottom:3}}>{s.posicao} · Rio Ave FC · 2025/26</div>
+              <div style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,.4)',letterSpacing:'.07em',textTransform:'uppercase',marginBottom:3}}>{normPos(s.posicao)} · Rio Ave FC · 2025/26</div>
               <div style={{fontSize:28,fontWeight:800,letterSpacing:'-.5px',lineHeight:1}}>{s.nome}</div>
               <div style={{fontSize:12,color:'rgba(255,255,255,.5)',marginTop:4}}>{s.jogosTotal} ficha{s.jogosTotal!==1?'s':''} · {s.minutosJogados}&apos; jogados · {pctMin}% dos min. disponíveis</div>
             </div>
