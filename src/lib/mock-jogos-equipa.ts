@@ -985,10 +985,7 @@ export interface FichaData {
   eventos: EventoJogo[];
 }
 
-// Todas as fichas disponíveis por época: Record<string, number> = { '25/26': 34 };
-
-
-export const TOTAL_JOGOS_EPOCA
+export const TOTAL_JOGOS_EPOCA: Record<string, number> = { '25/26': 34 };
 
 // ─── Plantel derivado das fichas de jogo ─────────────────────
 export interface JogadorPlantel {
