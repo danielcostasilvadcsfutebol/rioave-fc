@@ -1,591 +1,633 @@
-// src/lib/mock-jogos-equipa.ts
-// Todos os jogos do Rio Ave FC · Época 2025/26
-// Fonte: zerozero.pt / recolha manual por Daniel Silva · Sócio 3883
+'use client';
 
-export type Competicao = 'liga' | 'taca-pt' | 'taca-liga' | 'europa' | 'amigavel';
-export type Local = 'casa' | 'fora';
-export type Resultado = 'V' | 'E' | 'D';
+import { useState, useMemo } from 'react';
+import Link from 'next/link';
+import {
+  JOGOS_2526, filtrarJogos, calcularStatsEpoca,
+  STATS_J33_SPORTING, EVENTOS_J33_SPORTING,
+  TITULARES_RA_J33, TITULARES_ADV_J33,
+  SUPLENTES_RA_J33, SUPLENTES_ADV_J33,
+  STATS_J32_GIL, EVENTOS_J32_GIL,
+  TITULARES_RA_J32, TITULARES_ADV_J32,
+  SUPLENTES_RA_J32, SUPLENTES_ADV_J32,
+  STATS_J31_VITORIA, EVENTOS_J31_VITORIA,
+  TITULARES_RA_J31, TITULARES_ADV_J31,
+  SUPLENTES_RA_J31, SUPLENTES_ADV_J31,
+  STATS_J30_AFS, EVENTOS_J30_AFS,
+  TITULARES_RA_J30, TITULARES_ADV_J30,
+  SUPLENTES_RA_J30, SUPLENTES_ADV_J30,
+  type PartidaEquipa, type EventoJogo, type JogadorTitular,
+  type EstatisticasJogo,
+} from '@/lib/mock-jogos-equipa';
 
-export interface PartidaEquipa {
-  id: string; epoca: string; competicao: Competicao; competicao_label: string;
-  jornada: string; data: string; hora: string; local: Local;
-  adversario: string; golos_ra: number; golos_adv: number; resultado: Resultado;
-  espectadores?: number; estadio?: string; formacao_ra?: string; formacao_adv?: string;
-  arbitro?: string; hasDetail?: boolean; publicado: boolean;
+// ── Detail data lookup ─────────────────────────────────────────
+interface GameDetail {
+  stats:  EstatisticasJogo;
+  eventos: EventoJogo[];
+  titRA:  JogadorTitular[];
+  titAdv: JogadorTitular[];
+  supRA:  JogadorTitular[];
+  supAdv: JogadorTitular[];
+  halfScore1: string;
+  halfScore2: string;
 }
 
-function resultado(ra: number, adv: number): Resultado {
-  if (ra > adv) return 'V';
-  if (ra === adv) return 'E';
-  return 'D';
-}
-
-const LIGA_2526: Omit<PartidaEquipa, 'id' | 'resultado' | 'publicado'>[] = [
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J1',
-    data:'2025-09-23', hora:'20:15', local:'fora', adversario:'S.L. Benfica',
-    golos_ra:1, golos_adv:1, estadio:'Estádio da Luz' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J2',
-    data:'2025-08-17', hora:'15:30', local:'casa', adversario:'Nacional',
-    golos_ra:1, golos_adv:1, espectadores:2452 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J3',
-    data:'2025-08-23', hora:'20:30', local:'fora', adversario:'FC Arouca',
-    golos_ra:3, golos_adv:3, estadio:'Estádio Municipal de Arouca' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J4',
-    data:'2025-08-31', hora:'20:30', local:'casa', adversario:'SC Braga',
-    golos_ra:2, golos_adv:2, espectadores:3250 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J5',
-    data:'2025-09-13', hora:'15:30', local:'fora', adversario:'Moreirense',
-    golos_ra:1, golos_adv:3, estadio:'Estádio Comendador Joaquim de Almeida Freitas' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J6',
-    data:'2025-09-19', hora:'20:15', local:'casa', adversario:'FC Porto',
-    golos_ra:0, golos_adv:3, espectadores:4624 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J7',
-    data:'2025-09-28', hora:'20:30', local:'fora', adversario:'FC Famalicão',
-    golos_ra:0, golos_adv:0, estadio:'Estádio Municipal de Famalicão' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J8',
-    data:'2025-10-05', hora:'17:30', local:'casa', adversario:'CD Tondela',
-    golos_ra:3, golos_adv:0, espectadores:2066 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J9',
-    data:'2025-10-25', hora:'20:30', local:'fora', adversario:'Est. Amadora',
-    golos_ra:2, golos_adv:1, estadio:'Estádio José Gomes' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J10',
-    data:'2025-11-01', hora:'18:00', local:'casa', adversario:'Estoril Praia',
-    golos_ra:0, golos_adv:4, espectadores:2039 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J11',
-    data:'2025-11-08', hora:'15:30', local:'fora', adversario:'FC Alverca',
-    golos_ra:1, golos_adv:1, estadio:'Estádio Municipal de Alverca' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J12',
-    data:'2025-11-30', hora:'15:30', local:'casa', adversario:'Santa Clara',
-    golos_ra:1, golos_adv:1, espectadores:2098 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J13',
-    data:'2025-12-06', hora:'18:00', local:'fora', adversario:'AFS',
-    golos_ra:2, golos_adv:1, estadio:'Estádio do Fontelo' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J14',
-    data:'2025-12-13', hora:'18:00', local:'casa', adversario:'Vitória SC',
-    golos_ra:0, golos_adv:1, espectadores:2521 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J15',
-    data:'2025-12-20', hora:'18:00', local:'fora', adversario:'Gil Vicente',
-    golos_ra:2, golos_adv:2, estadio:'Estádio Cidade de Barcelos' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J16',
-    data:'2025-12-28', hora:'20:30', local:'fora', adversario:'Sporting CP',
-    golos_ra:0, golos_adv:4, estadio:'Estádio de Alvalade' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J17',
-    data:'2026-01-04', hora:'15:30', local:'casa', adversario:'Casa Pia AC',
-    golos_ra:3, golos_adv:1, espectadores:2067 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J18',
-    data:'2026-01-17', hora:'20:30', local:'casa', adversario:'S.L. Benfica',
-    golos_ra:0, golos_adv:2, espectadores:4435 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J19',
-    data:'2026-01-25', hora:'15:30', local:'fora', adversario:'Nacional',
-    golos_ra:0, golos_adv:4, estadio:'Estádio da Madeira' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J20',
-    data:'2026-02-01', hora:'18:00', local:'casa', adversario:'FC Arouca',
-    golos_ra:0, golos_adv:3, espectadores:1842 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J21',
-    data:'2026-02-08', hora:'18:00', local:'fora', adversario:'SC Braga',
-    golos_ra:0, golos_adv:3, estadio:'Estádio Municipal de Braga' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J22',
-    data:'2026-02-16', hora:'20:15', local:'casa', adversario:'Moreirense',
-    golos_ra:1, golos_adv:2, espectadores:2041 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J23',
-    data:'2026-02-22', hora:'20:30', local:'fora', adversario:'FC Porto',
-    golos_ra:0, golos_adv:1, estadio:'Estádio do Dragão' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J24',
-    data:'2026-03-01', hora:'20:30', local:'casa', adversario:'FC Famalicão',
-    golos_ra:0, golos_adv:0, espectadores:2595 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J25',
-    data:'2026-03-09', hora:'20:15', local:'fora', adversario:'CD Tondela',
-    golos_ra:1, golos_adv:0, estadio:'Estádio João Cardoso' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J26',
-    data:'2026-03-15', hora:'18:00', local:'casa', adversario:'Est. Amadora',
-    golos_ra:2, golos_adv:1, espectadores:2885 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J27',
-    data:'2026-03-22', hora:'15:30', local:'fora', adversario:'Estoril Praia',
-    golos_ra:2, golos_adv:1, estadio:'Estádio António Coimbra da Mota' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J28',
-    data:'2026-04-04', hora:'18:00', local:'casa', adversario:'FC Alverca',
-    golos_ra:1, golos_adv:2, espectadores:2284 },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J29',
-    data:'2026-04-11', hora:'18:00', local:'fora', adversario:'Santa Clara',
-    golos_ra:2, golos_adv:0, estadio:'Estádio de São Miguel' },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J30',
-    data:'2026-04-17', hora:'20:45', local:'casa', adversario:'AFS',
-    golos_ra:2, golos_adv:2, espectadores:2158,
-    formacao_ra:'4-2-3-1', formacao_adv:'4-3-3', hasDetail:true },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J31',
-    data:'2026-04-25', hora:'20:30', local:'fora', adversario:'Vitória SC',
-    golos_ra:0, golos_adv:2, estadio:'Estádio D. Afonso Henriques',
-    formacao_ra:'4-2-3-1', formacao_adv:'4-2-3-1', hasDetail:true },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J32',
-    data:'2026-05-03', hora:'20:30', local:'casa', adversario:'Gil Vicente',
-    golos_ra:0, golos_adv:0, espectadores:2801,
-    formacao_ra:'4-4-2', formacao_adv:'4-2-3-1', arbitro:'Fábio Veríssimo', hasDetail:true },
-  { epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'J33',
-    data:'2026-05-11', hora:'20:15', local:'casa', adversario:'Sporting CP',
-    golos_ra:1, golos_adv:4, espectadores:3742,
-    formacao_ra:'4-4-2', formacao_adv:'4-2-3-1', arbitro:'João Gonçalves', hasDetail:true },
-];
-
-const TACA_2526: Omit<PartidaEquipa, 'id' | 'resultado' | 'publicado'>[] = [
-  { epoca:'25/26', competicao:'taca-pt', competicao_label:'Taça de Portugal', jornada:'3ª Elim.',
-    data:'2025-10-19', hora:'15:00', local:'fora', adversario:'Sintrense',
-    golos_ra:2, golos_adv:3, estadio:'Estádio de Sintra' },
-];
-
-export const JOGOS_2526: PartidaEquipa[] = [
-  ...LIGA_2526,
-  ...TACA_2526,
-].map((j, i) => ({
-  ...j,
-  id: `25-26-${String(i + 1).padStart(2, '0')}`,
-  resultado: resultado(j.golos_ra, j.golos_adv),
-  publicado: true,
-})).sort((a, b) => b.data.localeCompare(a.data));
-
-export function calcularStatsEpoca(jogos: PartidaEquipa[]) {
-  const v = jogos.filter(j => j.resultado === 'V').length;
-  const e = jogos.filter(j => j.resultado === 'E').length;
-  const d = jogos.filter(j => j.resultado === 'D').length;
-  const gm = jogos.reduce((s, j) => s + j.golos_ra,  0);
-  const gs = jogos.reduce((s, j) => s + j.golos_adv, 0);
-  const ligaJogos = jogos.filter(j => j.competicao === 'liga');
-  const ligaPts = ligaJogos.reduce((s, j) => s + (j.resultado==='V'?3:j.resultado==='E'?1:0), 0);
-  return { v, e, d, gm, gs, total: jogos.length, ligaPts };
-}
-
-export function filtrarJogos(jogos: PartidaEquipa[], comp: string, local: string): PartidaEquipa[] {
-  return jogos.filter(j => {
-    if (comp !== 'todas' && j.competicao !== comp) return false;
-    if (local !== 'todos' && j.local !== local) return false;
-    return true;
-  });
-}
-
-// ─── Tipos para dados detalhados ──────────────────────────────
-export type EquipaEvento = 'ra' | 'adv';
-
-export interface EstatisticasJogo {
-  posse_bola:[number,number]; remates:[number,number]; remates_baliza:[number,number];
-  remates_poste:[number,number]; grandes_oportunidades:[number,number]; assistencias:[number,number];
-  cruzamentos:[number,number]; cantos:[number,number]; livres:[number,number];
-  ataques:[number,number]; ataques_centro:[number,number]; ataques_esquerda:[number,number];
-  ataques_direita:[number,number]; defesas:[number,number]; penaltis:[number,number];
-  penaltis_defendidos:[number,number]; foras_jogo:[number,number]; faltas:[number,number];
-  amarelos:[number,number]; vermelhos:[number,number];
-}
-
-export type TipoEvento = 'golo'|'golo_penalidade'|'auto_golo'|'cartao_amarelo'|'cartao_vermelho'|'substituicao';
-
-export interface EventoJogo {
-  minuto: number; minuto_extra?: number; tipo: TipoEvento; equipa: EquipaEvento;
-  jogador: string; jogador2?: string; descricao?: string; score_ra?: number; score_adv?: number;
-}
-
-export interface JogadorTitular {
-  numero: number; nome: string; posicao?: string; capitao?: boolean;
-}
-
-export interface FichaData {
-  gameId: string; jornada: string; data: string;
-  adversario: string; local: 'casa'|'fora'; resultado: 'V'|'E'|'D';
-  golos_ra: number; golos_adv: number;
-  titulares: JogadorTitular[]; suplentes: JogadorTitular[]; eventos: EventoJogo[];
-}
-
-export const TOTAL_JOGOS_EPOCA: Record<string, number> = { '25/26': 34 };
-
-// ─── Plantel ──────────────────────────────────────────────────
-export interface JogadorPlantel {
-  nome: string; numero: number; posicao?: string;
-  jogosTitular: number; jogosSuplente: number; jogosTotal: number;
-}
-
-const POS_ORDER: Record<string, number> = {
-  GR:100, DC:80, DD:80, DE:80, MDC:60, MI:60, ME:60, MAD:40, MAM:40, MAE:40, MC:40, AV:20,
+const GAME_DETAILS: Record<string, GameDetail> = {
+  '25-26-33': {
+    stats: STATS_J33_SPORTING, eventos: EVENTOS_J33_SPORTING,
+    titRA: TITULARES_RA_J33,  titAdv: TITULARES_ADV_J33,
+    supRA: SUPLENTES_RA_J33,  supAdv: SUPLENTES_ADV_J33,
+    halfScore1: '1 — 2', halfScore2: '0 — 2',
+  },
+  '25-26-32': {
+    stats: STATS_J32_GIL, eventos: EVENTOS_J32_GIL,
+    titRA: TITULARES_RA_J32,  titAdv: TITULARES_ADV_J32,
+    supRA: SUPLENTES_RA_J32,  supAdv: SUPLENTES_ADV_J32,
+    halfScore1: '0 — 0', halfScore2: '0 — 0',
+  },
+  '25-26-31': {
+    stats: STATS_J31_VITORIA, eventos: EVENTOS_J31_VITORIA,
+    titRA: TITULARES_RA_J31,  titAdv: TITULARES_ADV_J31,
+    supRA: SUPLENTES_RA_J31,  supAdv: SUPLENTES_ADV_J31,
+    halfScore1: '0 — 0', halfScore2: '0 — 2',
+  },
+  '25-26-30': {
+    stats: STATS_J30_AFS, eventos: EVENTOS_J30_AFS,
+    titRA: TITULARES_RA_J30,  titAdv: TITULARES_ADV_J30,
+    supRA: SUPLENTES_RA_J30,  supAdv: SUPLENTES_ADV_J30,
+    halfScore1: '1 — 1', halfScore2: '1 — 1',
+  },
 };
 
-export function getRosterRA(epoca: string): JogadorPlantel[] {
-  const fichas = FICHAS_RA[epoca] ?? [];
-  const map = new Map<string, JogadorPlantel>();
-  function getOrCreate(nome: string, numero: number, posicao?: string) {
-    const k = nome.trim();
-    if (!map.has(k)) map.set(k, { nome:k, numero, posicao, jogosTitular:0, jogosSuplente:0, jogosTotal:0 });
-    return map.get(k)!;
+// ── Icons ─────────────────────────────────────────────────────
+function IcoChevron({ open }: { open: boolean }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <path d={open ? 'M3 9l4-4 4 4' : 'M3 5l4 4 4-4'}/>
+    </svg>
+  );
+}
+
+function IcoSub() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <path d="M11 1.5v12M8.5 4L11 1.5 13.5 4" stroke="#006B3C" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M4 13.5v-12M1.5 11L4 13.5 6.5 11" stroke="#DC2626" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+const COMP_COLORS: Record<string, { bg: string; color: string }> = {
+  'liga':     { bg: '#EBF4FF', color: '#1A5FA8' },
+  'taca-pt':  { bg: '#FFF4E5', color: '#A05C00' },
+  'taca-liga':{ bg: '#F3EFFF', color: '#5B34C0' },
+  'europa':   { bg: '#E5F5FF', color: '#0B6B9E' },
+  'amigavel': { bg: '#F5F5F5', color: '#7B8089' },
+};
+
+// ── PartidaRow ────────────────────────────────────────────────
+function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }: {
+  partida: PartidaEquipa;
+  expanded: boolean;
+  detalhe: 'eventos' | 'stats' | 'formacao';
+  onToggle: () => void;
+  onDetalhe: (d: 'eventos' | 'stats' | 'formacao') => void;
+  cardBg?: string;
+}) {
+  const isHome = partida.local === 'casa';
+  const res    = { V: 'Vitória', E: 'Empate', D: 'Derrota' }[partida.resultado];
+  const compClr = COMP_COLORS[partida.competicao] ?? COMP_COLORS['amigavel'];
+
+  const scoreL = isHome ? partida.golos_ra  : partida.golos_adv;
+  const scoreR = isHome ? partida.golos_adv : partida.golos_ra;
+  const teamL  = isHome ? 'Rio Ave FC'       : partida.adversario;
+  const teamR  = isHome ? partida.adversario : 'Rio Ave FC';
+
+  const fmtDate = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+  const badgeBg = partida.resultado === 'V' ? '#006B3C' : partida.resultado === 'E' ? '#6B7280' : '#DC2626';
+
+  const detail    = GAME_DETAILS[partida.id] ?? null;
+  const hasReal   = !!detail;
+  const eventos   = detail?.eventos   ?? null;
+  const statsJogo = detail?.stats     ?? null;
+  const titRA     = detail?.titRA     ?? null;
+  const titAdv    = detail?.titAdv    ?? null;
+  const supRA     = detail?.supRA     ?? null;
+  const supAdv    = detail?.supAdv    ?? null;
+  const halfScore1 = detail?.halfScore1 ?? '0 — 0';
+  const halfScore2 = detail?.halfScore2 ?? '0 — 0';
+
+  // ── Events helpers ──────────────────────────────────────────
+
+  function isDoubleYellow(ev: EventoJogo): boolean {
+    if (ev.tipo !== 'cartao_vermelho' || !eventos) return false;
+    return eventos.some(e =>
+      e.tipo === 'cartao_amarelo' && e.equipa === ev.equipa &&
+      e.jogador === ev.jogador && e.minuto < ev.minuto
+    );
   }
-  for (const f of fichas) {
-    f.titulares.forEach(p => { const e = getOrCreate(p.nome, p.numero, p.posicao); e.jogosTitular++; e.jogosTotal++; });
-    const entrou = new Set(f.eventos.filter(e => e.tipo==='substituicao' && e.equipa==='ra' && e.jogador2).map(e => e.jogador2!.trim()));
-    f.suplentes.forEach(p => {
-      if (entrou.has(p.nome.trim())) {
-        const e = getOrCreate(p.nome, p.numero, p.posicao);
-        e.jogosSuplente++; e.jogosTotal++;
+
+  function CardIcon({ type, double: dbl }: { type: 'yellow'|'red'; double?: boolean }) {
+    if (dbl) return (
+      <div style={{ display:'flex', alignItems:'center', gap:3 }}>
+        <div style={{ position:'relative', width:20, height:14 }}>
+          <div style={{ position:'absolute', left:0, width:10, height:13, borderRadius:2, background:'#EF9F27', border:'0.5px solid rgba(0,0,0,.15)' }}/>
+          <div style={{ position:'absolute', left:6, width:10, height:13, borderRadius:2, background:'#EF9F27', border:'0.5px solid rgba(0,0,0,.15)' }}/>
+        </div>
+        <span style={{ fontSize:9, color:'#9CA3AF' }}>→</span>
+        <div style={{ width:10, height:13, borderRadius:2, background:'#DC2626', border:'0.5px solid rgba(0,0,0,.15)' }}/>
+      </div>
+    );
+    return <div style={{ width:11, height:14, borderRadius:2, background: type==='yellow'?'#EF9F27':'#DC2626', border:'0.5px solid rgba(0,0,0,.15)', flexShrink:0 }}/>;
+  }
+
+  // Fix 1: showLeft = RA is home ? RA events on left : ADV events on left
+  function EventRow({ ev }: { ev: EventoJogo }) {
+    const isRA     = ev.equipa === 'ra';
+    // When RA plays at HOME → RA on left; when AWAY → RA on right
+    const showLeft = isHome ? isRA : !isRA;
+    const isGoal   = ['golo','golo_penalidade','auto_golo'].includes(ev.tipo);
+    const isSub    = ev.tipo === 'substituicao';
+    const isYellow = ev.tipo === 'cartao_amarelo';
+    const isRed    = ev.tipo === 'cartao_vermelho';
+    const isDbl    = isRed && isDoubleYellow(ev);
+
+    const score = ev.score_ra != null
+      ? <span style={{ fontSize:11, fontWeight:800, padding:'2px 7px', borderRadius:5, background:'rgba(0,0,0,.07)', color:'#111318', letterSpacing:'-.3px' }}>{ev.score_ra}–{ev.score_adv}</span>
+      : null;
+    const min = ev.minuto_extra ? `${ev.minuto}+${ev.minuto_extra}'` : `${ev.minuto}'`;
+
+    const rowBg = isGoal
+      ? (isRA ? 'rgba(0,107,60,.06)' : 'rgba(220,38,38,.05)')
+      : 'transparent';
+
+    const iconEl = isGoal ? <span style={{ fontSize:16 }}>⚽</span>
+      : isSub ? <IcoSub/>
+      : (isYellow || isRed) ? <CardIcon type={isYellow?'yellow':'red'} double={isDbl}/>
+      : null;
+
+    const nameStyle: React.CSSProperties = { fontSize:12, fontWeight:isGoal?700:600, color:'#111318' };
+
+    // Fix 2: for subs, entering player (jogador2) is prominent; exiting (jogador) is secondary
+    const mainName  = isSub && ev.jogador2 ? ev.jogador2 : ev.jogador;
+    const subDetail = isSub && ev.jogador2
+      ? <span style={{ fontSize:10, color:'#9CA3AF', marginLeft:4 }}>↓ {ev.jogador}</span>
+      : isGoal && ev.jogador2
+        ? <span style={{ fontSize:10, color:'#9CA3AF', marginLeft:4 }}>assist. {ev.jogador2}</span>
+        : null;
+
+    if (showLeft) return (
+      <div style={{ display:'grid', gridTemplateColumns:'40px 1fr 40px', alignItems:'center', minHeight:isGoal?36:28, padding:'3px 4px', background:rowBg, borderRadius:6 }}>
+        <div style={{ textAlign:'right', fontSize:11, fontWeight:700, color:'#9CA3AF' }}>{min}</div>
+        <div style={{ padding:'0 8px', display:'flex', alignItems:'center', gap:5 }}>
+          {iconEl}
+          <span style={nameStyle}>{mainName}</span>
+          {subDetail}
+          {score && <div style={{ marginLeft:4 }}>{score}</div>}
+        </div>
+        <div/>
+      </div>
+    );
+
+    return (
+      <div style={{ display:'grid', gridTemplateColumns:'40px 1fr 40px', alignItems:'center', minHeight:isGoal?36:28, padding:'3px 4px', background:rowBg, borderRadius:6 }}>
+        <div/>
+        <div style={{ padding:'0 8px', display:'flex', alignItems:'center', justifyContent:'flex-end', gap:5 }}>
+          {score && <div>{score}</div>}
+          {subDetail && (
+            isSub && ev.jogador2
+              ? <span style={{ fontSize:10, color:'#9CA3AF', marginRight:4 }}>↓ {ev.jogador}</span>
+              : isGoal && ev.jogador2
+                ? <span style={{ fontSize:10, color:'#9CA3AF', marginRight:4 }}>assist. {ev.jogador2}</span>
+                : null
+          )}
+          <span style={nameStyle}>{mainName}</span>
+          {iconEl}
+        </div>
+        <div style={{ textAlign:'left', fontSize:11, fontWeight:700, color:'#9CA3AF' }}>{min}</div>
+      </div>
+    );
+  }
+
+  function HalfDivider({ label, score }: { label: string; score: string }) {
+    return (
+      <div style={{ display:'flex', alignItems:'center', gap:8, margin:'10px 0 6px', padding:'6px 10px', background:'#F0F2F5', borderRadius:8 }}>
+        <span style={{ fontSize:10, fontWeight:700, color:'#6B7280', textTransform:'uppercase', letterSpacing:'.08em', flex:1 }}>{label}</span>
+        <span style={{ fontSize:12, fontWeight:800, color:'#374151', background:'#fff', padding:'2px 10px', borderRadius:6, border:'1px solid #E4E7EC' }}>{score}</span>
+      </div>
+    );
+  }
+
+  function EventsList() {
+    if (!eventos || eventos.length === 0) {
+      return <div style={{ padding:'20px 0', textAlign:'center', fontSize:12, color:'#9CA3AF' }}>Eventos serão adicionados progressivamente.</div>;
+    }
+    const rows: React.ReactNode[] = [];
+    let shownSecond = false;
+    rows.push(<HalfDivider key="first" label="1ª Parte" score={halfScore1}/>);
+    for (const ev of eventos) {
+      const isSecond = ev.minuto > 45 && !ev.minuto_extra;
+      if (isSecond && !shownSecond) {
+        rows.push(<HalfDivider key="second" label="2ª Parte" score={halfScore2}/>);
+        shownSecond = true;
       }
-    });
+      rows.push(<EventRow key={`${ev.minuto}-${ev.tipo}-${ev.jogador}`} ev={ev}/>);
+    }
+    return <>{rows}</>;
   }
-  return Array.from(map.values()).sort((a, b) => {
-    const pa = POS_ORDER[a.posicao??'']??0, pb = POS_ORDER[b.posicao??'']??0;
-    return pb !== pa ? pb - pa : b.jogosTotal - a.jogosTotal;
+
+    const STATS_LABELS: [keyof typeof STATS_J33_SPORTING, string][] = [
+    ['posse_bola','% Posse de bola'],['remates','Remates'],['remates_baliza','Remates à baliza'],
+    ['remates_poste','Remates ao poste'],['grandes_oportunidades','Grandes oportunidades'],
+    ['assistencias','Assistências'],['cruzamentos','Cruzamentos'],['cantos','Cantos'],
+    ['livres','Livres'],['ataques','Ataques'],['ataques_centro','Ataques pelo centro'],
+    ['ataques_esquerda','Ataques pela esquerda'],['ataques_direita','Ataques pela direita'],
+    ['defesas','Defesas'],['penaltis','Penáltis'],['penaltis_defendidos','Penáltis defendidos'],
+    ['foras_jogo','Foras de jogo'],['faltas','Faltas'],['amarelos','Amarelos'],['vermelhos','Vermelhos'],
+  ];
+
+  // Detail tab style
+  const detailTab = (d: 'eventos' | 'stats' | 'formacao'): React.CSSProperties => ({
+    flex: 1, padding: '9px 8px', fontSize: 11, fontWeight: 600, textAlign: 'center' as const,
+    cursor: 'pointer', fontFamily: 'var(--font-sora)', transition: 'all .15s',
+    border: '0.5px solid',
+    borderColor: detalhe === d ? '#006B3C' : '#E4E7EC',
+    background:  detalhe === d ? '#006B3C' : '#fff',
+    color:        detalhe === d ? '#fff' : '#7B8089',
+    borderRadius: 8,
+    margin: '0 3px',
   });
+
+  return (
+    // ── Bordered card per match ───────────────────────────────
+    <div style={{ background: cardBg ?? '#fff', border: '1.5px solid #E4E7EC', borderRadius: 12, overflow: 'hidden', marginBottom: 10, boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
+
+      {/* Header row */}
+      <div style={{ padding: '8px 14px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ padding: '2px 8px', borderRadius: 99, fontSize: 9, fontWeight: 700, background: compClr.bg, color: compClr.color }}>
+          {partida.competicao_label} · {partida.jornada}
+        </span>
+        <span style={{ fontSize: 10, color: '#9CA3AF' }}>{fmtDate(partida.data)} · {partida.hora}</span>
+      </div>
+
+      {/* Teams + score */}
+      <div onClick={onToggle} style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, padding: '10px 14px 6px', cursor: 'pointer', transition: 'background .12s', background: expanded ? '#EEF7F2' : 'transparent' }}
+        onMouseEnter={e => { if (!expanded) (e.currentTarget as HTMLElement).style.background = '#F9FAFB'; }}
+        onMouseLeave={e => { if (!expanded) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: isHome ? '#006B3C' : '#111318' }}>{teamL}</span>
+          <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 3, textTransform: 'uppercase' as const, alignSelf: 'flex-start', background: '#EEF7F2', color: '#006B3C', letterSpacing: '.04em' }}>CASA</span>
+        </div>
+
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 26, fontWeight: 800, color: '#111318', letterSpacing: -2, lineHeight: 1 }}>{scoreL} – {scoreR}</div>
+          <div style={{ marginTop: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99, display: 'inline-block', background: badgeBg, color: '#fff' }}>{res}</span>
+          </div>
+          <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 5 }}>Clica para mais dados</div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end' }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: !isHome ? '#006B3C' : '#111318' }}>{teamR}</span>
+          <span style={{ fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 3, textTransform: 'uppercase' as const, background: '#F1F3F5', color: '#6B7280', letterSpacing: '.04em' }}>FORA</span>
+        </div>
+      </div>
+
+      {/* Footer info */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 14px 10px', fontSize: 10, color: '#9CA3AF', borderBottom: expanded ? '1px solid #E4E7EC' : 'none' }}>
+        <span>{isHome ? 'Estádio dos Arcos' : (partida.estadio ?? 'Estádio do adversário')}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {partida.espectadores && <span style={{ fontWeight: 600, color: '#6B7280' }}>{partida.espectadores.toLocaleString('pt-PT')} esp.</span>}
+          <span style={{ color: '#9CA3AF' }}><IcoChevron open={expanded}/></span>
+        </div>
+      </div>
+
+      {/* Expanded detail */}
+      {expanded && (
+        <div style={{ background: '#F9FAFB' }}>
+          {/* Tab bar */}
+          <div style={{ display: 'flex', padding: '10px 10px 6px', gap: 0 }}>
+            {(['eventos', 'stats', 'formacao'] as const).map(d => (
+              <button key={d} onClick={() => onDetalhe(d)} style={detailTab(d)}>
+                {d === 'eventos' ? '⚡ Eventos' : d === 'stats' ? '📊 Estatísticas' : '👕 Formações'}
+              </button>
+            ))}
+          </div>
+
+          {/* ── Eventos ── */}
+          {detalhe === 'eventos' && (
+            <div style={{ padding: '4px 14px 12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 40px', padding: '6px 0', marginBottom: 4, borderBottom: '1px solid #E4E7EC' }}>
+                <span style={{ textAlign: 'right', fontSize: 9, fontWeight: 700, color: isHome ? '#006B3C' : '#6B7280', textTransform: 'uppercase', letterSpacing: '.07em' }}>{isHome ? 'RA' : partida.adversario.split(' ')[0]}</span>
+                <span/>
+                <span style={{ fontSize: 9, fontWeight: 700, color: isHome ? '#6B7280' : '#006B3C', textTransform: 'uppercase', letterSpacing: '.07em' }}>{isHome ? partida.adversario.split(' ')[0] : 'RA'}</span>
+              </div>
+              <EventsList/>
+            </div>
+          )}
+
+          {/* ── Estatísticas ── */}
+          {detalhe === 'stats' && (
+            <div style={{ padding: '6px 14px 12px' }}>
+              {hasReal && statsJogo ? (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr 44px', gap: 8, paddingBottom: 8, borderBottom: '1.5px solid #E4E7EC', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', color: '#006B3C' }}>RA</span>
+                    <span/>
+                    <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.04em', color: '#DC2626', textAlign: 'right' }}>{partida.adversario.split(' ')[0]}</span>
+                  </div>
+                  {STATS_LABELS.map(([key, label], idx) => {
+                    const [vl, vr] = statsJogo[key];
+                    const tot = Math.max(vl + vr, 1);
+                    const pl  = Math.round(vl / tot * 100);
+                    const rowBg = idx % 2 === 0 ? '#fff' : '#F9FAFB'; // alternating rows
+                    return (
+                      <div key={key} style={{ display: 'grid', gridTemplateColumns: '44px 1fr 44px', gap: 8, alignItems: 'center', padding: '7px 6px', background: rowBg, borderRadius: 6 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#111318' }}>{key === 'posse_bola' ? `${vl}%` : vl}</div>
+                        <div>
+                          <div style={{ fontSize: 10, color: '#9CA3AF', textAlign: 'center', marginBottom: 4 }}>{label}</div>
+                          <div style={{ height: 5, background: '#E4E7EC', borderRadius: 99, overflow: 'hidden', display: 'flex' }}>
+                            <div style={{ background: '#006B3C', height: '100%', width: `${pl}%`, borderRadius: '99px 0 0 99px' }}/>
+                            <div style={{ background: '#DC2626', height: '100%', width: `${100 - pl}%`, marginLeft: 'auto', borderRadius: '0 99px 99px 0' }}/>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#111318', textAlign: 'right' }}>{key === 'posse_bola' ? `${vr}%` : vr}</div>
+                      </div>
+                    );
+                  })}
+                </>
+              ) : (
+                <div style={{ padding: '20px 0', textAlign: 'center', fontSize: 12, color: '#9CA3AF' }}>Estatísticas serão adicionadas progressivamente.</div>
+              )}
+            </div>
+          )}
+
+          {/* ── Formações ── */}
+          {detalhe === 'formacao' && (
+            <div style={{ padding: '6px 14px 12px' }}>
+              {hasReal && titRA && titAdv ? (() => {
+                const evs = eventos ?? [];
+                const ann = (pNome: string, eq: 'ra'|'adv') => {
+                  const e = evs.filter(x => x.equipa === eq);
+                  const y = e.filter(x => x.tipo==='cartao_amarelo' && x.jogador===pNome).length;
+                  const r = e.filter(x => x.tipo==='cartao_vermelho' && x.jogador===pNome).length;
+                  const out = e.find(x => x.tipo==='substituicao' && x.jogador===pNome);
+                  const inn = e.find(x => x.tipo==='substituicao' && x.jogador2===pNome);
+                  return { y, r, dbl: r>0&&y>0, out, inn };
+                };
+                const TRow = ({ p, eq }: { p: { numero:number; nome:string; posicao?:string; capitao?:boolean }; eq:'ra'|'adv' }) => {
+                  const a = ann(p.nome, eq);
+                  return (
+                    <div style={{ display:'flex', alignItems:'center', gap:4, padding:'3px 10px', fontSize:11 }}>
+                      <span style={{ fontSize:10, fontWeight:700, color:'#9CA3AF', minWidth:18, textAlign:'right' }}>{p.numero}</span>
+                      <span style={{ color:'#111318', flex:1 }}>{p.nome}{p.capitao?' (C)':''}</span>
+                      {!a.dbl && a.y>0 && <div style={{ width:9,height:11,borderRadius:1.5,background:'#EF9F27',flexShrink:0 }}/>}
+                      {a.dbl && <><div style={{ position:'relative',width:17,height:11,flexShrink:0 }}><div style={{ position:'absolute',left:0,width:9,height:11,borderRadius:1.5,background:'#EF9F27' }}/><div style={{ position:'absolute',left:5,width:9,height:11,borderRadius:1.5,background:'#EF9F27' }}/></div><div style={{ width:9,height:11,borderRadius:1.5,background:'#DC2626',flexShrink:0 }}/></>}
+                      {a.r>0&&!a.dbl && <div style={{ width:9,height:11,borderRadius:1.5,background:'#DC2626',flexShrink:0 }}/>}
+                      {a.out && <span style={{ fontSize:9,fontWeight:700,color:'#DC2626',background:'rgba(220,38,38,.08)',padding:'1px 4px',borderRadius:4,flexShrink:0 }}>↓{a.out.minuto}{a.out.minuto_extra?`+${a.out.minuto_extra}`:''}&apos;</span>}
+                      {p.posicao && <span style={{ fontSize:8,color:'#9CA3AF',background:'#F0F2F5',padding:'1px 4px',borderRadius:3 }}>{p.posicao}</span>}
+                    </div>
+                  );
+                };
+                const BRow = ({ p, eq }: { p: { numero:number; nome:string }; eq:'ra'|'adv' }) => {
+                  const a = ann(p.nome, eq);
+                  return (
+                    <div style={{ display:'flex', alignItems:'center', gap:4, padding:'3px 10px', fontSize:11, opacity: a.inn?1:.55 }}>
+                      <span style={{ fontSize:10,fontWeight:700,color:'#9CA3AF',minWidth:18,textAlign:'right' }}>{p.numero}</span>
+                      <span style={{ color: a.inn?'#111318':'#6B7280', flex:1 }}>{p.nome}</span>
+                      {a.inn && <span style={{ fontSize:9,fontWeight:700,color:'#006B3C',background:'rgba(0,107,60,.08)',padding:'1px 4px',borderRadius:4,flexShrink:0 }}>↑{a.inn.minuto}{a.inn.minuto_extra?`+${a.inn.minuto_extra}`:''}&apos;</span>}
+                    </div>
+                  );
+                };
+                return (
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    {([
+                      { title:'Rio Ave FC', scheme:partida.formacao_ra, tits:titRA, sups:supRA, color:'#006B3C', eq:'ra' as const },
+                      { title:partida.adversario, scheme:partida.formacao_adv, tits:titAdv, sups:supAdv, color:'#1A5FA8', eq:'adv' as const },
+                    ] as const).map(({ title, scheme, tits, sups, color, eq }) => (
+                      <div key={title} style={{ background:'#fff', border:'1px solid #E4E7EC', borderRadius:10, overflow:'hidden' }}>
+                        <div style={{ padding:'8px 10px', borderBottom:'1px solid #E4E7EC', display:'flex', justifyContent:'space-between', alignItems:'center', background:'#F9FAFB' }}>
+                          <span style={{ fontSize:12, fontWeight:700, color }}>{title}</span>
+                          {scheme && <span style={{ fontSize:10, fontWeight:600, color:'#9CA3AF', background:'#F0F2F5', padding:'2px 7px', borderRadius:99 }}>{scheme}</span>}
+                        </div>
+                        <div style={{ padding:'4px 0' }}>
+                          <div style={{ padding:'3px 10px 2px', fontSize:9, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'.08em' }}>Titulares</div>
+                          {tits?.map(p => <TRow key={p.numero} p={p} eq={eq}/>)}
+                        </div>
+                        {sups && sups.length > 0 && (
+                          <div style={{ borderTop:'1px solid #E4E7EC', padding:'4px 0' }}>
+                            <div style={{ padding:'3px 10px 2px', fontSize:9, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'.08em' }}>Banco</div>
+                            {sups.map(p => <BRow key={p.numero+p.nome} p={p} eq={eq}/>)}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })() : (
+                <div style={{ padding:'20px 0', textAlign:'center', fontSize:12, color:'#9CA3AF' }}>Formações serão adicionadas progressivamente.</div>
+              )}
+              {partida.arbitro && <div style={{ marginTop:8, fontSize:11, color:'#9CA3AF', textAlign:'center' }}>Árbitro: {partida.arbitro}</div>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
-// ─── Stats por jogador ────────────────────────────────────────
-export interface PartidaStat {
-  gameId: string; jornada: string; data: string;
-  adversario: string; local: 'casa'|'fora'; resultado: 'V'|'E'|'D';
-  golos_ra: number; golos_adv: number;
-  foiTitular: boolean; entrou: boolean; minutosJogados: number;
-  golosMarcados: number; assistencias: number;
-  cartoesAmarelos: number; cartoesVermelhos: number; golosSofridosEmCampo: number;
-}
+// ── Main page ─────────────────────────────────────────────────
+export default function JogosPage() {
+  const [comp, setComp]         = useState<string>('todas');
+  const [local, setLocal]       = useState<string>('todos');
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [detalhe, setDetalhe]   = useState<'eventos' | 'stats' | 'formacao'>('eventos');
 
-export interface JogadorStats {
-  nome: string; numero: number; posicao?: string; isGR: boolean; epoca: string;
-  jogosTotal: number; jogosTitular: number; jogosSuplente: number; jogosBanco: number;
-  minutosJogados: number; minutosDisponiveis: number;
-  golosMarcados: number; assistencias: number; contribuicoes: number;
-  cartoesAmarelos: number; cartoesVermelhos: number;
-  golosSofridosEmCampo: number; golsEquipaEmCampo: number; diferencaEmCampo: number;
-  cleanSheets: number;
-  vitorias: number; empates: number; derrotas: number; vitoriasTitular: number;
-  partidas: PartidaStat[];
-}
+  const jogos    = JOGOS_2526;
+  const filtered = useMemo(() => filtrarJogos(jogos, comp, local), [jogos, comp, local]);
 
-function minuto(e: EventoJogo) { return e.minuto + (e.minuto_extra ?? 0); }
+  // ── Stats: always based on filtered selection ─────────────
+  const stats    = useMemo(() => calcularStatsEpoca(filtered), [filtered]);
+  const casaStats = useMemo(() => calcularStatsEpoca(filtrarJogos(jogos, comp, 'casa')), [jogos, comp]);
+  const foraStats = useMemo(() => calcularStatsEpoca(filtrarJogos(jogos, comp, 'fora')), [jogos, comp]);
+  const showBreakdown = local === 'todos';
 
-function calcMinutos(nome: string, titulares: JogadorTitular[], eventos: EventoJogo[]): number {
-  const k = nome.trim();
-  if (titulares.some(p => p.nome.trim()===k)) {
-    const saiu = eventos.find(e => e.tipo==='substituicao' && e.equipa==='ra' && e.jogador.trim()===k);
-    return saiu ? minuto(saiu) : 90;
+  // ── Grouping ──────────────────────────────────────────────
+  const grouped = useMemo(() => {
+    if (comp !== 'todas') return null;
+    const map = new Map<string, { label: string; jogos: PartidaEquipa[] }>();
+    for (const j of filtered) {
+      if (!map.has(j.competicao)) map.set(j.competicao, { label: j.competicao_label, jogos: [] });
+      map.get(j.competicao)!.jogos.push(j);
+    }
+    return map;
+  }, [filtered, comp]);
+
+  const COMP_OPTS = [
+    { value: 'todas',    label: 'Todas' },
+    { value: 'liga',     label: 'Liga' },
+    { value: 'taca-pt',  label: 'Taça Portugal' },
+    { value: 'taca-liga',label: 'Taça Liga' },
+    { value: 'europa',   label: 'Europa' },
+    { value: 'amigavel', label: 'Amigáveis' },
+  ];
+  const LOCAL_OPTS = [
+    { value: 'todos', label: 'Todos' },
+    { value: 'casa',  label: 'Casa' },
+    { value: 'fora',  label: 'Fora' },
+  ];
+
+  // ── Fix #8: hardcoded colors so CSS vars can't break this ──
+  const pill = (active: boolean): React.CSSProperties => ({
+    padding: '5px 13px', borderRadius: 99, fontSize: 11, fontWeight: 600,
+    border: '1.5px solid', cursor: 'pointer', fontFamily: 'var(--font-sora)',
+    borderColor: active ? '#006B3C' : '#D1D5DB',
+    background:  active ? '#006B3C' : '#fff',
+    color:       active ? '#fff'    : '#6B7280',
+    transition: 'all .12s',
+  });
+
+  function MatchGroup({ label, jogos: gJogos }: { label: string; jogos: PartidaEquipa[] }) {
+    const gv = gJogos.filter(j => j.resultado === 'V').length;
+    const ge = gJogos.filter(j => j.resultado === 'E').length;
+    const gd = gJogos.filter(j => j.resultado === 'D').length;
+    return (
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#fff', borderRadius: '12px 12px 0 0', border: '1.5px solid #E4E7EC', borderBottom: 'none' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#111318' }}>{label}</span>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {([[gv,'V','#006B3C'],[ge,'E','#6B7280'],[gd,'D','#DC2626']] as [number,string,string][]).map(([n,l,c]) =>
+              n > 0 && <span key={l} style={{ fontSize: 11, fontWeight: 700, padding: '2px 9px', borderRadius: 99, background: c, color: '#fff' }}>{n}{l}</span>
+            )}
+          </div>
+        </div>
+        {gJogos.map((p, mapIdx) => {
+          const bg = mapIdx % 2 === 0 ? '#fff' : '#F8FBF9';
+          return (
+            <div key={p.id} style={{ borderLeft: '1.5px solid #E4E7EC', borderRight: '1.5px solid #E4E7EC', borderBottom: '1.5px solid #E4E7EC', background: bg, borderRadius: p === gJogos[gJogos.length-1] ? '0 0 12px 12px' : 0, overflow: 'hidden' }}>
+              <PartidaRow partida={p} cardBg={bg}
+                expanded={expanded === p.id} detalhe={detalhe}
+                onToggle={() => setExpanded(x => x === p.id ? null : p.id)}
+                onDetalhe={setDetalhe}
+              />
+            </div>
+          );
+        })}
+      </div>
+    );
   }
-  const entrou = eventos.find(e => e.tipo==='substituicao' && e.equipa==='ra' && e.jogador2?.trim()===k);
-  return entrou ? Math.max(0, 90 - minuto(entrou)) : 0;
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#F0F2F5' }}>
+      {/* Header */}
+      <header style={{ background: '#fff', borderBottom: '0.5px solid #E4E7EC', position: 'sticky', top: 0, zIndex: 50 }}>
+        <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 16px', height: 52, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 5, textDecoration: 'none', color: '#6B7280', fontSize: 12, fontWeight: 600 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M10 3L5 8l5 5"/></svg>
+            Início
+          </Link>
+          <span style={{ color: '#E4E7EC' }}>·</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#111318' }}>Jogos da Equipa</div>
+            <div style={{ fontSize: 9, fontWeight: 600, color: '#B0B5BE', letterSpacing: '.08em', textTransform: 'uppercase' }}>Rio Ave FC · 2025/26</div>
+          </div>
+        </div>
+      </header>
+
+      <main style={{ maxWidth: 760, margin: '0 auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+        {/* ── Season banner (updates with filters) ── */}
+        <div style={{ background: 'linear-gradient(135deg, #003D20, #005A30)', borderRadius: 14, padding: 20, color: '#fff' }}>
+          <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,.4)', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 10 }}>
+            Época 2025/26 · {comp === 'todas' ? 'Todas as competições' : COMP_OPTS.find(o=>o.value===comp)?.label} · {local === 'todos' ? 'Casa + Fora' : local === 'casa' ? 'Casa' : 'Fora'}
+          </div>
+
+          {/* Main KPIs */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: showBreakdown ? 12 : 0 }}>
+            {[
+              { l: 'Jogos',    v: stats.total,   s: `${stats.v}V · ${stats.e}E · ${stats.d}D` },
+              { l: 'Vitórias', v: stats.v,       s: `${stats.total > 0 ? Math.round(stats.v/stats.total*100) : 0}%` },
+              { l: 'Golos',    v: stats.gm,      s: `sofridos: ${stats.gs}` },
+              { l: 'Pts Liga', v: stats.ligaPts, s: 'pontos' },
+            ].map(s => (
+              <div key={s.l} style={{ background: 'rgba(0,0,0,.2)', borderRadius: 9, padding: '9px 8px', textAlign: 'center' }}>
+                <div style={{ fontSize: 8, color: 'rgba(255,255,255,.4)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 2 }}>{s.l}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-.5px', lineHeight: 1 }}>{s.v}</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,.35)', marginTop: 1 }}>{s.s}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Breakdown Casa/Fora when "Todos" selected ── */}
+          {showBreakdown && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {[{ label: '🏠 Casa', s: casaStats }, { label: '✈️ Fora', s: foraStats }].map(({ label, s }) => (
+                <div key={label} style={{ background: 'rgba(255,255,255,.08)', borderRadius: 9, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,.6)', marginBottom: 6 }}>{label}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
+                    {[
+                      { l: 'Jogos', v: s.total },
+                      { l: 'V-E-D',  v: `${s.v}-${s.e}-${s.d}` },
+                      { l: 'Golos', v: s.gm },
+                      { l: 'Sofrid', v: s.gs },
+                    ].map(k => (
+                      <div key={k.l} style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', lineHeight: 1 }}>{k.v}</div>
+                        <div style={{ fontSize: 8, color: 'rgba(255,255,255,.35)', marginTop: 1 }}>{k.l}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Filters ── */}
+        <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 14, padding: '14px 16px' }}>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>Competição</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {COMP_OPTS.map(o => <button key={o.value} onClick={() => setComp(o.value)} style={pill(comp === o.value)}>{o.label}</button>)}
+            </div>
+          </div>
+          <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 8 }}>Local</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {LOCAL_OPTS.map(o => <button key={o.value} onClick={() => setLocal(o.value)} style={pill(local === o.value)}>{o.label}</button>)}
+              </div>
+            </div>
+            <span style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500 }}>{filtered.length} jogo{filtered.length !== 1 ? 's' : ''}</span>
+          </div>
+        </div>
+
+        {/* ── Match list ── */}
+        {filtered.length === 0 ? (
+          <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 14, padding: '40px 20px', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>
+            Nenhum jogo encontrado com estes filtros.
+          </div>
+        ) : grouped ? (
+          Array.from(grouped.entries()).map(([compKey, { label, jogos: gJogos }]) => (
+            <MatchGroup key={compKey} label={label} jogos={gJogos}/>
+          ))
+        ) : (
+          <>
+            {filtered.map((p, idx) => (
+              <PartidaRow key={p.id} partida={p} cardBg={idx%2===0?'#fff':'#F8FBF9'}
+                expanded={expanded === p.id} detalhe={detalhe}
+                onToggle={() => setExpanded(x => x === p.id ? null : p.id)}
+                onDetalhe={setDetalhe}
+              />
+            ))}
+          </>
+        )}
+
+        <div style={{ textAlign: 'center', padding: '4px 0 16px', fontSize: 11, color: '#B0B5BE' }}>
+          Dados coletados por Daniel Silva · Sócio 3883
+        </div>
+      </main>
+    </div>
+  );
 }
-
-function estavaCampo(nome: string, min: number, titulares: JogadorTitular[], eventos: EventoJogo[]): boolean {
-  const k = nome.trim();
-  if (titulares.some(p => p.nome.trim()===k)) {
-    const saiu = eventos.find(e => e.tipo==='substituicao' && e.equipa==='ra' && e.jogador.trim()===k);
-    return !saiu || minuto(saiu) > min;
-  }
-  const entrou = eventos.find(e => e.tipo==='substituicao' && e.equipa==='ra' && e.jogador2?.trim()===k);
-  return entrou ? minuto(entrou) <= min : false;
-}
-
-export function getPlayerStats(nome: string, epoca: string): JogadorStats | null {
-  const fichas = FICHAS_RA[epoca] ?? [];
-  const k = nome.trim();
-  let numero = 0, posicao: string|undefined;
-  for (const f of fichas) {
-    const p = [...f.titulares, ...f.suplentes].find(p => p.nome.trim()===k);
-    if (p) { numero = p.numero; posicao = p.posicao; break; }
-  }
-  if (!numero && !posicao) return null;
-  const isGR = posicao === 'GR';
-  const partidas: PartidaStat[] = [];
-  for (const f of fichas) {
-    const mins = calcMinutos(k, f.titulares, f.eventos);
-    if (mins === 0) continue;
-    const foiTitular = f.titulares.some(p => p.nome.trim()===k);
-    const goalTypes = ['golo','golo_penalidade'];
-    const golosMarcados = f.eventos.filter(e => goalTypes.includes(e.tipo) && e.equipa==='ra' && e.jogador.trim()===k).length;
-    const assistencias  = f.eventos.filter(e => goalTypes.includes(e.tipo) && e.equipa==='ra' && e.jogador2?.trim()===k).length;
-    const cartoesAmarelos  = f.eventos.filter(e => e.tipo==='cartao_amarelo'  && e.equipa==='ra' && e.jogador.trim()===k).length;
-    const cartoesVermelhos = f.eventos.filter(e => e.tipo==='cartao_vermelho' && e.equipa==='ra' && e.jogador.trim()===k).length;
-    const goalsConceded = f.eventos.filter(e => {
-      const isAdv = (e.tipo==='golo'||e.tipo==='golo_penalidade') && e.equipa==='adv';
-      const isOwn = e.tipo==='auto_golo' && e.equipa==='ra';
-      return (isAdv||isOwn) && estavaCampo(k, minuto(e), f.titulares, f.eventos);
-    }).length;
-    partidas.push({ gameId:f.gameId, jornada:f.jornada, data:f.data, adversario:f.adversario,
-      local:f.local, resultado:f.resultado, golos_ra:f.golos_ra, golos_adv:f.golos_adv,
-      foiTitular, entrou:!foiTitular, minutosJogados:mins,
-      golosMarcados, assistencias, cartoesAmarelos, cartoesVermelhos, golosSofridosEmCampo:goalsConceded });
-  }
-  const jogosTotal = partidas.length;
-  const jogosTitular = partidas.filter(p => p.foiTitular).length;
-  const jogosSuplente = partidas.filter(p => p.entrou).length;
-  const minutosJogados = partidas.reduce((s,p) => s+p.minutosJogados, 0);
-  const vitorias = partidas.filter(p => p.resultado==='V').length;
-  const empates  = partidas.filter(p => p.resultado==='E').length;
-  const derrotas = partidas.filter(p => p.resultado==='D').length;
-  const vitoriasTitular = partidas.filter(p => p.foiTitular && p.resultado==='V').length;
-  const golosMarcados        = partidas.reduce((s,p) => s+p.golosMarcados, 0);
-  const assistencias         = partidas.reduce((s,p) => s+p.assistencias, 0);
-  const cartoesAmarelos      = partidas.reduce((s,p) => s+p.cartoesAmarelos, 0);
-  const cartoesVermelhos     = partidas.reduce((s,p) => s+p.cartoesVermelhos, 0);
-  const golosSofridosEmCampo = partidas.reduce((s,p) => s+p.golosSofridosEmCampo, 0);
-  const jogosBancoRaw = fichas.filter(f => !f.titulares.some(p=>p.nome.trim()===k) && f.suplentes.some(p=>p.nome.trim()===k)).length - jogosSuplente;
-  const jogosBanco = Math.max(0, jogosBancoRaw);
-  const minutosDisponiveis = (jogosTotal + jogosBanco) * 90;
-  const golsEquipaEmCampo = fichas.reduce((sum, f) => {
-    if (calcMinutos(k, f.titulares, f.eventos)===0) return sum;
-    return sum + f.eventos.filter(e => ['golo','golo_penalidade'].includes(e.tipo) && e.equipa==='ra' && estavaCampo(k, minuto(e), f.titulares, f.eventos)).length;
-  }, 0);
-  const cleanSheets = partidas.filter(p => p.golosSofridosEmCampo===0).length;
-  return {
-    nome:k, numero, posicao, isGR, epoca,
-    jogosTotal, jogosTitular, jogosSuplente, jogosBanco,
-    minutosJogados, minutosDisponiveis,
-    golosMarcados, assistencias, contribuicoes:golosMarcados+assistencias,
-    cartoesAmarelos, cartoesVermelhos,
-    golosSofridosEmCampo, golsEquipaEmCampo, diferencaEmCampo:golsEquipaEmCampo-golosSofridosEmCampo,
-    cleanSheets, vitorias, empates, derrotas, vitoriasTitular, partidas,
-  };
-}
-
-// ─── Dados detalhados · J33 · Rio Ave 1-4 Sporting CP ────────
-export const STATS_J33_SPORTING: EstatisticasJogo = {
-  posse_bola:[41,59], remates:[9,15], remates_baliza:[2,5], remates_poste:[0,0],
-  grandes_oportunidades:[5,5], assistencias:[1,1], cruzamentos:[10,18], cantos:[5,6],
-  livres:[2,2], ataques:[25,29], ataques_centro:[3,1], ataques_esquerda:[9,14],
-  ataques_direita:[13,14], defesas:[2,1], penaltis:[0,1], penaltis_defendidos:[0,0],
-  foras_jogo:[0,0], faltas:[9,7], amarelos:[3,2], vermelhos:[0,0],
-};
-export const EVENTOS_J33_SPORTING: EventoJogo[] = [
-  { minuto:12, tipo:'golo',           equipa:'ra',  jogador:'Bezerra',     jogador2:'Monteiro T.', score_ra:1, score_adv:0 },
-  { minuto:13, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Bezerra' },
-  { minuto:32, tipo:'cartao_amarelo', equipa:'adv', jogador:'O. Diamande' },
-  { minuto:32, tipo:'cartao_amarelo', equipa:'adv', jogador:'Suárez L.' },
-  { minuto:33, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Petrasso F.' },
-  { minuto:35, tipo:'golo_penalidade',equipa:'adv', jogador:'Suárez L.',   score_ra:1, score_adv:1 },
-  { minuto:42, tipo:'auto_golo',      equipa:'ra',  jogador:'Gustavo M.',  score_ra:1, score_adv:2 },
-  { minuto:52, tipo:'cartao_vermelho',equipa:'ra',  jogador:'Petrasso F.' },
-  { minuto:55, tipo:'substituicao',   equipa:'ra',  jogador:'Tamble',      jogador2:'Brabec J.' },
-  { minuto:63, tipo:'substituicao',   equipa:'ra',  jogador:'Vrousai',     jogador2:'Tomé J.' },
-  { minuto:65, tipo:'substituicao',   equipa:'adv', jogador:'L. Guilherme',jogador2:'Geny Catamo' },
-  { minuto:65, tipo:'substituicao',   equipa:'adv', jogador:'Morita H.',   jogador2:'Quenda G.' },
-  { minuto:66, tipo:'golo',           equipa:'adv', jogador:'Trincão',     jogador2:'Diomande O.', score_ra:1, score_adv:3 },
-  { minuto:72, tipo:'substituicao',   equipa:'ra',  jogador:'Nelson',      jogador2:'Richards O.' },
-  { minuto:72, tipo:'substituicao',   equipa:'ra',  jogador:'Bezerra',     jogador2:'Papakanellos A.' },
-  { minuto:72, tipo:'substituicao',   equipa:'ra',  jogador:'Spikic',      jogador2:'Ntoi A.' },
-  { minuto:82, tipo:'substituicao',   equipa:'adv', jogador:'Pedro G.',    jogador2:'E. Felicíssimo' },
-  { minuto:82, tipo:'substituicao',   equipa:'adv', jogador:'D. Bragança', jogador2:'Kochorashvili G.' },
-  { minuto:83, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Ryan G.' },
-  { minuto:85, tipo:'cartao_vermelho',equipa:'ra',  jogador:'Ryan G.' },
-  { minuto:90, tipo:'golo',           equipa:'adv', jogador:'Quenda G.',   jogador2:'Araújo M.', score_ra:1, score_adv:4 },
-  { minuto:90, minuto_extra:1, tipo:'substituicao', equipa:'adv', jogador:'Suárez L.', jogador2:'Nel R.' },
-];
-export const TITULARES_RA_J33: JogadorTitular[] = [
-  { numero:1, nome:'Miszta', posicao:'GR' },
-  { numero:17, nome:'Vrousai', posicao:'DC', capitao:true },
-  { numero:21, nome:'Petrasso F.', posicao:'DC' },
-  { numero:44, nome:'Nikitscher', posicao:'DC' },
-  { numero:18, nome:'Spikic', posicao:'DC' },
-  { numero:6, nome:'Nelson', posicao:'ME' },
-  { numero:39, nome:'Gustavo M.', posicao:'MI' },
-  { numero:8, nome:'Ryan G.', posicao:'MI' },
-  { numero:11, nome:'Blesa', posicao:'ME' },
-  { numero:7, nome:'Bezerra', posicao:'AV' },
-  { numero:9, nome:'Tamble', posicao:'AV' },
-];
-export const TITULARES_ADV_J33: JogadorTitular[] = [
-  { numero:1, nome:'Rui Silva', posicao:'GR' },
-  { numero:72, nome:'E. Quaresma', posicao:'DD' },
-  { numero:5, nome:'G. Inácio', posicao:'DC', capitao:true },
-  { numero:23, nome:'D. Bragança', posicao:'DC' },
-  { numero:20, nome:'M. Araújo', posicao:'DE' },
-  { numero:8, nome:'Pedro G.', posicao:'MDC' },
-  { numero:3, nome:'Morita H.', posicao:'MDC' },
-  { numero:17, nome:'Trincão', posicao:'MD' },
-  { numero:26, nome:'O. Diamande', posicao:'MAM' },
-  { numero:31, nome:'L. Guilherme', posicao:'ME' },
-  { numero:87, nome:'Suárez L.', posicao:'AV' },
-];
-export const SUPLENTES_RA_J33: JogadorTitular[] = [
-  { numero:30, nome:'Ennio Gouw' }, { numero:5, nome:'Ntoi A.' },
-  { numero:19, nome:'Papakanellos A.' }, { numero:14, nome:'Tomé J.' },
-  { numero:32, nome:'Brabec J.' }, { numero:54, nome:'Liavas G.' },
-  { numero:63, nome:'Lomboto' }, { numero:77, nome:'Richards O.' }, { numero:80, nome:'Olinho' },
-];
-export const SUPLENTES_ADV_J33: JogadorTitular[] = [
-  { numero:71, nome:'João Virginia' }, { numero:7, nome:'Geovany Quenda' },
-  { numero:77, nome:'Geny Catamo' }, { numero:18, nome:'Giorgi Kochorashvili' },
-  { numero:14, nome:'Souleymane Faye' }, { numero:70, nome:'Salvador Blopa' },
-  { numero:73, nome:'Eduardo Felicíssimo' }, { numero:90, nome:'Rafael Nel' },
-  { numero:91, nome:'Ricardo Mangas' },
-];
-
-// ─── J32 · Rio Ave 0-0 Gil Vicente ───────────────────────────
-export const STATS_J32_GIL: EstatisticasJogo = {
-  posse_bola:[50,50], remates:[15,16], remates_baliza:[2,9], remates_poste:[0,0],
-  grandes_oportunidades:[3,6], assistencias:[0,0], cruzamentos:[18,25], cantos:[9,7],
-  livres:[3,1], ataques:[30,32], ataques_centro:[3,2], ataques_esquerda:[18,17],
-  ataques_direita:[11,13], defesas:[3,3], penaltis:[0,0], penaltis_defendidos:[0,0],
-  foras_jogo:[3,1], faltas:[9,13], amarelos:[1,2], vermelhos:[0,0],
-};
-export const EVENTOS_J32_GIL: EventoJogo[] = [
-  { minuto:46, tipo:'substituicao',   equipa:'adv', jogador:'Martín',    jogador2:'Agustín Morales' },
-  { minuto:58, tipo:'substituicao',   equipa:'adv', jogador:'Héctor',    jogador2:'G. Varela' },
-  { minuto:63, tipo:'substituicao',   equipa:'ra',  jogador:'Spikic',    jogador2:'Olinho' },
-  { minuto:63, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Ryan G.' },
-  { minuto:69, tipo:'cartao_amarelo', equipa:'adv', jogador:'Zé Carlos' },
-  { minuto:79, tipo:'substituicao',   equipa:'adv', jogador:'Zé Carlos', jogador2:'Bermejo' },
-  { minuto:83, tipo:'substituicao',   equipa:'ra',  jogador:'Nelson',    jogador2:'Richards O.' },
-  { minuto:83, tipo:'substituicao',   equipa:'ra',  jogador:'Vrousai',   jogador2:'Tomé J.' },
-  { minuto:87, tipo:'substituicao',   equipa:'ra',  jogador:'Tamble',    jogador2:'Papakanellos A.' },
-  { minuto:87, tipo:'substituicao',   equipa:'adv', jogador:'Murilo',    jogador2:'Carlos Eduardo' },
-  { minuto:87, tipo:'substituicao',   equipa:'ra',  jogador:'Ryan G.',   jogador2:'Liavas G.' },
-  { minuto:88, tipo:'cartao_amarelo', equipa:'adv', jogador:'Elimbi' },
-];
-export const TITULARES_RA_J32: JogadorTitular[] = [
-  { numero:1, nome:'Miszta', posicao:'GR' }, { numero:17, nome:'Vrousai', posicao:'DC', capitao:true },
-  { numero:23, nome:'Petrasso', posicao:'DC' }, { numero:44, nome:'Nikitscher', posicao:'DC' },
-  { numero:18, nome:'Spikic', posicao:'DC' }, { numero:6, nome:'Nelson', posicao:'ME' },
-  { numero:39, nome:'Gustavo M.', posicao:'MI' }, { numero:8, nome:'Ryan G.', posicao:'MI' },
-  { numero:11, nome:'Blesa', posicao:'ME' }, { numero:7, nome:'Bezerra', posicao:'AV' },
-  { numero:9, nome:'Tamble', posicao:'AV' },
-];
-export const TITULARES_ADV_J32: JogadorTitular[] = [
-  { numero:99, nome:'D. Figueira', posicao:'GR' }, { numero:2, nome:'Zé Carlos', posicao:'DD', capitao:true },
-  { numero:39, nome:'Buatu M.', posicao:'DC' }, { numero:32, nome:'Martín', posicao:'DC' },
-  { numero:3, nome:'G. Konan', posicao:'DE' }, { numero:10, nome:'L. Esteves', posicao:'MDC' },
-  { numero:23, nome:'Héctor', posicao:'MDC' }, { numero:95, nome:'Santi G.', posicao:'MAD' },
-  { numero:77, nome:'Murilo', posicao:'MAE' }, { numero:6, nome:'Zé Carlos', posicao:'MAM' },
-  { numero:4, nome:'Elimbi', posicao:'AV' },
-];
-export const SUPLENTES_RA_J32: JogadorTitular[] = [
-  { numero:30, nome:'Ennio Gouw' }, { numero:25, nome:'Rafael' },
-  { numero:19, nome:'Papakanellos A.' }, { numero:14, nome:'Tomé J.' },
-  { numero:32, nome:'Brabec J.' }, { numero:54, nome:'Liavas G.' },
-  { numero:53, nome:'Lomboto' }, { numero:77, nome:'Richards O.' }, { numero:80, nome:'Olinho' },
-];
-export const SUPLENTES_ADV_J32: JogadorTitular[] = [
-  { numero:30, nome:'Lucas Azevedo' }, { numero:5, nome:'Facundo Cáseres' },
-  { numero:11, nome:'Joelson Fernandes' }, { numero:17, nome:'Sergio Lillo' },
-  { numero:20, nome:'Hevertton Santos' }, { numero:27, nome:'Agustín Morales' },
-  { numero:29, nome:'Carlos Eduardo' }, { numero:48, nome:'Antonio Espigares' },
-  { numero:39, nome:'Gustavo Varela' },
-];
-
-// ─── J31 · Vitória SC 2-0 Rio Ave (fora) ─────────────────────
-export const STATS_J31_VITORIA: EstatisticasJogo = {
-  posse_bola:[46,54], remates:[5,11], remates_baliza:[4,3], remates_poste:[0,0],
-  grandes_oportunidades:[3,5], assistencias:[0,1], cruzamentos:[9,20], cantos:[5,3],
-  livres:[1,0], ataques:[26,32], ataques_centro:[3,6], ataques_esquerda:[11,12],
-  ataques_direita:[12,14], defesas:[1,4], penaltis:[0,0], penaltis_defendidos:[0,0],
-  foras_jogo:[2,1], faltas:[13,7], amarelos:[4,4], vermelhos:[0,0],
-};
-export const EVENTOS_J31_VITORIA: EventoJogo[] = [
-  { minuto:28, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Ntoi A.' },
-  { minuto:57, tipo:'cartao_amarelo', equipa:'adv', jogador:'G.Silva' },
-  { minuto:58, tipo:'substituicao',   equipa:'adv', jogador:'M.Maga',    jogador2:'Strata T.' },
-  { minuto:58, tipo:'substituicao',   equipa:'adv', jogador:'Camara Jr', jogador2:'M.Nogueira' },
-  { minuto:58, tipo:'substituicao',   equipa:'adv', jogador:'D.Sousa',   jogador2:'G.Nogueira' },
-  { minuto:59, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Gustavo M.' },
-  { minuto:60, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Nikitscher' },
-  { minuto:62, tipo:'cartao_amarelo', equipa:'adv', jogador:'T.Balieiro' },
-  { minuto:68, tipo:'substituicao',   equipa:'adv', jogador:'Saviolo',   jogador2:'Arcanjo T.' },
-  { minuto:69, tipo:'substituicao',   equipa:'ra',  jogador:'Olinho',    jogador2:'Ryan G.' },
-  { minuto:69, tipo:'substituicao',   equipa:'ra',  jogador:'Spikic',    jogador2:'Tomé J.' },
-  { minuto:72, tipo:'golo',           equipa:'adv', jogador:'Samu',      score_ra:0, score_adv:1 },
-  { minuto:77, tipo:'substituicao',   equipa:'ra',  jogador:'Nelson',    jogador2:'Richards O.' },
-  { minuto:77, tipo:'substituicao',   equipa:'ra',  jogador:'Nikitscher',jogador2:'Tamble' },
-  { minuto:79, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Bezerra' },
-  { minuto:80, tipo:'cartao_amarelo', equipa:'adv', jogador:'Samu' },
-  { minuto:81, tipo:'substituicao',   equipa:'adv', jogador:'G.Silva',   jogador2:'N.Oliveira' },
-  { minuto:86, tipo:'substituicao',   equipa:'ra',  jogador:'Bezerra',   jogador2:'Lomboto' },
-  { minuto:90, minuto_extra:2, tipo:'cartao_amarelo', equipa:'adv', jogador:'Strata T.' },
-  { minuto:90, minuto_extra:5, tipo:'golo', equipa:'adv', jogador:'Strata T.', score_ra:0, score_adv:2 },
-];
-export const TITULARES_RA_J31: JogadorTitular[] = [
-  { numero:1, nome:'Miszta', posicao:'GR' }, { numero:17, nome:'Vrousai', posicao:'DD', capitao:true },
-  { numero:32, nome:'Brabec J.', posicao:'DC' }, { numero:44, nome:'Nikitscher', posicao:'DC' },
-  { numero:18, nome:'Spikic', posicao:'DE' }, { numero:39, nome:'Gustavo M.', posicao:'MDC' },
-  { numero:5, nome:'Ntoi A.', posicao:'MDC' }, { numero:6, nome:'Nelson', posicao:'MAD' },
-  { numero:11, nome:'Blesa', posicao:'MAM' }, { numero:80, nome:'Olinho', posicao:'MAE' },
-  { numero:7, nome:'Bezerra', posicao:'AV' },
-];
-export const TITULARES_ADV_J31: JogadorTitular[] = [
-  { numero:2, nome:'M.Maga', posicao:'GR' }, { numero:16, nome:'Beni', posicao:'DD' },
-  { numero:19, nome:'Camara Jr', posicao:'DC' }, { numero:27, nome:'Charles', posicao:'DC' },
-  { numero:4, nome:'O.Rivas', posicao:'DE' }, { numero:11, nome:'G.Silva', posicao:'MDC' },
-  { numero:28, nome:'T.Balieiro', posicao:'MDC' }, { numero:48, nome:'Saviolo', posicao:'MAD' },
-  { numero:20, nome:'Samu', posicao:'MAM', capitao:true }, { numero:23, nome:'D.Sousa', posicao:'MAE' },
-  { numero:13, nome:'J.Mendes', posicao:'AV' },
-];
-export const SUPLENTES_RA_J31: JogadorTitular[] = [
-  { numero:99, nome:'Ennio Gouw' }, { numero:8, nome:'Ryan G.' }, { numero:9, nome:'Tamble' },
-  { numero:20, nome:'Tomé J.' }, { numero:23, nome:'Petrasso' }, { numero:25, nome:'Rafael' },
-  { numero:54, nome:'Liavas G.' }, { numero:63, nome:'Lomboto' }, { numero:77, nome:'Richards O.' },
-];
-export const SUPLENTES_ADV_J31: JogadorTitular[] = [
-  { numero:25, nome:'Juan Reyes' }, { numero:6, nome:'Matija Mitrovic' },
-  { numero:7, nome:'Nélson Oliveira' }, { numero:17, nome:'Lebedenko' },
-  { numero:10, nome:'Telmo Arcanjo' }, { numero:26, nome:'Rodrigo Abascal' },
-  { numero:30, nome:'Gonçalo Nogueira' }, { numero:66, nome:'Tony Strata' },
-  { numero:88, nome:'João Nogueira' },
-];
-
-// ─── J30 · Rio Ave 2-2 AFS (casa) ────────────────────────────
-export const STATS_J30_AFS: EstatisticasJogo = {
-  posse_bola:[64,36], remates:[21,12], remates_baliza:[8,7], remates_poste:[0,0],
-  grandes_oportunidades:[11,6], assistencias:[0,2], cruzamentos:[21,11], cantos:[4,9],
-  livres:[2,0], ataques:[43,24], ataques_centro:[4,3], ataques_esquerda:[20,14],
-  ataques_direita:[19,7], defesas:[5,6], penaltis:[0,0], penaltis_defendidos:[0,0],
-  foras_jogo:[3,2], faltas:[9,12], amarelos:[1,2], vermelhos:[0,0],
-};
-export const EVENTOS_J30_AFS: EventoJogo[] = [
-  { minuto:18, tipo:'golo',           equipa:'ra',  jogador:'Olinho',    score_ra:1, score_adv:0 },
-  { minuto:32, tipo:'golo',           equipa:'adv', jogador:'Tomané',    score_ra:1, score_adv:1 },
-  { minuto:64, tipo:'substituicao',   equipa:'ra',  jogador:'Ryan G.',   jogador2:'Tamble' },
-  { minuto:64, tipo:'substituicao',   equipa:'adv', jogador:'Rivas',     jogador2:'Kiki Afonso' },
-  { minuto:64, tipo:'substituicao',   equipa:'adv', jogador:'O.Perea',   jogador2:'Guilherme S.' },
-  { minuto:66, tipo:'cartao_amarelo', equipa:'ra',  jogador:'Ntoi A.' },
-  { minuto:68, tipo:'golo',           equipa:'adv', jogador:'Pedro Lima', score_ra:1, score_adv:2 },
-  { minuto:74, tipo:'substituicao',   equipa:'ra',  jogador:'Spikic',    jogador2:'Papakanellos A.' },
-  { minuto:79, tipo:'golo',           equipa:'ra',  jogador:'Ntoi A.',   score_ra:2, score_adv:2 },
-  { minuto:86, tipo:'substituicao',   equipa:'ra',  jogador:'Bezerra',   jogador2:'Lomboto' },
-  { minuto:86, tipo:'substituicao',   equipa:'ra',  jogador:'Olinho',    jogador2:'Nikitscher' },
-  { minuto:86, tipo:'substituicao',   equipa:'adv', jogador:'Gustavo',   jogador2:'Algobia' },
-  { minuto:90, tipo:'cartao_amarelo', equipa:'adv', jogador:'Tomané' },
-  { minuto:90, minuto_extra:1, tipo:'substituicao', equipa:'adv', jogador:'Tunde',  jogador2:'Diego Duarte' },
-  { minuto:90, minuto_extra:1, tipo:'substituicao', equipa:'adv', jogador:'Tomané', jogador2:'Nenê' },
-  { minuto:90, minuto_extra:3, tipo:'cartao_amarelo', equipa:'adv', jogador:'Paulo Vítor' },
-];
-export const TITULARES_RA_J30: JogadorTitular[] = [
-  { numero:1, nome:'Miszta', posicao:'GR' }, { numero:17, nome:'Vrousai', posicao:'DD', capitao:true },
-  { numero:18, nome:'Spikic', posicao:'DC' }, { numero:32, nome:'Brabec J.', posicao:'DC' },
-  { numero:5, nome:'Ntoi A.', posicao:'DE' }, { numero:39, nome:'Gustavo M.', posicao:'MDC' },
-  { numero:80, nome:'Olinho', posicao:'MDC' }, { numero:6, nome:'Nelson', posicao:'MAD' },
-  { numero:8, nome:'Ryan G.', posicao:'MAM' }, { numero:11, nome:'Blesa', posicao:'MAE' },
-  { numero:7, nome:'Bezerra', posicao:'AV' },
-];
-export const TITULARES_ADV_J30: JogadorTitular[] = [
-  { numero:1, nome:'Adriel', posicao:'GR' }, { numero:12, nome:'Rivas', posicao:'DD' },
-  { numero:14, nome:'O.Perea', posicao:'DC' }, { numero:42, nome:'Devenish', posicao:'DC', capitao:true },
-  { numero:3, nome:'Paulo Vítor', posicao:'DE' }, { numero:70, nome:'Roni', posicao:'MC' },
-  { numero:8, nome:'Pedro Lima', posicao:'MC' }, { numero:7, nome:'Tomané', posicao:'MC' },
-  { numero:97, nome:'M.Pivô', posicao:'AD' }, { numero:23, nome:'Gustavo', posicao:'AV' },
-  { numero:11, nome:'Tunde', posicao:'AE' },
-];
-export const SUPLENTES_RA_J30: JogadorTitular[] = [
-  { numero:99, nome:'Ennio Gouw' }, { numero:9, nome:'Tamble' },
-  { numero:19, nome:'Papakanellos A.' }, { numero:20, nome:'Tomé J.' },
-  { numero:23, nome:'Petrasso' }, { numero:25, nome:'Rafael' },
-  { numero:44, nome:'Nikitscher' }, { numero:54, nome:'Liavas G.' }, { numero:77, nome:'Richards O.' },
-];
-export const SUPLENTES_ADV_J30: JogadorTitular[] = [
-  { numero:88, nome:'Pedro Trigueira' }, { numero:18, nome:'Nenê' },
-  { numero:19, nome:'Tiago Hernandes' }, { numero:20, nome:'Diego Duarte' },
-  { numero:21, nome:'Guilherme S.' }, { numero:24, nome:'Kiki Afonso' },
-  { numero:26, nome:'Carlos Ponck' }, { numero:27, nome:'Algobia' }, { numero:33, nome:'Aderllan Santos' },
-];
-
-// ─── FICHAS_RA (deve vir depois de todos os arrays de dados) ──
-export const FICHAS_RA: Record<string, FichaData[]> = {
-  '25/26': [
-    { gameId:'25-26-30', jornada:'J30', data:'2026-04-17', adversario:'AFS',
-      local:'casa', resultado:'E', golos_ra:2, golos_adv:2,
-      titulares:TITULARES_RA_J30, suplentes:SUPLENTES_RA_J30, eventos:EVENTOS_J30_AFS },
-    { gameId:'25-26-31', jornada:'J31', data:'2026-04-25', adversario:'Vitória SC',
-      local:'fora', resultado:'D', golos_ra:0, golos_adv:2,
-      titulares:TITULARES_RA_J31, suplentes:SUPLENTES_RA_J31, eventos:EVENTOS_J31_VITORIA },
-    { gameId:'25-26-32', jornada:'J32', data:'2026-05-03', adversario:'Gil Vicente',
-      local:'casa', resultado:'E', golos_ra:0, golos_adv:0,
-      titulares:TITULARES_RA_J32, suplentes:SUPLENTES_RA_J32, eventos:EVENTOS_J32_GIL },
-    { gameId:'25-26-33', jornada:'J33', data:'2026-05-11', adversario:'Sporting CP',
-      local:'casa', resultado:'D', golos_ra:1, golos_adv:4,
-      titulares:TITULARES_RA_J33, suplentes:SUPLENTES_RA_J33, eventos:EVENTOS_J33_SPORTING },
-  ],
-};
