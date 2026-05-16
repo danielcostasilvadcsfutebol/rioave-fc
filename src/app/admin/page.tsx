@@ -88,6 +88,10 @@ export default function AdminPage() {
   const [jogoEdit, setJogoEdit] = useState<Record<string,unknown>>({});
   const [loading, setLoading] = useState(false);
 
+  // Épocas disponíveis (dinâmico)
+  const [epocas, setEpocas] = useState(['25/26','24/25','23/24','22/23']);
+  const [novaEpoca, setNovaEpoca] = useState('');
+
   // Plantel edit state
   const [editingJogador, setEditingJogador] = useState<string|null>(null); // jogador_id being edited
   const [editForm, setEditForm] = useState({ nome: '', posicao: 'DEF', numero: '', ativo: true });
@@ -328,6 +332,9 @@ export default function AdminPage() {
     if (!jogadorId) {
       const { data: created } = await supabase.from('jogadores').insert({ nome_display: newJogador.nome, posicao: newJogador.posicao }).select().single();
       jogadorId = created?.id;
+    } else {
+      // Sempre actualiza a posição com o valor seleccionado
+      await supabase.from('jogadores').update({ posicao: newJogador.posicao }).eq('id', jogadorId);
     }
     if (!jogadorId) { toast('Erro ao criar jogador', false); return; }
     await supabase.from('jogadores_epoca').upsert({ jogador_id: jogadorId, epoca: newJogador.epoca, numero: Number(newJogador.numero), ativo: true }, { onConflict: 'jogador_id,epoca' });
@@ -383,9 +390,60 @@ export default function AdminPage() {
       {mainTab === 'plantel' && (
         <div style={{ maxWidth: 800, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 12, padding: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#111318' }}>Plantel por época</div>
-              {sel2(epocaPlantel, ['25/26', '24/25', '23/24'], v => setEpocaPlantel(v))}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#111318' }}>Plantel por época</div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <select value={epocaPlantel} onChange={e => setEpocaPlantel(e.target.value)}
+                    style={{ padding: '6px 10px', border: '1.5px solid #E4E7EC', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#111318' }}>
+                    {epocas.map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+                </div>
+              </div>
+              {/* Criar nova época */}
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', padding: '8px 10px', background: '#F9FAFB', borderRadius: 8, border: '1px solid #E4E7EC' }}>
+                <span style={{ fontSize: 11, color: '#9CA3AF', flexShrink: 0 }}>Nova época:</span>
+                <input value={novaEpoca} onChange={e => setNovaEpoca(e.target.value)} placeholder="ex: 26/27"
+                  style={{ flex: 1, padding: '4px 8px', border: '1px solid #E4E7EC', borderRadius: 6, fontSize: 12 }} />
+                <button onClick={() => {
+                  const e = novaEpoca.trim();
+                  if (!e) return;
+                  if (!epocas.includes(e)) setEpocas(prev => [e, ...prev]);
+                  setEpocaPlantel(e);
+                  setNovaEpoca('');
+                }} style={{ padding: '4px 12px', background: '#006B3C', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                  Criar
+                </button>
+              </div>
+            </div>
+            {/* Add player form — no topo */}
+            <div style={{ background: '#F0F7F3', border: '1.5px solid #006B3C', borderRadius: 10, padding: 14, marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#006B3C', marginBottom: 10 }}>+ Adicionar jogador à época</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 60px 80px auto', gap: 8, alignItems: 'end' }}>
+                <div>
+                  <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 3 }}>Nome</div>
+                  <PlayerAC value={newJogador.nome} onChange={v => setNewJogador(p => ({ ...p, nome: v }))}
+                    players={allJogadores.map(j => j.nome_display as string)} placeholder="Nome do jogador" />
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 3 }}>Posição</div>
+                  {sel2(newJogador.posicao, POSICOES_RA, v => setNewJogador(p => ({ ...p, posicao: v })))}
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 3 }}>Nº</div>
+                  {inp(newJogador.numero, v => setNewJogador(p => ({ ...p, numero: v })), '#')}
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 3 }}>Época</div>
+                  <select value={newJogador.epoca} onChange={e => setNewJogador(p => ({ ...p, epoca: e.target.value }))}
+                    style={{ padding: '6px 8px', border: '1px solid #E4E7EC', borderRadius: 6, fontSize: 12 }}>
+                    {epocas.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <button onClick={saveNewJogador} style={{ padding: '7px 14px', background: '#006B3C', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                  Adicionar
+                </button>
+              </div>
             </div>
             {/* Player list */}
             {['GR', 'DEF', 'MED', 'AV'].map(pos => {
@@ -441,7 +499,7 @@ export default function AdminPage() {
                               <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 2 }}>Época</div>
                               <select value={addEpocaForm.epoca} onChange={e => setAddEpocaForm(p => ({ ...p, epoca: e.target.value }))}
                                 style={{ width: '100%', padding: '5px 6px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 12 }}>
-                                {['25/26','24/25','23/24','22/23'].map(o => <option key={o} value={o}>{o}</option>)}
+                                {epocas.map(o => <option key={o} value={o}>{o}</option>)}
                               </select>
                             </div>
                             <div>
@@ -477,32 +535,7 @@ export default function AdminPage() {
               );
             })}
           </div>
-          {/* Add new player */}
-          <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 12, padding: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 12 }}>+ Adicionar jogador à época</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 60px 80px auto', gap: 8, alignItems: 'end' }}>
-              <div>
-                <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 3 }}>Nome</div>
-                <PlayerAC value={newJogador.nome} onChange={v => setNewJogador(p => ({ ...p, nome: v }))}
-                  players={allJogadores.map(j => j.nome_display as string)} placeholder="Nome do jogador" />
-              </div>
-              <div>
-                <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 3 }}>Posição</div>
-                {sel2(newJogador.posicao, POSICOES_RA, v => setNewJogador(p => ({ ...p, posicao: v })))}
-              </div>
-              <div>
-                <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 3 }}>Nº</div>
-                {inp(newJogador.numero, v => setNewJogador(p => ({ ...p, numero: v })), '#')}
-              </div>
-              <div>
-                <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 3 }}>Época</div>
-                {sel2(newJogador.epoca, ['25/26', '24/25', '23/24'], v => setNewJogador(p => ({ ...p, epoca: v })))}
-              </div>
-              <button onClick={saveNewJogador} style={{ padding: '7px 14px', background: '#006B3C', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                Adicionar
-              </button>
-            </div>
-          </div>
+
         </div>
       )}
 
