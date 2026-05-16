@@ -64,7 +64,7 @@ export default function AdminPage() {
     const jogo = jogos.find(j => j.id === sel);
     setJogoEdit(jogo ? {...jogo} : {});
     Promise.all([
-      supabase.from('eventos_jogo').select('*').eq('jogo_id',sel).order('ordem'),
+      supabase.from('eventos_jogo').select('*').eq('jogo_id',sel).order('minuto').order('minuto_extra',{ascending:true,nullsFirst:true}),
       supabase.from('fichas_jogo').select('*').eq('jogo_id',sel).order('ordem'),
       supabase.from('estatisticas_jogo').select('*').eq('jogo_id',sel).single(),
     ]).then(([evRes, fcRes, stRes]) => {
@@ -123,7 +123,7 @@ export default function AdminPage() {
     setJogos(prev => prev.map(j => j.id===sel ? {...j, has_detail:true} : j));
     toast('Evento adicionado');
     setNewEv({ minuto:'', minuto_extra:'', tipo:'golo', equipa:'ra', jogador:'', jogador2:'', score_ra:'', score_adv:'' });
-    const { data } = await supabase.from('eventos_jogo').select('*').eq('jogo_id',sel).order('ordem');
+    const { data } = await supabase.from('eventos_jogo').select('*').eq('jogo_id',sel).order('minuto').order('minuto_extra',{ascending:true,nullsFirst:true});
     setEventos(data??[]);
   }
 
@@ -273,7 +273,7 @@ export default function AdminPage() {
                   {eventos.map(ev => (
                     <div key={ev.id as string} style={{ display:'grid', gridTemplateColumns:'40px 90px 60px 1fr 1fr auto', gap:6, alignItems:'center', padding:'6px 0', borderBottom:'1px solid #F3F4F6', fontSize:12 }}>
                       <span style={{ fontWeight:700, color:'#6B7280' }}>{ev.minuto as number}{ev.minuto_extra?`+${ev.minuto_extra}`:''}&apos;</span>
-                      <span style={{ background:ev.equipa==='ra'?'#EEF7F2':'#FCEBEB', color:ev.equipa==='ra'?'#006B3C':'#DC2626', padding:'2px 6px', borderRadius:4, fontSize:11, fontWeight:600 }}>{ev.tipo as string}</span>
+                      <span style={{ background: ev.tipo==='auto_golo' ? '#FCEBEB' : ev.equipa==='ra'?'#EEF7F2':'#FCEBEB', color: ev.tipo==='auto_golo' ? '#DC2626' : ev.equipa==='ra'?'#006B3C':'#DC2626', padding:'2px 6px', borderRadius:4, fontSize:11, fontWeight:600 }}>{ev.tipo as string}</span>
                       <span style={{ fontSize:10, color:'#9CA3AF' }}>{ev.equipa as string}</span>
                       <span style={{ fontWeight:600 }}>{ev.jogador as string}</span>
                       <span style={{ color:'#9CA3AF' }}>{ev.jogador2 as string ?? ''}{ev.score_ra!=null?` ${ev.score_ra}-${ev.score_adv}`:''}</span>
