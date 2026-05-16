@@ -210,3 +210,51 @@ export async function getFichasEpocaDB(epoca: string): Promise<import('./mock-jo
   }));
   return results;
 }
+
+// ── Jogadores ─────────────────────────────────────────────────
+export interface JogadorDB {
+  id: string;
+  nome_display: string;
+  posicao: string;
+  numero?: number;
+  ativo?: boolean;
+}
+
+export async function getJogadoresEpoca(epoca: string): Promise<JogadorDB[]> {
+  const { data, error } = await supabase
+    .from('jogadores_epoca')
+    .select('epoca, numero, ativo, jogadores(id, nome_display, posicao)')
+    .eq('epoca', epoca)
+    .order('numero');
+  if (error || !data) return [];
+  return data.map((row: any) => ({
+    id: row.jogadores.id,
+    nome_display: row.jogadores.nome_display,
+    posicao: row.jogadores.posicao,
+    numero: row.numero,
+    ativo: row.ativo,
+  }));
+}
+
+export async function getAllJogadores(): Promise<JogadorDB[]> {
+  const { data } = await supabase
+    .from('jogadores')
+    .select('*')
+    .order('nome_display');
+  return (data ?? []) as JogadorDB[];
+}
+
+export async function upsertJogador(j: { nome_display: string; posicao: string }) {
+  return supabase.from('jogadores').upsert(j, { onConflict: 'nome_display' }).select().single();
+}
+
+export async function upsertJogadorEpoca(jogador_id: string, epoca: string, numero: number, ativo = true) {
+  return supabase.from('jogadores_epoca').upsert(
+    { jogador_id, epoca, numero, ativo },
+    { onConflict: 'jogador_id,epoca' }
+  );
+}
+
+export async function deleteJogadorEpoca(jogador_id: string, epoca: string) {
+  return supabase.from('jogadores_epoca').delete().eq('jogador_id', jogador_id).eq('epoca', epoca);
+}
