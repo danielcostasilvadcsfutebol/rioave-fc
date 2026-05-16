@@ -88,6 +88,15 @@ export default function AdminPage() {
   const [jogoEdit, setJogoEdit] = useState<Record<string,unknown>>({});
   const [loading, setLoading] = useState(false);
 
+  // New game form
+  const [showNewJogo, setShowNewJogo] = useState(false);
+  const [newJogo, setNewJogo] = useState({
+    epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic',
+    jornada:'', data:'', hora:'20:30', local:'casa', adversario:'',
+    golos_ra:'0', golos_adv:'0', resultado:'E',
+    espectadores:'', estadio:'', formacao_ra:'', formacao_adv:'', arbitro:''
+  });
+
   // Form state
   const [newEv, setNewEv] = useState({ minuto: '', minuto_extra: '', tipo: 'golo', equipa: 'ra', jogador: '', jogador2: '', score_ra: '', score_adv: '' });
   const [newFicha, setNewFicha] = useState({ tipo: 'titular', equipa: 'ra', numero: '', nome: '', posicao: '', capitao: false });
@@ -159,6 +168,33 @@ export default function AdminPage() {
   );
 
   // ── CRUD helpers ─────────────────────────────────────────────
+  async function createJogo() {
+    if (!newJogo.jornada || !newJogo.adversario || !newJogo.data) {
+      toast('Preenche jornada, adversário e data', false); return;
+    }
+    const epoca_id = newJogo.epoca.replace('/','-');
+    const jornada_id = newJogo.jornada.replace(/[^a-zA-Z0-9]/g,'').toLowerCase();
+    const id = `${epoca_id}-${jornada_id}-${Date.now().toString(36)}`;
+    const { error } = await supabase.from('jogos').insert({
+      id, epoca: newJogo.epoca,
+      competicao: newJogo.competicao, competicao_label: newJogo.competicao_label,
+      jornada: newJogo.jornada, data: newJogo.data, hora: newJogo.hora,
+      local: newJogo.local, adversario: newJogo.adversario,
+      golos_ra: Number(newJogo.golos_ra), golos_adv: Number(newJogo.golos_adv),
+      resultado: newJogo.resultado,
+      espectadores: newJogo.espectadores ? Number(newJogo.espectadores) : null,
+      estadio: newJogo.estadio || null, formacao_ra: newJogo.formacao_ra || null,
+      formacao_adv: newJogo.formacao_adv || null, arbitro: newJogo.arbitro || null,
+      has_detail: false, publicado: true,
+    });
+    if (error) { toast('Erro: ' + error.message, false); return; }
+    toast('Jogo criado');
+    setShowNewJogo(false);
+    setNewJogo({ epoca:'25/26', competicao:'liga', competicao_label:'Liga Portugal Betclic', jornada:'', data:'', hora:'20:30', local:'casa', adversario:'', golos_ra:'0', golos_adv:'0', resultado:'E', espectadores:'', estadio:'', formacao_ra:'', formacao_adv:'', arbitro:'' });
+    const { data } = await supabase.from('jogos').select('id,jornada,data,adversario,local,golos_ra,golos_adv,resultado,has_detail,espectadores,formacao_ra,formacao_adv,arbitro,hora,estadio,epoca').order('data', { ascending: false });
+    setJogos(data ?? []);
+  }
+
   async function saveEvento() {
     if (!newEv.jogador || !sel) return;
     const tipoFinal = newEv.tipo === 'segundo_amarelo' ? 'cartao_vermelho' : newEv.tipo;
@@ -356,7 +392,82 @@ export default function AdminPage() {
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: 16, display: 'grid', gridTemplateColumns: '260px 1fr', gap: 16 }}>
           {/* Sidebar */}
           <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 12, padding: 12, height: 'fit-content' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 10 }}>Jogos</div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.07em' }}>Jogos</div>
+              <button onClick={() => setShowNewJogo(v => !v)} style={{ fontSize:11, fontWeight:600, padding:'3px 8px', background:'#006B3C', color:'#fff', border:'none', borderRadius:6, cursor:'pointer' }}>+ Novo</button>
+            </div>
+            {showNewJogo && (
+              <div style={{ background:'#F9FAFB', border:'1px solid #E4E7EC', borderRadius:10, padding:12, marginBottom:12 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:'#374151', marginBottom:8 }}>Novo Jogo</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
+                    <div><div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>Época</div>
+                      <select value={newJogo.epoca} onChange={e => setNewJogo(p=>({...p,epoca:e.target.value}))} style={{ width:'100%', padding:'5px 6px', border:'1px solid #E4E7EC', borderRadius:5, fontSize:11 }}>
+                        {['25/26','24/25','23/24'].map(o=><option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div><div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>Competição</div>
+                      <select value={newJogo.competicao} onChange={e => {
+                        const labels: Record<string,string> = { liga:'Liga Portugal Betclic', 'taca-pt':'Taça de Portugal', 'taca-liga':'Taça da Liga', amigavel:'Amigável' };
+                        setNewJogo(p=>({...p, competicao:e.target.value, competicao_label:labels[e.target.value]??e.target.value}));
+                      }} style={{ width:'100%', padding:'5px 6px', border:'1px solid #E4E7EC', borderRadius:5, fontSize:11 }}>
+                        <option value="liga">Liga</option>
+                        <option value="taca-pt">Taça Portugal</option>
+                        <option value="taca-liga">Taça Liga</option>
+                        <option value="amigavel">Amigável</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
+                    <div><div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>Jornada</div>
+                      <input value={newJogo.jornada} onChange={e=>setNewJogo(p=>({...p,jornada:e.target.value}))} placeholder="J30" style={{ width:'100%', padding:'5px 6px', border:'1px solid #E4E7EC', borderRadius:5, fontSize:11, boxSizing:'border-box' as const }} />
+                    </div>
+                    <div><div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>Local</div>
+                      <select value={newJogo.local} onChange={e=>setNewJogo(p=>({...p,local:e.target.value}))} style={{ width:'100%', padding:'5px 6px', border:'1px solid #E4E7EC', borderRadius:5, fontSize:11 }}>
+                        <option value="casa">Casa</option>
+                        <option value="fora">Fora</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div><div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>Adversário</div>
+                    <input value={newJogo.adversario} onChange={e=>setNewJogo(p=>({...p,adversario:e.target.value}))} placeholder="ex: Sporting CP" style={{ width:'100%', padding:'5px 6px', border:'1px solid #E4E7EC', borderRadius:5, fontSize:11, boxSizing:'border-box' as const }} />
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
+                    <div><div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>Data</div>
+                      <input type="date" value={newJogo.data} onChange={e=>setNewJogo(p=>({...p,data:e.target.value}))} style={{ width:'100%', padding:'5px 6px', border:'1px solid #E4E7EC', borderRadius:5, fontSize:11, boxSizing:'border-box' as const }} />
+                    </div>
+                    <div><div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>Hora</div>
+                      <input value={newJogo.hora} onChange={e=>setNewJogo(p=>({...p,hora:e.target.value}))} placeholder="20:30" style={{ width:'100%', padding:'5px 6px', border:'1px solid #E4E7EC', borderRadius:5, fontSize:11, boxSizing:'border-box' as const }} />
+                    </div>
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:6 }}>
+                    <div><div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>Golos RA</div>
+                      <input type="number" value={newJogo.golos_ra} onChange={e=>setNewJogo(p=>({...p,golos_ra:e.target.value}))} style={{ width:'100%', padding:'5px 6px', border:'1px solid #E4E7EC', borderRadius:5, fontSize:11, boxSizing:'border-box' as const }} />
+                    </div>
+                    <div><div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>Golos ADV</div>
+                      <input type="number" value={newJogo.golos_adv} onChange={e=>setNewJogo(p=>({...p,golos_adv:e.target.value}))} style={{ width:'100%', padding:'5px 6px', border:'1px solid #E4E7EC', borderRadius:5, fontSize:11, boxSizing:'border-box' as const }} />
+                    </div>
+                    <div><div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>Result.</div>
+                      <select value={newJogo.resultado} onChange={e=>setNewJogo(p=>({...p,resultado:e.target.value}))} style={{ width:'100%', padding:'5px 6px', border:'1px solid #E4E7EC', borderRadius:5, fontSize:11 }}>
+                        <option value="V">V</option><option value="E">E</option><option value="D">D</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
+                    <div><div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>Espectadores</div>
+                      <input type="number" value={newJogo.espectadores} onChange={e=>setNewJogo(p=>({...p,espectadores:e.target.value}))} placeholder="opcional" style={{ width:'100%', padding:'5px 6px', border:'1px solid #E4E7EC', borderRadius:5, fontSize:11, boxSizing:'border-box' as const }} />
+                    </div>
+                    <div><div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>Árbitro</div>
+                      <input value={newJogo.arbitro} onChange={e=>setNewJogo(p=>({...p,arbitro:e.target.value}))} placeholder="opcional" style={{ width:'100%', padding:'5px 6px', border:'1px solid #E4E7EC', borderRadius:5, fontSize:11, boxSizing:'border-box' as const }} />
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', gap:6, marginTop:4 }}>
+                    <button onClick={createJogo} style={{ flex:1, padding:'7px', background:'#006B3C', color:'#fff', border:'none', borderRadius:6, fontSize:12, fontWeight:600, cursor:'pointer' }}>Criar jogo</button>
+                    <button onClick={() => setShowNewJogo(false)} style={{ padding:'7px 12px', background:'#F3F4F6', color:'#6B7280', border:'none', borderRadius:6, fontSize:12, cursor:'pointer' }}>Cancelar</button>
+                  </div>
+                </div>
+              </div>
+            )}
             {jogos.map(j => (
               <div key={j.id as string} onClick={() => setSel(j.id as string)}
                 style={{ padding: '8px 10px', borderRadius: 8, cursor: 'pointer', marginBottom: 4, background: sel === j.id ? '#006B3C' : 'transparent', color: sel === j.id ? '#fff' : '#374151' }}>
