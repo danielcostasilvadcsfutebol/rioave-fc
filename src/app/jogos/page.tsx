@@ -57,13 +57,13 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
   const [detail, setDetail] = useState<{eventos:EventoJogo[];stats:EstatisticasJogo|null;fichas:FichasJogo|null}|null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  // Reset detail when collapsed so it re-fetches fresh on next expand
   useEffect(() => {
-    if (expanded && !detail) {
-      setLoadingDetail(true);
-      Promise.all([getEventosDB(partida.id), getEstatisticasDB(partida.id), getFichasDB(partida.id)])
-        .then(([eventos, stats, fichas]) => { setDetail({ eventos, stats, fichas }); setLoadingDetail(false); });
-    }
-  }, [expanded, partida.id, detail]);
+    if (!expanded) { setDetail(null); return; }
+    setLoadingDetail(true);
+    Promise.all([getEventosDB(partida.id), getEstatisticasDB(partida.id), getFichasDB(partida.id)])
+      .then(([eventos, stats, fichas]) => { setDetail({ eventos, stats, fichas }); setLoadingDetail(false); });
+  }, [expanded, partida.id]);
 
   const isHome = partida.local === 'casa';
   const res = {V:'Vitória',E:'Empate',D:'Derrota'}[partida.resultado];
@@ -245,7 +245,12 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
                     </div>
                   ))}
                 </div>
-              ) : <div style={{padding:'20px 0',textAlign:'center',fontSize:12,color:'#9CA3AF'}}>Formações serão adicionadas progressivamente.</div>}
+              ) : <div style={{padding:'20px 0',textAlign:'center',fontSize:12,color:'#9CA3AF',display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+                  <span>Formações ainda não inseridas para este jogo.</span>
+                  <button onClick={()=>{setDetail(null);setLoadingDetail(true);Promise.all([getEventosDB(partida.id),getEstatisticasDB(partida.id),getFichasDB(partida.id)]).then(([ev,st,fc])=>{setDetail({eventos:ev,stats:st,fichas:fc});setLoadingDetail(false);});}} style={{fontSize:11,fontWeight:600,padding:'5px 12px',background:'#EEF7F2',color:'#006B3C',border:'1px solid #006B3C',borderRadius:6,cursor:'pointer'}}>
+                    🔄 Actualizar dados
+                  </button>
+                </div>}
               {partida.arbitro&&<div style={{marginTop:8,fontSize:11,color:'#9CA3AF',textAlign:'center'}}>Árbitro: {partida.arbitro}</div>}
             </div>
           )}
