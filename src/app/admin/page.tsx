@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase-client';
 
 const ADMIN_PASSWORD = 'rioave2025';
-const TIPOS_EVENTO = ['golo','golo_penalidade','auto_golo','cartao_amarelo','cartao_vermelho','substituicao'];
+const TIPOS_EVENTO = ['golo','golo_penalidade','auto_golo','cartao_amarelo','cartao_vermelho','segundo_amarelo','substituicao'];
 const POSICOES = ['GR','DEF','MED','AV'];
 const STATS_COLS = [
   ['posse_bola','% Posse de bola'],['remates','Remates'],['remates_baliza','Remates à baliza'],
@@ -107,15 +107,20 @@ export default function AdminPage() {
   async function saveEvento() {
     if (!newEv.jogador || !sel) return;
     const maxOrdem = Math.max(0, ...eventos.map(e => Number(e.ordem)||0));
+    // 2º amarelo é inserido como cartao_vermelho (a UI detecta automaticamente)
+    const tipoFinal = newEv.tipo === 'segundo_amarelo' ? 'cartao_vermelho' : newEv.tipo;
     const { error } = await supabase.from('eventos_jogo').insert({
       jogo_id: sel, minuto: Number(newEv.minuto), minuto_extra: newEv.minuto_extra?Number(newEv.minuto_extra):null,
-      tipo: newEv.tipo, equipa: newEv.equipa, jogador: newEv.jogador,
+      tipo: tipoFinal, equipa: newEv.equipa, jogador: newEv.jogador,
       jogador2: newEv.jogador2||null,
       score_ra: newEv.score_ra?Number(newEv.score_ra):null,
       score_adv: newEv.score_adv?Number(newEv.score_adv):null,
       ordem: maxOrdem + 1,
     });
     if (error) { toast('Erro: '+error.message, false); return; }
+    // Auto-marca o jogo como tendo dados detalhados
+    await supabase.from('jogos').update({ has_detail: true }).eq('id', sel);
+    setJogos(prev => prev.map(j => j.id===sel ? {...j, has_detail:true} : j));
     toast('Evento adicionado');
     setNewEv({ minuto:'', minuto_extra:'', tipo:'golo', equipa:'ra', jogador:'', jogador2:'', score_ra:'', score_adv:'' });
     const { data } = await supabase.from('eventos_jogo').select('*').eq('jogo_id',sel).order('ordem');
@@ -138,6 +143,8 @@ export default function AdminPage() {
       ordem: maxOrdem + 1,
     });
     if (error) { toast('Erro: '+error.message, false); return; }
+    await supabase.from('jogos').update({ has_detail: true }).eq('id', sel);
+    setJogos(prev => prev.map(j => j.id===sel ? {...j, has_detail:true} : j));
     toast('Jogador adicionado');
     setNewFicha({ tipo:'titular', equipa:'ra', numero:'', nome:'', posicao:'', capitao:false });
     const { data } = await supabase.from('fichas_jogo').select('*').eq('jogo_id',sel).order('ordem');
