@@ -90,8 +90,6 @@ export async function getFichasDB(jogoId: string): Promise<FichasJogo> {
     .from('fichas_jogo')
     .select('*')
     .eq('jogo_id', jogoId)
-    .order('minuto')
-    .order('minuto_extra', { ascending: true, nullsFirst: true })
     .order('ordem');
   const empty = { titulares_ra:[], suplentes_ra:[], titulares_adv:[], suplentes_adv:[] };
   if (error || !data) return empty;
