@@ -95,8 +95,20 @@ export default function PlantelPage() {
     return map;
   }, [filtered]);
 
-  const GRID = '44px 1fr 52px 44px 44px 44px 36px 36px 36px 36px';
-  const COLS = ['Nº','Jogador','Min','Fichas','Tit','Sub','⚽','🅰','🟨','GS'];
+  const GRID = '44px 1fr 52px 44px 44px 44px 36px 36px 36px 36px 36px';
+  const COLS: {key:string; tip:string}[] = [
+    {key:'Nº',    tip:'Número de camisola'},
+    {key:'Jogador',tip:'Nome do jogador'},
+    {key:'Min',   tip:'Minutos jogados'},
+    {key:'Fichas',tip:'Nº de jogos na ficha'},
+    {key:'Tit',   tip:'Jogos como titular'},
+    {key:'Sub',   tip:'Jogos como suplente (entrou)'},
+    {key:'⚽',    tip:'Golos marcados'},
+    {key:'🅰',    tip:'Assistências'},
+    {key:'🟨',    tip:'Cartões amarelos'},
+    {key:'🟥',    tip:'Cartões vermelhos'},
+    {key:'GS',    tip:'Golos sofridos em campo'},
+  ];
 
   return (
     <div style={{minHeight:'100vh',background:'#F0F2F5'}}>
@@ -146,7 +158,7 @@ export default function PlantelPage() {
                   <span style={{fontSize:11,color:'#9CA3AF'}}>{players.length} jogadores</span>
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:GRID,gap:6,padding:'5px 14px',borderBottom:'1px solid #F3F4F6',background:'#FAFAFA'}}>
-                  {COLS.map(h=><div key={h} style={{fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.07em',textAlign:h==='Jogador'?'left':'center'}}>{h}</div>)}
+                  {COLS.map(h=><div key={h.key} title={h.tip} style={{fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.07em',textAlign:h.key==='Jogador'?'left':'center',cursor:'help'}}>{h.key}</div>)}
                 </div>
                 {players.map((p,i) => {
                   const s = statsMap.get(p.nome);
@@ -163,17 +175,18 @@ export default function PlantelPage() {
                         </Link>
                         {p.posicao&&<span style={{marginLeft:5,fontSize:8,fontWeight:700,padding:'1px 4px',borderRadius:3,background:GBG[group]??'#F0F2F5',color:GBT[group]??'#6B7280',textTransform:'uppercase',letterSpacing:'.04em'}}>{normPos(p.posicao)}</span>}
                       </div>
-                      <div style={{textAlign:'center'}}>
+                      <div title="Minutos jogados" style={{textAlign:'center'}}>
                         <div style={{fontSize:12,fontWeight:700,color:'#374151',lineHeight:1}}>{s?`${s.minutosJogados}'`:'—'}</div>
                         {s&&<div style={{height:3,background:'#F0F2F5',borderRadius:99,marginTop:3,overflow:'hidden'}}><div style={{height:'100%',width:`${pctMin}%`,background:'#006B3C',borderRadius:99}}/></div>}
                       </div>
-                      <StatPill v={p.jogosTotal} label="jogos" color="#006B3C"/>
-                      <StatPill v={p.jogosTitular} label="tit"/>
-                      <StatPill v={p.jogosSuplente} label="sub" color="#6B7280"/>
-                      <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:s&&s.golosMarcados>0?'#006B3C':'#9CA3AF'}}>{s?s.golosMarcados:'—'}</div>
-                      <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:s&&s.assistencias>0?'#1A5FA8':'#9CA3AF'}}>{s?s.assistencias:'—'}</div>
-                      <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:s&&s.cartoesAmarelos>0?'#EF9F27':'#9CA3AF'}}>{s?s.cartoesAmarelos:'—'}</div>
-                      <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:s&&s.golosSofridosEmCampo>0?'#DC2626':'#9CA3AF'}}>{s?s.golosSofridosEmCampo:'—'}</div>
+                      <StatPill v={s?.jogosTotal ?? 0} label="jogos" color="#006B3C"/>
+                      <StatPill v={s?.jogosTitular ?? 0} label="tit"/>
+                      <StatPill v={s?.jogosSuplente ?? 0} label="sub" color="#6B7280"/>
+                      <div title="Golos marcados" style={{textAlign:'center',fontSize:13,fontWeight:700,color:s&&s.golosMarcados>0?'#006B3C':'#9CA3AF',cursor:'default'}}>{s?s.golosMarcados:'—'}</div>
+                      <div title="Assistências" style={{textAlign:'center',fontSize:13,fontWeight:700,color:s&&s.assistencias>0?'#1A5FA8':'#9CA3AF',cursor:'default'}}>{s?s.assistencias:'—'}</div>
+                      <div title="Cartões amarelos" style={{textAlign:'center',fontSize:13,fontWeight:700,color:s&&s.cartoesAmarelos>0?'#EF9F27':'#9CA3AF',cursor:'default'}}>{s?s.cartoesAmarelos:'—'}</div>
+                      <div title="Cartões vermelhos" style={{textAlign:'center',fontSize:13,fontWeight:700,color:s&&s.cartoesVermelhos>0?'#DC2626':'#9CA3AF',cursor:'default'}}>{s?s.cartoesVermelhos:'—'}</div>
+                      <div title="Golos sofridos em campo" style={{textAlign:'center',fontSize:13,fontWeight:700,color:s&&s.golosSofridosEmCampo>0?'#DC2626':'#9CA3AF',cursor:'default'}}>{s?s.golosSofridosEmCampo:'—'}</div>
                     </div>
                   );
                 })}
@@ -184,7 +197,7 @@ export default function PlantelPage() {
         <div style={{background:'#fff',border:'1px solid #E4E7EC',borderRadius:10,padding:'10px 14px'}}>
           <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:6}}>Legenda</div>
           <div style={{display:'flex',gap:16,flexWrap:'wrap',fontSize:11,color:'#6B7280'}}>
-            {[['Min','Minutos jogados'],['Fichas','Jogos na ficha'],['Tit','Titular'],['Sub','Entrou como sub'],['⚽','Golos'],['🅰','Assistências'],['🟨','Amarelos'],['GS','Golos sofridos em campo']].map(([k,v])=>(
+            {[['Min','Minutos jogados'],['Fichas','Jogos na ficha'],['Tit','Titular'],['Sub','Entrou como sub'],['⚽','Golos'],['🅰','Assistências'],['🟨','Amarelos'],['🟥','Cartões vermelhos'],['GS','Golos sofridos em campo']].map(([k,v])=>(
               <span key={k}><strong style={{color:'#374151'}}>{k}</strong> — {v}</span>
             ))}
           </div>
