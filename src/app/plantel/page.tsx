@@ -35,29 +35,34 @@ export default function PlantelPage() {
     getFichasEpocaDB(epoca).then(data => { setFichas(data); setLoading(false); });
   }, [epoca]);
 
-  // Compute roster from Supabase fichas using existing logic
-  const roster = useMemo(() => {
-    if (!fichas.length) return [];
-    // Build a temporary FICHAS_RA-like structure and use getRosterRA logic
-    const map = new Map<string, JogadorPlantel>();
-    function getOrCreate(nome: string, numero: number, posicao?: string) {
-      const k = nome.trim();
-      if (!map.has(k)) map.set(k, { nome:k, numero, posicao, jogosTitular:0, jogosSuplente:0, jogosTotal:0 });
-      return map.get(k)!;
-    }
-    const POS_ORDER: Record<string,number> = { GR:100, DEF:80, DC:80, DD:80, DE:80, MED:60, MDC:60, MI:60, ME:60, MAD:60, MAM:60, MAE:60, MC:60, AV:20 };
-    for (const f of fichas) {
-      f.titulares.forEach(p => { const e = getOrCreate(p.nome, p.numero, p.posicao); e.jogosTitular++; e.jogosTotal++; });
-      const entrou = new Set(f.eventos.filter(e => e.tipo==='substituicao' && e.equipa==='ra' && e.jogador2).map(e => e.jogador2!.trim()));
-      f.suplentes.forEach(p => {
-        if (entrou.has(p.nome.trim())) { const e = getOrCreate(p.nome, p.numero, p.posicao); e.jogosSuplente++; e.jogosTotal++; }
-      });
-    }
-    return Array.from(map.values()).sort((a,b) => {
+  // Fetch all active players for this epoch from jogadores_epoca
+  const [jogadoresEpoca, setJogadoresEpoca] = useState<{nome_display:string;posicao:string;numero:number}[]>([]);
+  useEffect(() => {
+    import('@/lib/supabase-client').then(({ supabase }) =>
+      supabase.from('jogadores_epoca')
+        .select('numero, jogadores(nome_display, posicao)')
+        .eq('epoca', epoca).eq('ativo', true).order('numero')
+        .then(({ data }) => {
+          setJogadoresEpoca((data ?? []).map((r: any) => ({
+            nome_display: r.jogadores.nome_display,
+            posicao: r.jogadores.posicao,
+            numero: r.numero,
+          })));
+        })
+    );
+  }, [epoca]);
+
+  // Roster = all players from jogadores_epoca (shows everyone, stats computed where available)
+  const roster = useMemo((): JogadorPlantel[] => {
+    const POS_ORDER: Record<string,number> = { GR:100, DEF:80, MED:60, AV:20 };
+    return jogadoresEpoca.map(j => ({
+      nome: j.nome_display, numero: j.numero, posicao: j.posicao,
+      jogosTitular:0, jogosSuplente:0, jogosTotal:0,
+    })).sort((a,b) => {
       const pa=POS_ORDER[a.posicao??'']??0, pb=POS_ORDER[b.posicao??'']??0;
-      return pb!==pa ? pb-pa : b.jogosTotal-a.jogosTotal;
+      return pb!==pa ? pb-pa : (a.numero??99)-(b.numero??99);
     });
-  }, [fichas]);
+  }, [jogadoresEpoca]);
 
   // Pre-compute stats for all players using Supabase fichas
   const statsMap = useMemo(() => {
