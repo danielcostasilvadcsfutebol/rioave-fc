@@ -57,8 +57,15 @@ function computeStats(nome: string, fichas: FichaData[]) {
     }
 
     // Is player on field at given minute? (arrow fn to avoid hoisting issues)
-    const saiuEvt   = isTitular ? f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador.trim() === k) : null;
-    const entrouEvt = !isTitular ? f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k) : null;
+    // Robusto a subs com jogador/jogador2 trocados
+    const saiuEvt = isTitular ? (
+      f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador.trim() === k) ||
+      f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k)
+    ) : null;
+    const entrouEvt = isSuplente ? (
+      f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k) ||
+      f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador?.trim() === k)
+    ) : null;
     const minSaiu   = saiuEvt   ? mn(saiuEvt)   : Infinity;
     const minEntrou = entrouEvt ? mn(entrouEvt)  : null;
 
