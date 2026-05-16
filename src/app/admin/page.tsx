@@ -840,19 +840,34 @@ export default function AdminPage() {
                 {/* ── Stats ── */}
                 {!loading && gameTab === 'stats' && (
                   <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 12, padding: 16 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 12 }}>Estatísticas · RA vs ADV</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: 1, marginBottom: 4, fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' }}>
-                      <span>Estatística</span><span style={{ textAlign: 'center' }}>RA</span><span style={{ textAlign: 'center' }}>ADV</span>
-                    </div>
-                    {STATS_COLS.map(([key, label]) => (
-                      <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: 4, alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #F9FAFB' }}>
-                        <span style={{ fontSize: 12, color: '#374151' }}>{label}</span>
-                        <input type="number" value={String(stats[`${key}_ra`] ?? '')} onChange={e => setStats(p => ({ ...p, [`${key}_ra`]: Number(e.target.value) }))}
-                          style={{ padding: '4px 6px', border: '1px solid #E4E7EC', borderRadius: 4, fontSize: 12, textAlign: 'center' }} />
-                        <input type="number" value={String(stats[`${key}_adv`] ?? '')} onChange={e => setStats(p => ({ ...p, [`${key}_adv`]: Number(e.target.value) }))}
-                          style={{ padding: '4px 6px', border: '1px solid #E4E7EC', borderRadius: 4, fontSize: 12, textAlign: 'center' }} />
-                      </div>
-                    ))}
+                    {(() => {
+                    const isHome = selJogo?.local === 'casa';
+                    const labelEsq = isHome ? 'RA (casa)' : (selJogo?.adversario as string ?? 'ADV') + ' (casa)';
+                    const labelDir = isHome ? (selJogo?.adversario as string ?? 'ADV') + ' (fora)' : 'RA (fora)';
+                    const keyEsq = isHome ? 'ra' : 'adv';
+                    const keyDir = isHome ? 'adv' : 'ra';
+                    return (
+                      <>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 12 }}>
+                          Estatísticas · <span style={{ color: '#006B3C' }}>{labelEsq}</span> vs <span style={{ color: '#6B7280' }}>{labelDir}</span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: 1, marginBottom: 4, fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase' }}>
+                          <span>Estatística</span>
+                          <span style={{ textAlign: 'center', color: '#006B3C' }}>{isHome ? 'RA' : selJogo?.adversario as string}</span>
+                          <span style={{ textAlign: 'center' }}>{isHome ? selJogo?.adversario as string : 'RA'}</span>
+                        </div>
+                        {STATS_COLS.map(([key, label]) => (
+                          <div key={key} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: 4, alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #F9FAFB' }}>
+                            <span style={{ fontSize: 12, color: '#374151' }}>{label}</span>
+                            <input type="number" value={String(stats[`${key}_${keyEsq}`] ?? '')} onChange={e => setStats(p => ({ ...p, [`${key}_${keyEsq}`]: Number(e.target.value) }))}
+                              style={{ padding: '4px 6px', border: '1px solid #E4E7EC', borderRadius: 4, fontSize: 12, textAlign: 'center', background: '#F0F7F3' }} />
+                            <input type="number" value={String(stats[`${key}_${keyDir}`] ?? '')} onChange={e => setStats(p => ({ ...p, [`${key}_${keyDir}`]: Number(e.target.value) }))}
+                              style={{ padding: '4px 6px', border: '1px solid #E4E7EC', borderRadius: 4, fontSize: 12, textAlign: 'center' }} />
+                          </div>
+                        ))}
+                      </>
+                    );
+                  })()}
                     <button onClick={saveStats} style={{ marginTop: 14, padding: '8px 18px', background: '#006B3C', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                       Guardar estatísticas
                     </button>
