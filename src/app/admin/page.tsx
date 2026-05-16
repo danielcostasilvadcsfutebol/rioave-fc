@@ -123,12 +123,17 @@ export default function AdminPage() {
       .then(({ data }) => setAllJogadores(data ?? []));
   }, [auth]);
 
-  // Load RA players when epoch changes
+  // Reload RA players whenever selected game changes (epoch may differ)
   useEffect(() => {
     if (!auth) return;
-    supabase.from('jogadores_epoca').select('numero, ativo, jogadores(id, nome_display, posicao)').eq('epoca', jogoEpoca).order('numero')
+    const epoca = (jogos.find(j => j.id === sel)?.epoca as string) ?? '25/26';
+    supabase.from('jogadores_epoca')
+      .select('numero, ativo, jogadores(id, nome_display, posicao)')
+      .eq('epoca', epoca)
+      .eq('ativo', true)
+      .order('numero')
       .then(({ data }) => setJogadoresRA((data ?? []).map((r: any) => ({ ...r.jogadores, numero: r.numero, ativo: r.ativo }))));
-  }, [auth, jogoEpoca]);
+  }, [auth, sel, jogos]);
 
   // Load game detail
   useEffect(() => {
