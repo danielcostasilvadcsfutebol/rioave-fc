@@ -192,17 +192,36 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
             <div style={{padding:'6px 14px 12px'}}>
               {statsJogo ? (
                 <>
+                  {/* Casa à esquerda, Fora à direita */}
                   <div style={{display:'grid',gridTemplateColumns:'44px 1fr 44px',gap:8,paddingBottom:8,borderBottom:'1.5px solid #E4E7EC',marginBottom:4}}>
-                    <span style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.04em',color:'#006B3C'}}>RA</span>
-                    <span/>
-                    <span style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.04em',color:'#DC2626',textAlign:'right'}}>{partida.adversario.split(' ')[0]}</span>
+                    <span style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.04em',color:isHome?'#006B3C':'#DC2626'}}>
+                      {isHome?'RA':partida.adversario.split(' ')[0]}
+                    </span>
+                    <span style={{fontSize:9,color:'#9CA3AF',textAlign:'center',alignSelf:'center'}}>casa · fora</span>
+                    <span style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.04em',color:isHome?'#DC2626':'#006B3C',textAlign:'right'}}>
+                      {isHome?partida.adversario.split(' ')[0]:'RA'}
+                    </span>
                   </div>
                   {STATS_LABELS.map(([key,label],idx)=>{
                     const vals=statsJogo[key as keyof EstatisticasJogo] as [number,number];
-                    const [vl,vr]=vals??[0,0];
+                    const [raVal,advVal]=vals??[0,0];
+                    // Casa à esquerda: quando RA é casa usa raVal esq, quando RA é fora usa advVal esq
+                    const [vl,vr]=isHome?[raVal,advVal]:[advVal,raVal];
                     const tot=Math.max(vl+vr,1);
                     const pl=Math.round(vl/tot*100);
-                    return <div key={key} style={{display:'grid',gridTemplateColumns:'44px 1fr 44px',gap:8,alignItems:'center',padding:'7px 6px',background:idx%2===0?'#fff':'#F9FAFB',borderRadius:6}}><div style={{fontSize:13,fontWeight:700,color:'#111318'}}>{key==='posse_bola'?`${vl}%`:vl}</div><div><div style={{fontSize:10,color:'#9CA3AF',textAlign:'center',marginBottom:4}}>{label}</div><div style={{height:5,background:'#E4E7EC',borderRadius:99,overflow:'hidden',display:'flex'}}><div style={{background:'#006B3C',height:'100%',width:`${pl}%`,borderRadius:'99px 0 0 99px'}}/><div style={{background:'#DC2626',height:'100%',width:`${100-pl}%`,marginLeft:'auto',borderRadius:'0 99px 99px 0'}}/></div></div><div style={{fontSize:13,fontWeight:700,color:'#111318',textAlign:'right'}}>{key==='posse_bola'?`${vr}%`:vr}</div></div>;
+                    const colorL=isHome?'#006B3C':'#DC2626';
+                    const colorR=isHome?'#DC2626':'#006B3C';
+                    return <div key={key} style={{display:'grid',gridTemplateColumns:'44px 1fr 44px',gap:8,alignItems:'center',padding:'7px 6px',background:idx%2===0?'#fff':'#F9FAFB',borderRadius:6}}>
+                      <div style={{fontSize:13,fontWeight:700,color:'#111318'}}>{key==='posse_bola'?`${vl}%`:vl}</div>
+                      <div>
+                        <div style={{fontSize:10,color:'#9CA3AF',textAlign:'center',marginBottom:4}}>{label}</div>
+                        <div style={{height:5,background:'#E4E7EC',borderRadius:99,overflow:'hidden',display:'flex'}}>
+                          <div style={{background:colorL,height:'100%',width:`${pl}%`,borderRadius:'99px 0 0 99px'}}/>
+                          <div style={{background:colorR,height:'100%',width:`${100-pl}%`,marginLeft:'auto',borderRadius:'0 99px 99px 0'}}/>
+                        </div>
+                      </div>
+                      <div style={{fontSize:13,fontWeight:700,color:'#111318',textAlign:'right'}}>{key==='posse_bola'?`${vr}%`:vr}</div>
+                    </div>;
                   })}
                 </>
               ) : <div style={{padding:'20px 0',textAlign:'center',fontSize:12,color:'#9CA3AF'}}>Estatísticas serão adicionadas progressivamente.</div>}
