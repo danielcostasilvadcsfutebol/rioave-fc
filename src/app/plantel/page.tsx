@@ -66,7 +66,7 @@ export default function PlantelPage() {
 
   // Pre-compute stats for all players using Supabase fichas
   const statsMap = useMemo(() => {
-    const m = new Map<string, ReturnType<typeof getPlayerStats>>();
+    const m = new Map<string, ReturnType<typeof computePlayerStats>>();
     roster.forEach(p => {
       // Temporarily override FICHAS_RA with Supabase data
       m.set(p.nome, computePlayerStats(p.nome, fichas));
