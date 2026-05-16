@@ -115,10 +115,20 @@ export default function AdminPage() {
   const jogoEpoca = (selJogo?.epoca as string) ?? '25/26';
 
   // Load on auth
+  // Extrai número da jornada: "J3" → 3, "J33" → 33
+  function jornadaNum(j: string): number {
+    const m = j?.match(/\d+/);
+    return m ? parseInt(m[0]) : 0;
+  }
+
   useEffect(() => {
     if (!auth) return;
     supabase.from('jogos').select('id,jornada,data,adversario,local,golos_ra,golos_adv,resultado,has_detail,espectadores,formacao_ra,formacao_adv,arbitro,hora,estadio,epoca').order('data', { ascending: false })
-      .then(({ data }) => setJogos(data ?? []));
+      .then(({ data }) => {
+        // Ordena por número da jornada decrescente
+        const sorted = (data ?? []).sort((a: any, b: any) => jornadaNum(b.jornada) - jornadaNum(a.jornada));
+        setJogos(sorted);
+      });
     supabase.from('jogadores').select('id,nome_display,posicao').order('nome_display')
       .then(({ data }) => setAllJogadores(data ?? []));
   }, [auth]);
@@ -258,36 +268,35 @@ export default function AdminPage() {
 
   async function copyFichaAnterior() {
     if (!sel || !selJogo) return;
-    // Find the most recent game (before current) that has RA fichas
-    const { data: jogosAnteriores } = await supabase
-      .from('jogos')
-      .select('id, jornada, data')
-      .eq('epoca', jogoEpoca)
-      .lt('data', selJogo.data as string)
-      .order('data', { ascending: false })
-      .limit(10);
+    const numAtual = jornadaNum(selJogo.jornada as string);
+    if (numAtual <= 1) { toast('Não existe jornada anterior', false); return; }
 
-    if (!jogosAnteriores?.length) { toast('Nenhum jogo anterior encontrado', false); return; }
+    // Procura o jogo da jornada imediatamente anterior (por número), mesma época
+    const jogosOrdenados = [...jogos]
+      .filter(j => j.id !== sel && jornadaNum(j.jornada as string) < numAtual)
+      .sort((a: any, b: any) => jornadaNum(b.jornada) - jornadaNum(a.jornada));
 
-    // Find the first one that has RA fichas
+    if (!jogosOrdenados.length) { toast('Nenhuma jornada anterior encontrada', false); return; }
+
+    // Encontra o primeiro com ficha RA
     let fichasAnt: Record<string,unknown>[] = [];
     let jogoAnt: Record<string,unknown> | null = null;
-    for (const j of jogosAnteriores) {
-      const { data } = await supabase.from('fichas_jogo').select('*').eq('jogo_id', j.id).eq('equipa', 'ra').order('ordem');
+    for (const j of jogosOrdenados) {
+      const { data } = await supabase.from('fichas_jogo').select('*')
+        .eq('jogo_id', j.id).eq('equipa', 'ra').order('ordem');
       if (data?.length) { fichasAnt = data; jogoAnt = j; break; }
     }
 
-    if (!fichasAnt.length || !jogoAnt) { toast('Nenhum jogo anterior com ficha RA encontrado', false); return; }
+    if (!fichasAnt.length || !jogoAnt) { toast('Nenhuma jornada anterior com ficha RA', false); return; }
 
-    // Check if current game already has RA fichas
+    // Confirma se já há fichas RA
     if (fichas.filter(f => f.equipa === 'ra').length > 0) {
-      if (!confirm(`Já existem fichas RA neste jogo. Substituir pela ficha de ${jogoAnt.jornada}?`)) return;
-      // Delete existing RA fichas
+      if (!confirm(`Substituir fichas RA actuais pela ficha de ${jogoAnt.jornada}?`)) return;
       const raIds = fichas.filter(f => f.equipa === 'ra').map(f => f.id as string);
       for (const id of raIds) await supabase.from('fichas_jogo').delete().eq('id', id);
     }
 
-    // Copy fichas to current game
+    // Copia apenas jogadores RA (equipa='ra' já garantido pelo filtro acima)
     const toInsert = fichasAnt.map(({ id: _id, jogo_id: _jid, ...rest }) => ({ ...rest, jogo_id: sel }));
     const { error } = await supabase.from('fichas_jogo').insert(toInsert);
     if (error) { toast('Erro ao copiar: ' + error.message, false); return; }
@@ -296,7 +305,7 @@ export default function AdminPage() {
     setJogos(prev => prev.map(j => j.id === sel ? { ...j, has_detail: true } : j));
     const { data: updated } = await supabase.from('fichas_jogo').select('*').eq('jogo_id', sel).order('ordem');
     setFichas(updated ?? []);
-    toast(`Ficha de ${jogoAnt.jornada} copiada — edita quem não jogou`);
+    toast(`✓ Ficha RA de ${jogoAnt.jornada} copiada — remove quem não jogou`);
   }
 
   async function saveEvento() {
