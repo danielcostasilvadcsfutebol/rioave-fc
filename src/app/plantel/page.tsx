@@ -195,50 +195,109 @@ export default function PlantelPage() {
   );
 }
 
-// Compute player stats from Supabase fichas data
+// ── Stats computation (same logic as jogador_page) ──────────
+function isDoubleYellow(red: any, evts: any[]): boolean {
+  return evts.some((e: any) =>
+    e.tipo === 'cartao_amarelo' && e.equipa === red.equipa &&
+    e.jogador === red.jogador && e.minuto < red.minuto
+  );
+}
+
 function computePlayerStats(nome: string, fichas: FichaData[]) {
   const k = nome.trim();
-  let numero=0, posicao: string|undefined;
+  let numero = 0; let posicao: string | undefined;
   for (const f of fichas) {
-    const p = [...f.titulares,...f.suplentes].find(p=>p.nome.trim()===k);
-    if (p) { numero=p.numero; posicao=p.posicao; break; }
+    const p = [...f.titulares, ...f.suplentes].find(p => p.nome.trim() === k);
+    if (p) { numero = p.numero; posicao = p.posicao; break; }
   }
   if (!numero && !posicao) return null;
-  const isGR=posicao==='GR';
-  let jogosTotal=0,jogosTitular=0,jogosSuplente=0,minutosJogados=0;
-  let golosMarcados=0,assistencias=0,cartoesAmarelos=0,cartoesVermelhos=0,golosSofridosEmCampo=0;
-  let vitorias=0,empates=0,derrotas=0,vitoriasTitular=0,golsEquipaEmCampo=0,cleanSheets=0;
-  const partidas=[];
-  function minuto(e: any){return e.minuto+(e.minuto_extra??0);}
-  function calcMins(f: FichaData){
-    if(f.titulares.some(p=>p.nome.trim()===k)){const saiu=f.eventos.find(e=>e.tipo==='substituicao'&&e.equipa==='ra'&&e.jogador.trim()===k);return saiu?minuto(saiu):90;}
-    const entrou=f.eventos.find(e=>e.tipo==='substituicao'&&e.equipa==='ra'&&e.jogador2?.trim()===k);
-    return entrou?Math.max(0,90-minuto(entrou)):0;
+
+  let jogosTotal=0, jogosTitular=0, jogosSuplente=0, jogosBancoReal=0, minutosJogados=0;
+  let golosMarcados=0, assistencias=0, cartoesAmarelos=0, cartoesVermelhos=0;
+  let golosSofridosEmCampo=0, golsEquipaEmCampo=0;
+  let vitorias=0, empates=0, derrotas=0, vitoriasTitular=0, cleanSheets=0;
+
+  function mne(e: any) { return e.minuto + (e.minuto_extra ?? 0); }
+
+  for (const f of fichas) {
+    const isTitular  = f.titulares.some(p => p.nome.trim() === k);
+    const isSuplente = f.suplentes.some(p => p.nome.trim() === k);
+    if (!isTitular && !isSuplente) continue;
+
+    // Expulsion minute
+    const redCard = f.eventos.find((e: any) =>
+      e.tipo === 'cartao_vermelho' && e.equipa === 'ra' && e.jogador.trim() === k
+    );
+    const minExpulsao = redCard ? mne(redCard) : Infinity;
+
+    // Minutes on field
+    function calcMins(): number {
+      if (isTitular) {
+        const saiu = f.eventos.find((e: any) =>
+          e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador.trim() === k
+        );
+        return Math.min(saiu ? mne(saiu) : 90, minExpulsao);
+      }
+      const entrou = f.eventos.find((e: any) =>
+        e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k
+      );
+      if (!entrou) return 0; // on bench, didn't enter
+      return Math.min(90, minExpulsao) - mne(entrou);
+    }
+
+    // Is player on field at given minute?
+    function emCampo(min: number): boolean {
+      if (min > minExpulsao) return false;
+      if (isTitular) {
+        const saiu = f.eventos.find((e: any) =>
+          e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador.trim() === k
+        );
+        return !saiu || mne(saiu) > min;
+      }
+      const entrou = f.eventos.find((e: any) =>
+        e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k
+      );
+      return entrou ? mne(entrou) <= min : false;
+    }
+
+    const mins = calcMins();
+    if (mins === 0) { jogosBancoReal++; continue; }
+
+    const gm  = f.eventos.filter((e: any) => ['golo','golo_penalidade'].includes(e.tipo) && e.equipa==='ra' && e.jogador.trim()===k).length;
+    const ast = f.eventos.filter((e: any) => ['golo','golo_penalidade'].includes(e.tipo) && e.equipa==='ra' && e.jogador2?.trim()===k).length;
+    const yl  = f.eventos.filter((e: any) => e.tipo==='cartao_amarelo' && e.equipa==='ra' && e.jogador.trim()===k).length;
+    const reds = f.eventos.filter((e: any) => e.tipo==='cartao_vermelho' && e.equipa==='ra' && e.jogador.trim()===k);
+    const extraYl = reds.filter((r: any) => isDoubleYellow(r, f.eventos)).length;
+    const gc  = f.eventos.filter((e: any) => {
+      const isAdv = (e.tipo==='golo'||e.tipo==='golo_penalidade') && e.equipa==='adv';
+      const isOwn = e.tipo==='auto_golo' && e.equipa==='ra';
+      return (isAdv||isOwn) && emCampo(mne(e));
+    }).length;
+    const gea = f.eventos.filter((e: any) =>
+      ['golo','golo_penalidade'].includes(e.tipo) && e.equipa==='ra' && emCampo(mne(e))
+    ).length;
+
+    jogosTotal++; minutosJogados += mins;
+    if (isTitular) { jogosTitular++; if (f.resultado==='V') vitoriasTitular++; }
+    else jogosSuplente++;
+    if (f.resultado==='V') vitorias++;
+    else if (f.resultado==='E') empates++;
+    else derrotas++;
+    golosMarcados+=gm; assistencias+=ast;
+    cartoesAmarelos+=(yl+extraYl); cartoesVermelhos+=reds.length;
+    golosSofridosEmCampo+=gc; golsEquipaEmCampo+=gea;
+    if (gc===0) cleanSheets++;
   }
-  function emCampo(min: number,f: FichaData){
-    if(f.titulares.some(p=>p.nome.trim()===k)){const saiu=f.eventos.find(e=>e.tipo==='substituicao'&&e.equipa==='ra'&&e.jogador.trim()===k);return!saiu||minuto(saiu)>min;}
-    const entrou=f.eventos.find(e=>e.tipo==='substituicao'&&e.equipa==='ra'&&e.jogador2?.trim()===k);
-    return entrou?minuto(entrou)<=min:false;
-  }
-  for(const f of fichas){
-    const mins=calcMins(f);
-    if(mins===0) continue;
-    const foiTitular=f.titulares.some(p=>p.nome.trim()===k);
-    const gm=f.eventos.filter(e=>['golo','golo_penalidade'].includes(e.tipo)&&e.equipa==='ra'&&e.jogador.trim()===k).length;
-    const ast=f.eventos.filter(e=>['golo','golo_penalidade'].includes(e.tipo)&&e.equipa==='ra'&&e.jogador2?.trim()===k).length;
-    const ca=f.eventos.filter(e=>e.tipo==='cartao_amarelo'&&e.equipa==='ra'&&e.jogador.trim()===k).length;
-    const cv=f.eventos.filter(e=>e.tipo==='cartao_vermelho'&&e.equipa==='ra'&&e.jogador.trim()===k).length;
-    const gc=f.eventos.filter(e=>{const isAdv=(e.tipo==='golo'||e.tipo==='golo_penalidade')&&e.equipa==='adv';const isOwn=e.tipo==='auto_golo'&&e.equipa==='ra';return(isAdv||isOwn)&&emCampo(minuto(e),f);}).length;
-    const gea=f.eventos.filter(e=>['golo','golo_penalidade'].includes(e.tipo)&&e.equipa==='ra'&&emCampo(minuto(e),f)).length;
-    jogosTotal++;minutosJogados+=mins;
-    if(foiTitular){jogosTitular++;if(f.resultado==='V')vitoriasTitular++;}else{jogosSuplente++;}
-    if(f.resultado==='V')vitorias++;else if(f.resultado==='E')empates++;else derrotas++;
-    golosMarcados+=gm;assistencias+=ast;cartoesAmarelos+=ca;cartoesVermelhos+=cv;
-    golosSofridosEmCampo+=gc;golsEquipaEmCampo+=gea;
-    if(gc===0)cleanSheets++;
-    partidas.push({gameId:f.gameId,jornada:f.jornada,data:f.data,adversario:f.adversario,local:f.local,resultado:f.resultado,golos_ra:f.golos_ra,golos_adv:f.golos_adv,foiTitular,entrou:!foiTitular,minutosJogados:mins,golosMarcados:gm,assistencias:ast,cartoesAmarelos:ca,cartoesVermelhos:cv,golosSofridosEmCampo:gc});
-  }
-  const jogosBanco=fichas.filter(f=>!f.titulares.some(p=>p.nome.trim()===k)&&f.suplentes.some(p=>p.nome.trim()===k)).length-jogosSuplente;
-  const minutosDisponiveis=(jogosTotal+Math.max(0,jogosBanco))*90;
-  return{nome:k,numero,posicao,isGR,epoca:'25/26',jogosTotal,jogosTitular,jogosSuplente,jogosBanco:Math.max(0,jogosBanco),minutosJogados,minutosDisponiveis,golosMarcados,assistencias,contribuicoes:golosMarcados+assistencias,cartoesAmarelos,cartoesVermelhos,golosSofridosEmCampo,golsEquipaEmCampo,diferencaEmCampo:golsEquipaEmCampo-golosSofridosEmCampo,cleanSheets,vitorias,empates,derrotas,vitoriasTitular,partidas};
+
+  const minutosDisponiveis = (jogosTotal + jogosBancoReal) * 90;
+  return {
+    nome:k, numero, posicao, isGR: posicao==='GR', epoca:'25/26',
+    jogosTotal, jogosTitular, jogosSuplente, jogosBanco:jogosBancoReal,
+    minutosJogados, minutosDisponiveis,
+    golosMarcados, assistencias, contribuicoes:golosMarcados+assistencias,
+    cartoesAmarelos, cartoesVermelhos,
+    golosSofridosEmCampo, golsEquipaEmCampo,
+    diferencaEmCampo:golsEquipaEmCampo-golosSofridosEmCampo,
+    cleanSheets, vitorias, empates, derrotas, vitoriasTitular,
+  };
 }
