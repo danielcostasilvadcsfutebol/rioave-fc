@@ -158,7 +158,7 @@ export default function PlantelPage() {
                   <span style={{fontSize:11,color:'#9CA3AF'}}>{players.length} jogadores</span>
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:GRID,gap:6,padding:'5px 14px',borderBottom:'1px solid #F3F4F6',background:'#FAFAFA'}}>
-                  {COLS.map(h=><div key={h.key} title={h.tip} style={{fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.07em',textAlign:h.key==='Jogador'?'left':'center',cursor:'help'}}>{h.key}</div>)}
+                  {COLS.map(h=><div key={h.key} title={h.tip} style={{fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.07em',textAlign:h.key==='Jogador'?'left':'center',cursor:'default'}}>{h.key}</div>)}
                 </div>
                 {players.map((p,i) => {
                   const s = statsMap.get(p.nome);
@@ -243,35 +243,30 @@ function computePlayerStats(nome: string, fichas: FichaData[]) {
     );
     const minExpulsao = redCard ? mne(redCard) : Infinity;
 
-    // Minutes on field
-    function calcMins(): number {
-      if (isTitular) {
-        const saiu = f.eventos.find((e: any) =>
-          e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador.trim() === k
-        );
-        return Math.min(saiu ? mne(saiu) : 90, minExpulsao);
-      }
-      const entrou = f.eventos.find((e: any) =>
-        e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k
-      );
-      if (!entrou) return 0; // on bench, didn't enter
-      return Math.min(90, minExpulsao) - mne(entrou);
-    }
+    // Minuto real em que saiu (sub ou expulsão) e em que entrou
+    const saiuEvt   = isTitular ? f.eventos.find((e: any) =>
+      e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador.trim() === k
+    ) : null;
+    const entrouEvt = !isTitular ? f.eventos.find((e: any) =>
+      e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k
+    ) : null;
+    const minSaiu   = saiuEvt   ? mne(saiuEvt)  : Infinity;
+    const minEntrou = entrouEvt ? mne(entrouEvt) : null;
 
-    // Is player on field at given minute?
-    function emCampo(min: number): boolean {
-      if (min > minExpulsao) return false;
-      if (isTitular) {
-        const saiu = f.eventos.find((e: any) =>
-          e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador.trim() === k
-        );
-        return !saiu || mne(saiu) > min;
-      }
-      const entrou = f.eventos.find((e: any) =>
-        e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k
-      );
-      return entrou ? mne(entrou) <= min : false;
-    }
+    // Minutos reais em campo (considera sub + expulsão)
+    const calcMins = (): number => {
+      if (isTitular) return Math.min(minSaiu, minExpulsao, 90);
+      if (minEntrou === null) return 0;
+      return Math.min(90, minExpulsao) - minEntrou;
+    };
+
+    // Estava em campo no minuto X?
+    const emCampo = (min: number): boolean => {
+      const minFim = Math.min(minSaiu, minExpulsao, 90);
+      if (isTitular) return min <= minFim;
+      if (minEntrou === null) return false;
+      return min >= minEntrou && min <= Math.min(minExpulsao, 90);
+    };
 
     const mins = calcMins();
     if (mins === 0) { jogosBancoReal++; continue; }
