@@ -756,6 +756,9 @@ export default function AdminPage() {
                         <div>{sel2(newEv.tipo, TIPOS_EVENTO, v => setNewEv(p => ({ ...p, tipo: v })))}</div>
                         <div>{sel2(newEv.equipa, ['ra', 'adv'], v => setNewEv(p => ({ ...p, equipa: v, jogador: '', jogador2: '' })))}</div>
                         <div>
+                          <div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>
+                            {newEv.tipo==='substituicao' ? '↑ Entra' : 'Jogador'}
+                          </div>
                           <PlayerAC
                             value={newEv.jogador}
                             onChange={v => setNewEv(p => ({ ...p, jogador: v }))}
@@ -764,11 +767,14 @@ export default function AdminPage() {
                           />
                         </div>
                         <div>
+                          <div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>
+                            {newEv.tipo==='substituicao' ? '↓ Sai' : 'Assist./Info'}
+                          </div>
                           <PlayerAC
                             value={newEv.jogador2}
                             onChange={v => setNewEv(p => ({ ...p, jogador2: v }))}
                             players={newEv.equipa === 'ra' ? raNames : advNames}
-                            placeholder={newEv.tipo === 'substituicao' ? 'Sai' : 'Assist.'}
+                            placeholder={newEv.tipo === 'substituicao' ? '↓ Quem sai' : 'Assist.'}
                           />
                         </div>
                         <div>{inp(newEv.score_ra, v => setNewEv(p => ({ ...p, score_ra: v })), 'RA')}</div>
