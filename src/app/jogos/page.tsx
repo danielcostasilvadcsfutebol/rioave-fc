@@ -134,10 +134,11 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
 
   const ann=(pNome:string,evs:EventoJogo[],eq:'ra'|'adv')=>{
     const e=evs.filter(x=>x.equipa===eq);
-    const y=e.filter(x=>x.tipo==='cartao_amarelo'&&x.jogador===pNome).length;
-    const r=e.filter(x=>x.tipo==='cartao_vermelho'&&x.jogador===pNome).length;
-    const out=e.find(x=>x.tipo==='substituicao'&&x.jogador===pNome);
-    const inn=e.find(x=>x.tipo==='substituicao'&&x.jogador2===pNome);
+    const p=pNome.trim();
+    const y=e.filter(x=>x.tipo==='cartao_amarelo'&&x.jogador?.trim()===p).length;
+    const r=e.filter(x=>x.tipo==='cartao_vermelho'&&x.jogador?.trim()===p).length;
+    const out=e.find(x=>x.tipo==='substituicao'&&x.jogador?.trim()===p);
+    const inn=e.find(x=>x.tipo==='substituicao'&&x.jogador2?.trim()===p);
     return{y,r,dbl:r>0&&y>0,out,inn};
   };
 
