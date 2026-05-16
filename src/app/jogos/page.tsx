@@ -58,12 +58,12 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
-    if (expanded && !detail && partida.hasDetail) {
+    if (expanded && !detail) {
       setLoadingDetail(true);
       Promise.all([getEventosDB(partida.id), getEstatisticasDB(partida.id), getFichasDB(partida.id)])
         .then(([eventos, stats, fichas]) => { setDetail({ eventos, stats, fichas }); setLoadingDetail(false); });
     }
-  }, [expanded, partida.id, partida.hasDetail, detail]);
+  }, [expanded, partida.id, detail]);
 
   const isHome = partida.local === 'casa';
   const res = {V:'Vitória',E:'Empate',D:'Derrota'}[partida.resultado];
