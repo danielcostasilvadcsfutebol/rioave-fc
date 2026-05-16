@@ -56,15 +56,18 @@ function computeStats(nome: string, fichas: FichaData[]) {
       return Math.min(90, minExpulsao) - mn(entrou);
     }
 
-    function emCampo(min: number): boolean {
-      if (min > minExpulsao) return false;
-      if (isTitular) {
-        const saiu = f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador.trim() === k);
-        return !saiu || mn(saiu) > min;
-      }
-      const entrou = f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k);
-      return entrou ? mn(entrou) <= min : false;
-    }
+    // Is player on field at given minute? (arrow fn to avoid hoisting issues)
+    const saiuEvt   = isTitular ? f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador.trim() === k) : null;
+    const entrouEvt = !isTitular ? f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k) : null;
+    const minSaiu   = saiuEvt   ? mn(saiuEvt)   : Infinity;
+    const minEntrou = entrouEvt ? mn(entrouEvt)  : null;
+
+    const emCampo = (min: number): boolean => {
+      const minFim = Math.min(minSaiu, minExpulsao, 90);
+      if (isTitular) return min <= minFim;
+      if (minEntrou === null) return false;
+      return min >= minEntrou && min <= Math.min(minExpulsao, 90);
+    };
 
     const mins = calcMins();
     if (mins === 0) { jogosBancoReal++; continue; }
