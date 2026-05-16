@@ -88,6 +88,12 @@ export default function AdminPage() {
   const [jogoEdit, setJogoEdit] = useState<Record<string,unknown>>({});
   const [loading, setLoading] = useState(false);
 
+  // Plantel edit state
+  const [editingJogador, setEditingJogador] = useState<string|null>(null); // jogador_id being edited
+  const [editForm, setEditForm] = useState({ nome: '', posicao: 'DEF', numero: '', ativo: true });
+  const [addEpocaFor, setAddEpocaFor] = useState<string|null>(null); // jogador_id to add epoch
+  const [addEpocaForm, setAddEpocaForm] = useState({ epoca: '25/26', numero: '' });
+
   // New game form
   const [showNewJogo, setShowNewJogo] = useState(false);
   const [newJogo, setNewJogo] = useState({
@@ -168,6 +174,52 @@ export default function AdminPage() {
   );
 
   // ── CRUD helpers ─────────────────────────────────────────────
+  async function updateJogador() {
+    if (!editingJogador || !editForm.nome) return;
+    // Update jogadores table
+    await supabase.from('jogadores').update({ nome_display: editForm.nome, posicao: editForm.posicao }).eq('id', editingJogador);
+    // Update jogadores_epoca for current epoch
+    await supabase.from('jogadores_epoca').update({ numero: Number(editForm.numero), ativo: editForm.ativo }).eq('jogador_id', editingJogador).eq('epoca', epocaPlantel);
+    toast('Jogador actualizado');
+    setEditingJogador(null);
+    const { data } = await supabase.from('jogadores_epoca').select('numero, ativo, jogadores(id, nome_display, posicao)').eq('epoca', epocaPlantel).order('numero');
+    setJogadoresEpoca((data ?? []).map((r: any) => ({ ...r.jogadores, numero: r.numero, ativo: r.ativo })));
+    const { data: all } = await supabase.from('jogadores').select('id,nome_display,posicao').order('nome_display');
+    setAllJogadores(all ?? []);
+  }
+
+  async function deleteJogadorFromEpoca(jogadorId: string, epoca: string) {
+    if (!confirm('Remover jogador desta época?')) return;
+    await supabase.from('jogadores_epoca').delete().eq('jogador_id', jogadorId).eq('epoca', epoca);
+    setJogadoresEpoca(prev => prev.filter(j => j.id !== jogadorId));
+    toast('Jogador removido da época');
+  }
+
+  async function deleteJogadorCompletely(jogadorId: string, nome: string) {
+    if (!confirm(`Apagar ${nome} de TODAS as épocas? Esta acção é irreversível.`)) return;
+    await supabase.from('jogadores_epoca').delete().eq('jogador_id', jogadorId);
+    await supabase.from('jogadores').delete().eq('id', jogadorId);
+    setJogadoresEpoca(prev => prev.filter(j => j.id !== jogadorId));
+    setAllJogadores(prev => prev.filter(j => j.id !== jogadorId));
+    toast('Jogador apagado completamente');
+  }
+
+  async function addEpocaToJogador() {
+    if (!addEpocaFor || !addEpocaForm.numero) return;
+    const { error } = await supabase.from('jogadores_epoca').upsert(
+      { jogador_id: addEpocaFor, epoca: addEpocaForm.epoca, numero: Number(addEpocaForm.numero), ativo: true },
+      { onConflict: 'jogador_id,epoca' }
+    );
+    if (error) { toast('Erro: ' + error.message, false); return; }
+    toast(`Época ${addEpocaForm.epoca} adicionada`);
+    setAddEpocaFor(null);
+    setAddEpocaForm({ epoca: '25/26', numero: '' });
+    if (addEpocaForm.epoca === epocaPlantel) {
+      const { data } = await supabase.from('jogadores_epoca').select('numero, ativo, jogadores(id, nome_display, posicao)').eq('epoca', epocaPlantel).order('numero');
+      setJogadoresEpoca((data ?? []).map((r: any) => ({ ...r.jogadores, numero: r.numero, ativo: r.ativo })));
+    }
+  }
+
   async function createJogo() {
     if (!newJogo.jornada || !newJogo.adversario || !newJogo.data) {
       toast('Preenche jornada, adversário e data', false); return;
@@ -341,17 +393,84 @@ export default function AdminPage() {
               if (!players.length) return null;
               const labels: Record<string, string> = { GR: 'Guarda-Redes', DEF: 'Defesas', MED: 'Médios', AV: 'Avançados' };
               return (
-                <div key={pos} style={{ marginBottom: 12 }}>
+                <div key={pos} style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>{labels[pos]}</div>
                   {players.map(j => (
-                    <div key={j.id as string} style={{ display: 'grid', gridTemplateColumns: '36px 1fr 60px auto', gap: 8, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #F3F4F6', opacity: j.ativo ? 1 : 0.45 }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', textAlign: 'center' }}>#{j.numero as number}</span>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#111318' }}>{j.nome_display as string}</span>
-                      <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: '#EEF7F2', color: '#006B3C', fontWeight: 600 }}>{j.posicao as string}</span>
-                      <button onClick={() => toggleAtivo(j.id as string, j.ativo as boolean, epocaPlantel)}
-                        style={{ padding: '3px 8px', fontSize: 11, fontWeight: 600, border: '1px solid #E4E7EC', borderRadius: 6, cursor: 'pointer', background: j.ativo ? '#FCEBEB' : '#EEF7F2', color: j.ativo ? '#DC2626' : '#006B3C' }}>
-                        {j.ativo ? 'Desactivar' : 'Activar'}
-                      </button>
+                    <div key={j.id as string}>
+                      {editingJogador === j.id ? (
+                        /* ── Edit mode ── */
+                        <div style={{ background: '#F0F7F3', border: '1px solid #006B3C', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 60px', gap: 6, marginBottom: 8 }}>
+                            <div>
+                              <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 2 }}>Nome</div>
+                              <input value={editForm.nome} onChange={e => setEditForm(p => ({ ...p, nome: e.target.value }))}
+                                style={{ width: '100%', padding: '5px 7px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 12, boxSizing: 'border-box' as const }} />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 2 }}>Posição</div>
+                              <select value={editForm.posicao} onChange={e => setEditForm(p => ({ ...p, posicao: e.target.value }))}
+                                style={{ width: '100%', padding: '5px 6px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 12 }}>
+                                {['GR','DEF','MED','AV'].map(o => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 2 }}>Nº</div>
+                              <input type="number" value={editForm.numero} onChange={e => setEditForm(p => ({ ...p, numero: e.target.value }))}
+                                style={{ width: '100%', padding: '5px 7px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 12, boxSizing: 'border-box' as const }} />
+                            </div>
+                          </div>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, cursor: 'pointer', marginBottom: 8 }}>
+                            <input type="checkbox" checked={editForm.ativo} onChange={e => setEditForm(p => ({ ...p, ativo: e.target.checked }))} />
+                            Activo nesta época
+                          </label>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button onClick={updateJogador} style={{ padding: '5px 12px', background: '#006B3C', color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Guardar</button>
+                            <button onClick={() => setEditingJogador(null)} style={{ padding: '5px 10px', background: '#F3F4F6', color: '#6B7280', border: 'none', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>Cancelar</button>
+                            <button onClick={() => deleteJogadorCompletely(j.id as string, j.nome_display as string)}
+                              style={{ marginLeft: 'auto', padding: '5px 10px', background: '#FCEBEB', color: '#DC2626', border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                              🗑 Apagar de tudo
+                            </button>
+                          </div>
+                        </div>
+                      ) : addEpocaFor === j.id ? (
+                        /* ── Add epoch mode ── */
+                        <div style={{ background: '#EBF4FF', border: '1px solid #1A5FA8', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+                          <div style={{ fontSize: 11, fontWeight: 600, color: '#1A5FA8', marginBottom: 8 }}>Adicionar época a {j.nome_display as string}</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px auto', gap: 6, alignItems: 'end' }}>
+                            <div>
+                              <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 2 }}>Época</div>
+                              <select value={addEpocaForm.epoca} onChange={e => setAddEpocaForm(p => ({ ...p, epoca: e.target.value }))}
+                                style={{ width: '100%', padding: '5px 6px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 12 }}>
+                                {['25/26','24/25','23/24','22/23'].map(o => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 2 }}>Nº camisola</div>
+                              <input type="number" value={addEpocaForm.numero} onChange={e => setAddEpocaForm(p => ({ ...p, numero: e.target.value }))}
+                                placeholder="Nº" style={{ width: '100%', padding: '5px 6px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 12, boxSizing: 'border-box' as const }} />
+                            </div>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              <button onClick={addEpocaToJogador} style={{ padding: '5px 10px', background: '#1A5FA8', color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Adicionar</button>
+                              <button onClick={() => setAddEpocaFor(null)} style={{ padding: '5px 8px', background: '#F3F4F6', color: '#6B7280', border: 'none', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>✕</button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        /* ── Normal row ── */
+                        <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 50px auto', gap: 6, alignItems: 'center', padding: '6px 4px', borderBottom: '1px solid #F3F4F6', opacity: j.ativo ? 1 : 0.45 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', textAlign: 'center' }}>#{j.numero as number}</span>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: '#111318' }}>{j.nome_display as string}</span>
+                          <span style={{ fontSize: 10, padding: '2px 5px', borderRadius: 4, background: '#EEF7F2', color: '#006B3C', fontWeight: 600 }}>{j.posicao as string}</span>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button onClick={() => { setEditingJogador(j.id as string); setEditForm({ nome: j.nome_display as string, posicao: j.posicao as string, numero: String(j.numero), ativo: j.ativo as boolean }); setAddEpocaFor(null); }}
+                              style={{ padding: '3px 7px', fontSize: 10, fontWeight: 600, background: '#F0F2F5', color: '#374151', border: '1px solid #E4E7EC', borderRadius: 5, cursor: 'pointer' }}>✏️</button>
+                            <button onClick={() => { setAddEpocaFor(j.id as string); setEditingJogador(null); setAddEpocaForm({ epoca: '25/26', numero: String(j.numero) }); }}
+                              style={{ padding: '3px 7px', fontSize: 10, fontWeight: 600, background: '#EBF4FF', color: '#1A5FA8', border: '1px solid #BFDBFE', borderRadius: 5, cursor: 'pointer' }}>+época</button>
+                            <button onClick={() => deleteJogadorFromEpoca(j.id as string, epocaPlantel)}
+                              style={{ padding: '3px 7px', fontSize: 10, fontWeight: 600, background: '#FCEBEB', color: '#DC2626', border: 'none', borderRadius: 5, cursor: 'pointer' }}>✕</button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
