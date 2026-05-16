@@ -103,7 +103,9 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
     const isDbl=isRed&&isDoubleYellow(ev);
     const score=ev.score_ra!=null?<span style={{fontSize:11,fontWeight:800,padding:'2px 7px',borderRadius:5,background:'rgba(0,0,0,.07)',color:'#111318'}}>{ev.score_ra}–{ev.score_adv}</span>:null;
     const min=ev.minuto_extra?`${ev.minuto}+${ev.minuto_extra}'`:`${ev.minuto}'`;
-    const rowBg=isGoal?(isRA?'rgba(0,107,60,.06)':'rgba(220,38,38,.05)'):'transparent';
+    // auto_golo by RA = goal for opponent → red background
+    const isAutoGoalRA = ev.tipo==='auto_golo' && isRA;
+    const rowBg=isGoal?(isAutoGoalRA||!isRA?'rgba(220,38,38,.05)':'rgba(0,107,60,.06)'):'transparent';
     const iconEl=isGoal?<span style={{fontSize:16}}>⚽</span>:isSub?<IcoSub/>:(isYellow||isRed)?<CardIcon type={isYellow?'yellow':'red'} double={isDbl}/>:null;
     const nameStyle:React.CSSProperties={fontSize:12,fontWeight:isGoal?700:600,color:'#111318'};
     const mainName=isSub&&ev.jogador2?ev.jogador2:ev.jogador;
