@@ -256,6 +256,49 @@ export default function AdminPage() {
     setJogos(data ?? []);
   }
 
+  async function copyFichaAnterior() {
+    if (!sel || !selJogo) return;
+    // Find the most recent game (before current) that has RA fichas
+    const { data: jogosAnteriores } = await supabase
+      .from('jogos')
+      .select('id, jornada, data')
+      .eq('epoca', jogoEpoca)
+      .lt('data', selJogo.data as string)
+      .order('data', { ascending: false })
+      .limit(10);
+
+    if (!jogosAnteriores?.length) { toast('Nenhum jogo anterior encontrado', false); return; }
+
+    // Find the first one that has RA fichas
+    let fichasAnt: Record<string,unknown>[] = [];
+    let jogoAnt: Record<string,unknown> | null = null;
+    for (const j of jogosAnteriores) {
+      const { data } = await supabase.from('fichas_jogo').select('*').eq('jogo_id', j.id).eq('equipa', 'ra').order('ordem');
+      if (data?.length) { fichasAnt = data; jogoAnt = j; break; }
+    }
+
+    if (!fichasAnt.length || !jogoAnt) { toast('Nenhum jogo anterior com ficha RA encontrado', false); return; }
+
+    // Check if current game already has RA fichas
+    if (fichas.filter(f => f.equipa === 'ra').length > 0) {
+      if (!confirm(`Já existem fichas RA neste jogo. Substituir pela ficha de ${jogoAnt.jornada}?`)) return;
+      // Delete existing RA fichas
+      const raIds = fichas.filter(f => f.equipa === 'ra').map(f => f.id as string);
+      for (const id of raIds) await supabase.from('fichas_jogo').delete().eq('id', id);
+    }
+
+    // Copy fichas to current game
+    const toInsert = fichasAnt.map(({ id: _id, jogo_id: _jid, ...rest }) => ({ ...rest, jogo_id: sel }));
+    const { error } = await supabase.from('fichas_jogo').insert(toInsert);
+    if (error) { toast('Erro ao copiar: ' + error.message, false); return; }
+
+    await supabase.from('jogos').update({ has_detail: true }).eq('id', sel);
+    setJogos(prev => prev.map(j => j.id === sel ? { ...j, has_detail: true } : j));
+    const { data: updated } = await supabase.from('fichas_jogo').select('*').eq('jogo_id', sel).order('ordem');
+    setFichas(updated ?? []);
+    toast(`Ficha de ${jogoAnt.jornada} copiada — edita quem não jogou`);
+  }
+
   async function saveEvento() {
     if (!newEv.jogador || !sel) return;
     const tipoFinal = newEv.tipo === 'segundo_amarelo' ? 'cartao_vermelho' : newEv.tipo;
@@ -732,7 +775,13 @@ export default function AdminPage() {
                 {/* ── Fichas ── */}
                 {!loading && gameTab === 'fichas' && (
                   <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 12, padding: 16 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 10 }}>Fichas · {fichas.length} jogadores</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>Fichas · {fichas.length} jogadores</div>
+                    <button onClick={copyFichaAnterior}
+                      style={{ padding: '6px 12px', background: '#EBF4FF', color: '#1A5FA8', border: '1.5px solid #BFDBFE', borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                      📋 Copiar ficha do jogo anterior
+                    </button>
+                  </div>
                     {(['titular', 'suplente'] as const).flatMap(tipo =>
                       (['ra', 'adv'] as const).map(equipa => {
                         const list = fichas.filter(f => f.tipo === tipo && f.equipa === equipa);
