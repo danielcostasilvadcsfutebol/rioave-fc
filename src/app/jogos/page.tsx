@@ -132,14 +132,16 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
 
   const detailTab=(d:'eventos'|'stats'|'formacao'):React.CSSProperties=>({flex:1,padding:'9px 8px',fontSize:11,fontWeight:600,textAlign:'center' as const,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',border:'0.5px solid',borderColor:detalhe===d?'#006B3C':'#E4E7EC',background:detalhe===d?'#006B3C':'#fff',color:detalhe===d?'#fff':'#7B8089',borderRadius:8,margin:'0 3px'});
 
-  const ann=(pNome:string,evs:EventoJogo[],eq:'ra'|'adv')=>{
+  // ann: robusto a subs com jogador/jogador2 trocados
+  // Usa o contexto titular=true/false para determinar direcção
+  const ann=(pNome:string,evs:EventoJogo[],eq:'ra'|'adv',titular=true)=>{
     const e=evs.filter(x=>x.equipa===eq);
     const p=pNome.trim();
     const y=e.filter(x=>x.tipo==='cartao_amarelo'&&x.jogador?.trim()===p).length;
     const r=e.filter(x=>x.tipo==='cartao_vermelho'&&x.jogador?.trim()===p).length;
-    const out=e.find(x=>x.tipo==='substituicao'&&x.jogador?.trim()===p);
-    const inn=e.find(x=>x.tipo==='substituicao'&&x.jogador2?.trim()===p);
-    return{y,r,dbl:r>0&&y>0,out,inn};
+    // Encontra a sub onde este jogador aparece (em qualquer campo)
+    const sub=e.find(x=>x.tipo==='substituicao'&&(x.jogador?.trim()===p||x.jogador2?.trim()===p));
+    return{y,r,dbl:r>0&&y>0, out:titular?sub:undefined, inn:!titular?sub:undefined};
   };
 
   return (
@@ -240,9 +242,9 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
                       </div>
                       <div style={{padding:'4px 0'}}>
                         <div style={{padding:'3px 10px 2px',fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em'}}>Titulares</div>
-                        {tits.map(p=>{const a=ann(p.nome,eventos,eq);return(<div key={p.numero} style={{display:'flex',alignItems:'center',gap:4,padding:'3px 10px',fontSize:11}}><span style={{fontSize:10,fontWeight:700,color:'#9CA3AF',minWidth:18,textAlign:'right'}}>{p.numero}</span><span style={{color:'#111318',flex:1}}>{p.nome}{p.capitao?' (C)':''}</span>{!a.dbl&&a.y>0&&<div style={{width:9,height:11,borderRadius:1.5,background:'#EF9F27',flexShrink:0}}/>}{a.dbl&&<><div style={{position:'relative',width:17,height:11,flexShrink:0}}><div style={{position:'absolute',left:0,width:9,height:11,borderRadius:1.5,background:'#EF9F27'}}/><div style={{position:'absolute',left:5,width:9,height:11,borderRadius:1.5,background:'#EF9F27'}}/></div><div style={{width:9,height:11,borderRadius:1.5,background:'#DC2626'}}/></>}{a.r>0&&!a.dbl&&<div style={{width:9,height:11,borderRadius:1.5,background:'#DC2626',flexShrink:0}}/>}{a.out&&<span style={{fontSize:9,fontWeight:700,color:'#DC2626',background:'rgba(220,38,38,.08)',padding:'1px 4px',borderRadius:4,flexShrink:0}}>↓{a.out.minuto}&apos;</span>}{p.posicao&&<span style={{fontSize:8,color:'#9CA3AF',background:'#F0F2F5',padding:'1px 4px',borderRadius:3}}>{normPos(p.posicao)}</span>}</div>);})}
+                        {tits.map(p=>{const a=ann(p.nome,eventos,eq,true);return(<div key={p.numero} style={{display:'flex',alignItems:'center',gap:4,padding:'3px 10px',fontSize:11}}><span style={{fontSize:10,fontWeight:700,color:'#9CA3AF',minWidth:18,textAlign:'right'}}>{p.numero}</span><span style={{color:'#111318',flex:1}}>{p.nome}{p.capitao?' (C)':''}</span>{!a.dbl&&a.y>0&&<div style={{width:9,height:11,borderRadius:1.5,background:'#EF9F27',flexShrink:0}}/>}{a.dbl&&<><div style={{position:'relative',width:17,height:11,flexShrink:0}}><div style={{position:'absolute',left:0,width:9,height:11,borderRadius:1.5,background:'#EF9F27'}}/><div style={{position:'absolute',left:5,width:9,height:11,borderRadius:1.5,background:'#EF9F27'}}/></div><div style={{width:9,height:11,borderRadius:1.5,background:'#DC2626'}}/></>}{a.r>0&&!a.dbl&&<div style={{width:9,height:11,borderRadius:1.5,background:'#DC2626',flexShrink:0}}/>}{a.out&&<span style={{fontSize:9,fontWeight:700,color:'#DC2626',background:'rgba(220,38,38,.08)',padding:'1px 4px',borderRadius:4,flexShrink:0}}>↓{a.out.minuto}&apos;</span>}{p.posicao&&<span style={{fontSize:8,color:'#9CA3AF',background:'#F0F2F5',padding:'1px 4px',borderRadius:3}}>{normPos(p.posicao)}</span>}</div>);})}
                       </div>
-                      {sups.length>0&&<div style={{borderTop:'1px solid #E4E7EC',padding:'4px 0'}}><div style={{padding:'3px 10px 2px',fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em'}}>Banco</div>{sups.map(p=>{const a=ann(p.nome,eventos,eq);return(<div key={p.numero+p.nome} style={{display:'flex',alignItems:'center',gap:4,padding:'3px 10px',fontSize:11,opacity:a.inn?1:.55}}><span style={{fontSize:10,fontWeight:700,color:'#9CA3AF',minWidth:18,textAlign:'right'}}>{p.numero}</span><span style={{color:a.inn?'#111318':'#6B7280',flex:1}}>{p.nome}</span>{a.inn&&<span style={{fontSize:9,fontWeight:700,color:'#006B3C',background:'rgba(0,107,60,.08)',padding:'1px 4px',borderRadius:4,flexShrink:0}}>↑{a.inn.minuto}&apos;</span>}</div>);})}</div>}
+                      {sups.length>0&&<div style={{borderTop:'1px solid #E4E7EC',padding:'4px 0'}}><div style={{padding:'3px 10px 2px',fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em'}}>Banco</div>{sups.map(p=>{const a=ann(p.nome,eventos,eq,false);return(<div key={p.numero+p.nome} style={{display:'flex',alignItems:'center',gap:4,padding:'3px 10px',fontSize:11,opacity:a.inn?1:.55}}><span style={{fontSize:10,fontWeight:700,color:'#9CA3AF',minWidth:18,textAlign:'right'}}>{p.numero}</span><span style={{color:a.inn?'#111318':'#6B7280',flex:1}}>{p.nome}</span>{a.inn&&<span style={{fontSize:9,fontWeight:700,color:'#006B3C',background:'rgba(0,107,60,.08)',padding:'1px 4px',borderRadius:4,flexShrink:0}}>↑{a.inn.minuto}&apos;</span>}</div>);})}</div>}
                     </div>
                   ))}
                 </div>
