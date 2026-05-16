@@ -243,12 +243,14 @@ function computePlayerStats(nome: string, fichas: FichaData[]) {
     );
     const minExpulsao = redCard ? mne(redCard) : Infinity;
 
-    // Minuto real em que saiu (sub ou expulsão) e em que entrou
-    const saiuEvt   = isTitular ? f.eventos.find((e: any) =>
-      e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador.trim() === k
+    // Robusto a subs com jogador/jogador2 trocados: procura em ambos os campos
+    const saiuEvt = isTitular ? (
+      f.eventos.find((e: any) => e.tipo==='substituicao' && e.equipa==='ra' && e.jogador?.trim()===k) ||
+      f.eventos.find((e: any) => e.tipo==='substituicao' && e.equipa==='ra' && e.jogador2?.trim()===k)
     ) : null;
-    const entrouEvt = !isTitular ? f.eventos.find((e: any) =>
-      e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k
+    const entrouEvt = isSuplente ? (
+      f.eventos.find((e: any) => e.tipo==='substituicao' && e.equipa==='ra' && e.jogador2?.trim()===k) ||
+      f.eventos.find((e: any) => e.tipo==='substituicao' && e.equipa==='ra' && e.jogador?.trim()===k)
     ) : null;
     const minSaiu   = saiuEvt   ? mne(saiuEvt)  : Infinity;
     const minEntrou = entrouEvt ? mne(entrouEvt) : null;
