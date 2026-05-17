@@ -406,12 +406,11 @@ export default function JogadorPage() {
           const R=62;
           function pt(angleDeg:number, val:number){ const a=angleDeg*Math.PI/180; return {x:Math.cos(a)*val*R,y:Math.sin(a)*val*R}; }
           const axes=[
-            {label:'PRESENÇA',  v:pMin,  a:-90},
-            {label:'GOLOS',     v:pGolo, a:-30},
-            {label:'ASSIST.',   v:pAst,  a:30},
-            {label:'DISCIPL.',  v:pDisc, a:90},
-            {label:'VITÓRIAS',  v:pVit,  a:150},
-            {label:'GS',        v:pGS,   a:210},
+            {label:'PRESENÇA', v:pMin,  a:-90},
+            {label:'GOLOS',    v:pGolo, a:-18},
+            {label:'ASSIST.',  v:pAst,  a:54},
+            {label:'GS',       v:pGS,   a:126},
+            {label:'VITÓRIAS', v:pVit,  a:198},
           ];
           const pts = axes.map(ax=>pt(ax.a,ax.v));
           const polyPts = pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
@@ -425,7 +424,7 @@ export default function JogadorPage() {
                 <div style={{display:'flex',alignItems:'center',gap:16}}>
                   <svg width="160" height="160" viewBox="-90 -90 180 180">
                     <g stroke="#F0F2F5" fill="none" strokeWidth="1">
-                      {[1,.67,.33].map((rv,i)=><polygon key={i} points={[-90,30,150,90,210,270].map((a:number)=>{const r=62*rv;const rad=a*Math.PI/180;return `${(Math.cos(rad)*r).toFixed(1)},${(Math.sin(rad)*r).toFixed(1)}`;}).join(' ')} opacity={0.8}/>)}
+                      {[1,.67,.33].map((rv,i)=><polygon key={i} points={[-90,-18,54,126,198].map((a:number)=>{const r=62*rv;const rad=a*Math.PI/180;return `${(Math.cos(rad)*r).toFixed(1)},${(Math.sin(rad)*r).toFixed(1)}`;}).join(' ')} opacity={0.8}/>)}
                     </g>
                     <g stroke="#EBEBEB" strokeWidth="0.5">
                       {axes.map((ax,i)=>{const p=pt(ax.a,1);return<line key={i} x1={0} y1={0} x2={p.x.toFixed(1)} y2={p.y.toFixed(1)}/>;  })}
@@ -438,7 +437,7 @@ export default function JogadorPage() {
                     })}
                   </svg>
                   <div style={{display:'flex',flexDirection:'column',gap:5}}>
-                    {[['Presença',`${Math.round(pMin*100)}%`],['Golos/90',(s.minutosJogados>0?s.golosMarcados/s.minutosJogados*90:0).toFixed(2)],['Ast./90',(s.minutosJogados>0?s.assistencias/s.minutosJogados*90:0).toFixed(2)],['Disciplina',`${Math.round(pDisc*100)}%`],['Vitórias',`${Math.round(pVit*100)}%`],['GS/90',(s.minutosJogados>0?s.golosSofridosEmCampo/s.minutosJogados*90:0).toFixed(2)]].map(([l,v])=>(
+                    {[['Presença',`${Math.round(pMin*100)}%`],['Golos/90',(s.minutosJogados>0?s.golosMarcados/s.minutosJogados*90:0).toFixed(2)],['Ast./90',(s.minutosJogados>0?s.assistencias/s.minutosJogados*90:0).toFixed(2)],['Vitórias',`${Math.round(pVit*100)}%`],['GS/90',(s.minutosJogados>0?s.golosSofridosEmCampo/s.minutosJogados*90:0).toFixed(2)]].map(([l,v])=>(
                       <div key={l} style={{display:'flex',justifyContent:'space-between',gap:12,alignItems:'center'}}>
                         <span style={{fontSize:10,color:'#9CA3AF'}}>{l}</span>
                         <span style={{fontSize:11,fontWeight:700,color:'#006B3C'}}>{v}</span>
@@ -461,23 +460,20 @@ export default function JogadorPage() {
                   ))}
                 </div>
                 {/* Mini bar chart per type */}
-                {[{key:'golos',label:'⚽ Golos',color:'#006B3C'},{key:'assists',label:'🅰 Assist.',color:'#1A5FA8'},{key:'amarelos',label:'🟨 Amarelos',color:'#EF9F27'}].map(({key,label,color})=>(
-                  <div key={key} style={{marginBottom:8}}>
-                    <div style={{display:'grid',gridTemplateColumns:'64px repeat(3,1fr)',gap:4,alignItems:'end'}}>
-                      <span style={{fontSize:10,color:'#374151'}}>{label}</span>
+                <div style={{display:'grid',gridTemplateColumns:'72px repeat(3,1fr)',gap:4,marginTop:4}}>
+                  <div/>
+                  {faseData.map((f:any,i:number)=>(
+                    <div key={i} style={{textAlign:'center',fontSize:9,fontWeight:700,color:'#9CA3AF'}}>{f.label}</div>
+                  ))}
+                  {[{key:'golos',label:'⚽ Golos',color:'#006B3C'},{key:'assists',label:'🅰 Assist.',color:'#1A5FA8'},{key:'amarelos',label:'🟨 Amarelos',color:'#EF9F27'}].map(({key,label,color})=>(
+                    <>
+                      <div key={label} style={{fontSize:11,color:'#374151',padding:'6px 0',borderTop:'1px solid #F3F4F6'}}>{label}</div>
                       {faseData.map((f:any,i:number)=>{
                         const v=(f as any)[key] as number;
-                        const mx=Math.max(...faseData.map((x:any)=>(x as any)[key] as number),1);
-                        return <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
-                          <div style={{width:'100%',height:`${Math.max(v/mx*36,0)}px`,background:v>0?color:'#F0F2F5',borderRadius:'3px 3px 0 0',minHeight:v>0?4:0,transition:'height .4s'}}/>
-                          <span style={{fontSize:10,fontWeight:600,color:v>0?color:'#D1D5DB'}}>{v}</span>
-                        </div>;
+                        return <div key={i} style={{textAlign:'center',fontSize:16,fontWeight:800,color:v>0?color:'#D1D5DB',padding:'6px 0',borderTop:'1px solid #F3F4F6'}}>{v}</div>;
                       })}
-                    </div>
-                  </div>
-                ))}
-                <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:'#D1D5DB',marginTop:4,paddingLeft:68}}>
-                  {faseData.map((f:any,i:number)=><span key={i}>{f.label}</span>)}
+                    </>
+                  ))}
                 </div>
               </div>
             </div>
