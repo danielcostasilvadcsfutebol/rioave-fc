@@ -128,7 +128,7 @@ export default function JogadorPage() {
         if (subEv) minSaiu = mne(subEv);
         mins = Math.min(minSaiu, minExp, 90);
       } else {
-        if (subEv) { minEntrou = mne(subEv); mins = Math.min(90, minExp) - minEntrou; }
+        if (subEv) { minEntrou = mne(subEv); mins = Math.min(90, minExp) - (minEntrou ?? 0); }
       }
 
       if (mins <= 0) { jogosBanco++; continue; }
