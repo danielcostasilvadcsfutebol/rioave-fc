@@ -413,7 +413,7 @@ export default function JogadorPage() {
                 <div style={{display:'flex',alignItems:'center',gap:16}}>
                   <svg width="160" height="160" viewBox="-90 -90 180 180">
                     <g stroke="#F0F2F5" fill="none" strokeWidth="1">
-                      {[1,.67,.33].map((rv,i)=><polygon key={i} points={[[-90],[30],[150],[90],[210],[270]].map(a=>{const r=62*rv;const rad=a*Math.PI/180;return `${(Math.cos(rad)*r).toFixed(1)},${(Math.sin(rad)*r).toFixed(1)}`;}).join(' ')} opacity={0.8}/>)}
+                      {[1,.67,.33].map((rv,i)=><polygon key={i} points={[-90,30,150,90,210,270].map((a:number)=>{const r=62*rv;const rad=a*Math.PI/180;return `${(Math.cos(rad)*r).toFixed(1)},${(Math.sin(rad)*r).toFixed(1)}`;}).join(' ')} opacity={0.8}/>)}
                     </g>
                     <g stroke="#EBEBEB" strokeWidth="0.5">
                       {axes.map((ax,i)=>{const p=pt(ax.a,1);return<line key={i} x1={0} y1={0} x2={p.x.toFixed(1)} y2={p.y.toFixed(1)}/>;  })}
