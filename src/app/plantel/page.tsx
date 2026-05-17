@@ -177,9 +177,13 @@ export default function PlantelPage() {
                     >
                       <div style={{width:34,height:34,borderRadius:8,background:'#F0F2F5',display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:800,color:'#374151'}}>{p.numero}</div>
                       <div>
-                        <Link href={`/plantel/${encodeURIComponent(p.nome)}`} style={{textDecoration:'none'}}>
-                          <span style={{fontSize:13,fontWeight:600,color:'#006B3C',cursor:'pointer',textDecoration:'underline',textDecorationStyle:'dotted',textUnderlineOffset:3}}>{p.nome}</span>
-                        </Link>
+                        <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                          <Link href={`/plantel/${encodeURIComponent(p.nome)}`} style={{textDecoration:'none'}}>
+                            <span style={{fontSize:13,fontWeight:600,color:'#006B3C',cursor:'pointer',textDecoration:'underline',textDecorationStyle:'dotted',textUnderlineOffset:3}}>{p.nome}</span>
+                          </Link>
+                          {(p as any).emprestado&&<span style={{fontSize:8,fontWeight:700,padding:'1px 5px',borderRadius:3,background:'#EBF4FF',color:'#1A5FA8',flexShrink:0}}>EMP.</span>}
+                          {(p as any).data_saida&&<span style={{fontSize:8,fontWeight:600,padding:'1px 5px',borderRadius:3,background:'#FCEBEB',color:'#DC2626',flexShrink:0}}>saiu {new Date((p as any).data_saida+'T00:00:00').toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit',year:'numeric'})}</span>}
+                        </div>
                         {p.posicao&&<span style={{marginLeft:5,fontSize:8,fontWeight:700,padding:'1px 4px',borderRadius:3,background:GBG[group]??'#F0F2F5',color:GBT[group]??'#6B7280',textTransform:'uppercase',letterSpacing:'.04em'}}>{normPos(p.posicao)}</span>}
                       </div>
                       <div title="Minutos jogados" style={{textAlign:'center'}}>
