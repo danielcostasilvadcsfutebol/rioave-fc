@@ -506,7 +506,7 @@ export default function AdminPage() {
               </button>
             ))}
             <span style={{ marginLeft: 'auto', fontSize: 11, color: '#9CA3AF' }}>{jogadoresEpoca.length} jogadores</span>
-          </div>, gap: 12 }}>
+          </div>
           <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 12, padding: 16 }}>
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
