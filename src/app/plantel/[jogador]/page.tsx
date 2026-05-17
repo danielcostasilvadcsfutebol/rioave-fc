@@ -167,6 +167,52 @@ export default function JogadorPage() {
       });
     }
 
+    // Calcular top 5 companheiros
+    const companheiroMap = new Map<string, {nome:string;posicao:string;min:number;jogos:number}>();
+    for (const jogoId of jogoIds) {
+      const jogo = jogos.find(j => j.id === jogoId);
+      if (!jogo) continue;
+      const ficJogo = ficPorJogo.get(jogoId) ?? [];
+      const evJogo  = evPorJogo.get(jogoId)  ?? [];
+      const thisPartida = partidas.find(p => p.gameId === jogoId);
+      if (!thisPartida) continue;
+      const myStart = thisPartida.foiTitular ? 0 : (thisPartida.minEntrou ?? 0);
+      const myEnd   = thisPartida.minSaiu ?? thisPartida.minutosJogados;
+      const raFichas = ficJogo.filter(f => f.tipo === 'titular');
+      for (const compFicha of raFichas) {
+        if (nameMatch(compFicha.nome, playerName)) continue;
+        const compName = compFicha.nome.trim();
+        const compSub = evJogo.find((e:any) => e.tipo==='substituicao' && e.equipa==='ra' &&
+          (nameMatch(e.jogador, compName) || nameMatch(e.jogador2, compName)));
+        const compEnd = compSub ? mne(compSub) : 90;
+        const overlap = Math.max(0, Math.min(myEnd, compEnd) - Math.max(myStart, 0));
+        if (overlap > 0) {
+          const prev = companheiroMap.get(compName) ?? {nome:compName, posicao:compFicha.posicao??'', min:0, jogos:0};
+          companheiroMap.set(compName, {...prev, min: prev.min+overlap, jogos: prev.jogos+1});
+        }
+      }
+      // Also check bench players who entered
+      const bancoComeOn = ficJogo.filter(f => f.tipo === 'suplente').filter(f => {
+        const subEv = evJogo.find((e:any) => e.tipo==='substituicao' && e.equipa==='ra' &&
+          (nameMatch(e.jogador, f.nome) || nameMatch(e.jogador2, f.nome)));
+        return !!subEv;
+      });
+      for (const compFicha of bancoComeOn) {
+        if (nameMatch(compFicha.nome, playerName)) continue;
+        const compName = compFicha.nome.trim();
+        const compSub = evJogo.find((e:any) => e.tipo==='substituicao' && e.equipa==='ra' &&
+          (nameMatch(e.jogador, compName) || nameMatch(e.jogador2, compName)));
+        if (!compSub) continue;
+        const compStart = mne(compSub);
+        const overlap = Math.max(0, Math.min(myEnd, 90) - Math.max(myStart, compStart));
+        if (overlap > 0) {
+          const prev = companheiroMap.get(compName) ?? {nome:compName, posicao:compFicha.posicao??'', min:0, jogos:0};
+          companheiroMap.set(compName, {...prev, min: prev.min+overlap, jogos: prev.jogos+1});
+        }
+      }
+    }
+    const top5 = Array.from(companheiroMap.values()).sort((a,b) => b.min-a.min).slice(0,5);
+
     // Ordenar por jornada decrescente
     partidas.sort((a: any, b: any) => {
       const na = parseInt((a.jornada||'').replace(/[^0-9]/g,'')) || 0;
@@ -183,7 +229,7 @@ export default function JogadorPage() {
       cartoesAmarelos,cartoesVermelhos,
       golosSofridosEmCampo,golsEquipaEmCampo,
       diferencaEmCampo:golsEquipaEmCampo-golosSofridosEmCampo,
-      cleanSheets,vitorias,empates,derrotas,vitoriasTitular,partidas,
+      cleanSheets,vitorias,empates,derrotas,vitoriasTitular,partidas,top5,
     };
   }
 
@@ -307,6 +353,33 @@ export default function JogadorPage() {
               <KpiCard label="Amarelos" value={s.cartoesAmarelos} color={s.cartoesAmarelos>0?'#EF9F27':'#9CA3AF'}/>
               <KpiCard label="Vermelhos" value={s.cartoesVermelhos} color={s.cartoesVermelhos>0?'#DC2626':'#9CA3AF'}/>
               <KpiCard label="Min. p/ amarelo" value={minPA?`${minPA}'`:'—'} sub={minPA?'média':'sem amarelos'}/>
+            </div>
+          </div>
+        )}
+
+        {/* TOP 5 COMPANHEIROS */}
+        {s.partidas.length >= 2 && s.top5 && s.top5.length > 0 && (
+          <div>
+            <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Top 5 · Companheiros com que partilha mais minutos dentro do campo</div>
+            <div style={{background:'#fff',border:'1.5px solid #E4E7EC',borderRadius:12,padding:'18px 20px'}}>
+              {s.top5.map((p:any,i:number) => (
+                <div key={p.nome} style={{marginBottom: i < s.top5.length-1 ? 13 : 0}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <span style={{fontSize:11,fontWeight:600,color:'#D1D5DB',minWidth:14}}>{i+1}</span>
+                      <span style={{fontSize:13,fontWeight:600,color:'#111318'}}>{p.nome}</span>
+                      {p.posicao && <span style={{fontSize:9,fontWeight:700,padding:'1px 6px',borderRadius:99,background:'#EEF7F2',color:'#006B3C'}}>{normPos(p.posicao)}</span>}
+                    </div>
+                    <div style={{display:'flex',alignItems:'baseline',gap:5}}>
+                      <span style={{fontSize:13,fontWeight:700,color:'#006B3C'}}>{p.min}&apos;</span>
+                      <span style={{fontSize:10,color:'#9CA3AF'}}>{p.jogos} jogo{p.jogos>1?'s':''}</span>
+                    </div>
+                  </div>
+                  <div style={{height:5,background:'#F0F2F5',borderRadius:99,overflow:'hidden'}}>
+                    <div style={{height:'100%',width:`${Math.round(p.min/s.top5[0].min*100)}%`,background:'#006B3C',borderRadius:99}}/>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
