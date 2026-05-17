@@ -173,6 +173,43 @@ async function loadAll() {
   const biggestLoss=[...jogos].filter((j:any)=>j.resultado==='D').sort((a:any,b:any)=>(b.golos_adv-b.golos_ra)-(a.golos_adv-a.golos_ra))[0];
   const highestScoring=[...jogos].sort((a:any,b:any)=>(b.golos_ra+b.golos_adv)-(a.golos_ra+a.golos_adv))[0];
 
+  // Cumulative points per jornada
+  let cp=0;
+  const cumPoints=jogos.map((j:any)=>{
+    cp+=j.resultado==='V'?3:j.resultado==='E'?1:0;
+    return {j:j.jornada,pts:cp,res:j.resultado as string};
+  });
+
+  // Goal minutes for heatmap
+  const gmMinutes=raG.map((e:any)=>mne(e));
+  const gsMinutes=conceded.map((e:any)=>mne(e));
+
+  // Radar metrics (0–1 normalised)
+  const totalYl=(eventos??[]).filter((e:any)=>e.tipo==='cartao_amarelo'&&e.equipa==='ra').length;
+  const totalRed=(eventos??[]).filter((e:any)=>e.tipo==='cartao_vermelho'&&e.equipa==='ra').length;
+  const radarData={
+    ataque:Math.min(1,(gm/Math.max(total,1))/2.5),
+    defesa:Math.max(0,1-(gs/Math.max(total,1))/2.5),
+    disciplina:Math.max(0,1-(totalYl*0.04+totalRed*0.18)),
+    eficacia:Math.min(1,wins/Math.max(total,1)*2),
+    presenca:allPlayers.length>0?Math.min(1,allPlayers[0].mins/(Math.max(total,1)*90)):0,
+  };
+
+  // Surprise facts
+  const facts:string[]=[];
+  const secHalf=raG.filter((e:any)=>mne(e)>45).length;
+  if(gm>0)facts.push(`${Math.round(secHalf/gm*100)}% dos golos foram marcados na 2ª parte`);
+  if(topScorers[0]){
+    const sGames=(fichas??[]).filter((f:any)=>f.tipo==='titular'&&nameMatch(f.nome,topScorers[0][0])).length;
+    if(sGames>0&&topScorers[0][1]>0)facts.push(`${topScorers[0][0]} marcou em ${Math.round(topScorers[0][1]/sGames*100)}% dos jogos em que foi titular`);
+  }
+  if(cleanSheets>0)facts.push(`Baliza a zero em ${Math.round(cleanSheets/total*100)}% dos jogos — ${cleanSheets} clean sheet${cleanSheets>1?'s':''}`);
+  const lateG=raG.filter((e:any)=>mne(e)>75).length;
+  if(lateG>0)facts.push(`${lateG} golo${lateG>1?'s':''} marcado${lateG>1?'s':''} depois do minuto 75`);
+  if(home.length>0&&away.length>0&&homeGm>0)facts.push(`Em casa: ${(homeGm/home.length).toFixed(1)} golos/jogo · Fora: ${(awayGm/away.length).toFixed(1)} golos/jogo`);
+  const earlyG=raG.filter((e:any)=>mne(e)<=15).length;
+  if(earlyG>0)facts.push(`${earlyG} golo${earlyG>1?'s':''} marcado${earlyG>1?'s':''} nos primeiros 15 minutos`);
+
   return {
     total,wins,draws,losses,pts,gm,gs,cleanSheets,
     home:home.length,homeWins,homeGm,homeGs,
@@ -182,7 +219,7 @@ async function loadAll() {
     topMinutes,topGR:byPos('GR'),topDEF:byPos('DEF'),topMED:byPos('MED'),topAV:byPos('AV'),
     topYellows,topReds,mostDisciplined,topSubEntries,
     avgEsp,bestEsp,bestOpp,worstOpp,biggestWin,biggestLoss,highestScoring,
-    jogos,
+    jogos,cumPoints,gmMinutes,gsMinutes,radarData,facts,
   };
 }
 
@@ -193,8 +230,9 @@ export default function EquipaPage() {
   const isMobile=useIsMobile();
   const [d,setD]=useState<any>(null);
   const [loading,setLoading]=useState(true);
+  const [animated,setAnimated]=useState(false);
 
-  useEffect(()=>{loadAll().then(r=>{setD(r);setLoading(false);});},[]);
+  useEffect(()=>{loadAll().then(r=>{setD(r);setLoading(false);setTimeout(()=>setAnimated(true),100);});},[]);
 
   if(loading) return <div style={{minHeight:'100vh',background:'#F0F2F5',display:'flex',alignItems:'center',justifyContent:'center',color:'#9CA3AF',fontSize:14}}>A carregar estatísticas…</div>;
   if(!d) return <div style={{minHeight:'100vh',background:'#F0F2F5',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
@@ -241,6 +279,197 @@ export default function EquipaPage() {
               </div>
             ))}
           </div>
+        </div>
+
+
+        {/* NÚMEROS QUE SURPREENDEM */}
+        {d.facts?.length>0&&<>
+          <Sec title="Números que surpreendem"/>
+          <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(2,1fr)',gap:10}}>
+            {d.facts.slice(0,6).map((f:string,i:number)=>(
+              <div key={i} style={{background:'#111318',borderRadius:12,padding:'14px 16px',display:'flex',alignItems:'flex-start',gap:10,
+                opacity:animated?1:0,transform:animated?'none':'translateY(12px)',
+                transition:`opacity .4s ease ${i*80}ms, transform .4s ease ${i*80}ms`}}>
+                <span style={{fontSize:20,flexShrink:0}}>{'💡⚡🎯🔥🛡️⚽'.split('')[i]||'💡'}</span>
+                <span style={{fontSize:13,color:'rgba(255,255,255,.85)',lineHeight:1.5,fontWeight:500}}>{f}</span>
+              </div>
+            ))}
+          </div>
+        </>}
+
+        {/* FORMA GRÁFICA */}
+        {d.cumPoints?.length>0&&<>
+          <Sec title="Forma gráfica · pontos acumulados"/>
+          <Card>
+            {(()=>{
+              const pts=d.cumPoints as {j:string;pts:number;res:string}[];
+              const maxPts=pts[pts.length-1]?.pts||1;
+              const W=580, H=140, PL=36, PR=16, PT=12, PB=28;
+              const iW=W-PL-PR, iH=H-PT-PB;
+              const xOf=(i:number)=>PL+i/(pts.length-1||1)*iW;
+              const yOf=(p:number)=>PT+iH-(p/maxPts)*iH;
+              const pathD=pts.map((p,i)=>`${i===0?'M':'L'}${xOf(i).toFixed(1)},${yOf(p.pts).toFixed(1)}`).join(' ');
+              const areaD=`${pathD} L${xOf(pts.length-1).toFixed(1)},${(PT+iH).toFixed(1)} L${PL},${(PT+iH).toFixed(1)} Z`;
+              const totalLen=pts.length*80;
+              return (
+                <div style={{overflowX:'auto'}}>
+                  <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+                    {/* Y grid lines */}
+                    {[0,.25,.5,.75,1].map(p=>{
+                      const y=yOf(p*maxPts);
+                      return <g key={p}>
+                        <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="#F0F2F5" strokeWidth="0.8"/>
+                        <text x={PL-4} y={y+4} textAnchor="end" fontSize="9" fill="#9CA3AF">{Math.round(p*maxPts)}</text>
+                      </g>;
+                    })}
+                    {/* Area fill */}
+                    <path d={areaD} fill="#006B3C" fillOpacity=".08"
+                      style={{opacity:animated?1:0,transition:'opacity .8s ease .3s'}}/>
+                    {/* Line */}
+                    <path d={pathD} fill="none" stroke="#006B3C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                      strokeDasharray={totalLen} strokeDashoffset={animated?0:totalLen}
+                      style={{transition:`stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1) .2s`}}/>
+                    {/* Dots */}
+                    {pts.map((p,i)=>(
+                      <circle key={i} cx={xOf(i)} cy={yOf(p.pts)} r="4"
+                        fill={p.res==='V'?'#006B3C':p.res==='E'?'#6B7280':'#DC2626'}
+                        stroke="#fff" strokeWidth="1.5"
+                        style={{opacity:animated?1:0,transition:`opacity .2s ease ${.4+i*.06}s`}}>
+                        <title>{p.j} · {p.pts} pts · {p.res==='V'?'Vitória':p.res==='E'?'Empate':'Derrota'}</title>
+                      </circle>
+                    ))}
+                    {/* X labels - every 5 jornadas */}
+                    {pts.filter((_,i)=>i%5===0||i===pts.length-1).map((p,_,arr)=>{
+                      const i=pts.indexOf(p);
+                      return <text key={i} x={xOf(i)} y={H-4} textAnchor="middle" fontSize="9" fill="#9CA3AF">J{p.j.replace(/[^0-9]/g,'')}</text>;
+                    })}
+                  </svg>
+                  <div style={{display:'flex',gap:12,marginTop:4,fontSize:11,color:'#9CA3AF'}}>
+                    {[['#006B3C','Vitória'],['#6B7280','Empate'],['#DC2626','Derrota']].map(([c,l])=>(
+                      <span key={l} style={{display:'flex',alignItems:'center',gap:4}}>
+                        <span style={{width:8,height:8,borderRadius:'50%',background:c,display:'inline-block'}}/>
+                        {l}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+          </Card>
+        </>}
+
+
+        {/* RADAR + MAPA DE CALOR */}
+        <Sec title="Perfil da equipa"/>
+        <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:12}}>
+
+          {/* RADAR */}
+          <Card>
+            <div style={{fontSize:11,fontWeight:600,color:'#9CA3AF',marginBottom:10}}>Radar da equipa</div>
+            {(()=>{
+              const R=62,CX=90,CY=90;
+              const axes=[
+                {label:'ATAQUE',  v:d.radarData?.ataque||0, a:-90},
+                {label:'EFICÁCIA',v:d.radarData?.eficacia||0,a:-18},
+                {label:'PRESENÇA',v:d.radarData?.presenca||0,a:54},
+                {label:'DEFESA',  v:d.radarData?.defesa||0, a:126},
+                {label:'DISCIPL.',v:d.radarData?.disciplina||0,a:198},
+              ];
+              const pt=(a:number,r:number)=>{const rad=a*Math.PI/180;return{x:CX+Math.cos(rad)*r,y:CY+Math.sin(rad)*r};};
+              const gridPts=(r:number)=>axes.map(ax=>pt(ax.a,r)).map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+              const playerPts=axes.map(ax=>{const p=pt(ax.a,ax.v*R);return`${p.x.toFixed(1)},${p.y.toFixed(1)}`;}).join(' ');
+              const zeroPts=axes.map(()=>`${CX},${CY}`).join(' ');
+              return (
+                <div style={{display:'flex',gap:16,alignItems:'center'}}>
+                  <svg width={180} height={180} viewBox="0 0 180 180">
+                    <g stroke="#F0F2F5" fill="none" strokeWidth="0.8">
+                      {[1,.67,.33].map((s,i)=><polygon key={i} points={gridPts(R*s)}/>)}
+                    </g>
+                    <g stroke="#E8EAF0" strokeWidth="0.5">
+                      {axes.map((ax,i)=>{const p=pt(ax.a,R);return<line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y}/>;  })}
+                    </g>
+                    <polygon points={animated?playerPts:zeroPts}
+                      fill="#006B3C" fillOpacity=".18" stroke="#006B3C" strokeWidth="2" strokeLinejoin="round"
+                      style={{transition:'points 1s cubic-bezier(.4,0,.2,1) .3s'}}/>
+                    {axes.map((ax,i)=>{
+                      const p=pt(ax.a,ax.v*R);
+                      const lp=pt(ax.a,R+18);
+                      return <g key={i}>
+                        <circle cx={animated?p.x:CX} cy={animated?p.y:CY} r="3.5" fill="#006B3C"
+                          style={{transition:`cx 1s ease .3s, cy 1s ease .3s`}}/>
+                        <text x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle"
+                          fontSize="8" fill="#9CA3AF" fontWeight="600">{ax.label}</text>
+                      </g>;
+                    })}
+                  </svg>
+                  <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                    {axes.map(ax=>(
+                      <div key={ax.label} style={{display:'flex',justifyContent:'space-between',gap:16,alignItems:'center'}}>
+                        <span style={{fontSize:10,color:'#9CA3AF'}}>{ax.label}</span>
+                        <span style={{fontSize:12,fontWeight:700,color:'#006B3C'}}>{Math.round(ax.v*100)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+          </Card>
+
+          {/* MAPA DE CALOR */}
+          <Card>
+            <div style={{fontSize:11,fontWeight:600,color:'#9CA3AF',marginBottom:10}}>Mapa de calor de golos</div>
+            {(()=>{
+              const W=220,H=130,gms:number[]=d.gmMinutes||[],gss:number[]=d.gsMinutes||[];
+              const allMins=[...gms,...gss];
+              const xOf=(min:number)=>12+min/90*(W-24);
+              const yOf=(i:number,total:number,arr:number[])=>{
+                // spread dots vertically within bands to avoid overlap
+                const same=arr.filter(m=>Math.abs(m-arr[i])<3);
+                const idx=same.indexOf(arr[i]);
+                return H/2+(idx%2===0?1:-1)*(Math.floor(idx/2)+1)*9;
+              };
+              return (
+                <div>
+                  <svg width="100%" viewBox={`0 0 ${W+20} ${H+20}`}>
+                    {/* Pitch */}
+                    <rect x={10} y={5} width={W} height={H} rx="4" fill="#F9FFF9" stroke="#D1E8D1" strokeWidth="1"/>
+                    {/* Half line */}
+                    <line x1={10+W/2} y1={5} x2={10+W/2} y2={5+H} stroke="#D1E8D1" strokeWidth="0.8" strokeDasharray="3,3"/>
+                    {/* Minute axis */}
+                    {[0,15,30,45,60,75,90].map(m=>{
+                      const x=10+xOf(m);
+                      return <g key={m}>
+                        <line x1={x} y1={5+H} x2={x} y2={5+H+4} stroke="#C8D5C8" strokeWidth="0.6"/>
+                        <text x={x} y={5+H+12} textAnchor="middle" fontSize="7.5" fill="#9CA3AF">{m}&apos;</text>
+                      </g>;
+                    })}
+                    {/* Conceded goals */}
+                    {gss.map((min,i)=>{
+                      const y=yOf(i,gss.length,gss);
+                      return <circle key={`gs${i}`} cx={10+xOf(min)} cy={H/2+5+(y-H/2)*0.4}
+                        r="5" fill="#DC2626" fillOpacity=".7" stroke="#fff" strokeWidth="0.8"
+                        style={{opacity:animated?1:0,transition:`opacity .3s ease ${.6+i*.12}s`}}>
+                        <title>Golo sofrido — {min}&apos;</title>
+                      </circle>;
+                    })}
+                    {/* Scored goals */}
+                    {gms.map((min,i)=>{
+                      const y=yOf(i,gms.length,gms);
+                      return <circle key={`gm${i}`} cx={10+xOf(min)} cy={H/2+5-(y-H/2)*0.4}
+                        r="5.5" fill="#006B3C" fillOpacity=".8" stroke="#fff" strokeWidth="0.8"
+                        style={{opacity:animated?1:0,transition:`opacity .3s ease ${.4+i*.1}s`}}>
+                        <title>Golo marcado — {min}&apos;</title>
+                      </circle>;
+                    })}
+                  </svg>
+                  <div style={{display:'flex',gap:12,fontSize:11,color:'#9CA3AF',marginTop:2}}>
+                    <span><span style={{display:'inline-block',width:8,height:8,borderRadius:'50%',background:'#006B3C',marginRight:4}}/>Marcados ({gms.length})</span>
+                    <span><span style={{display:'inline-block',width:8,height:8,borderRadius:'50%',background:'#DC2626',marginRight:4}}/>Sofridos ({gss.length})</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </Card>
         </div>
 
         {/* RESULTADOS + FORMA */}
