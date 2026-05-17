@@ -282,195 +282,162 @@ export default function EquipaPage() {
         </div>
 
 
-        {/* NÚMEROS QUE SURPREENDEM */}
-        {d.facts?.length>0&&<>
-          <Sec title="Números que surpreendem"/>
-          <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(2,1fr)',gap:10}}>
-            {d.facts.slice(0,6).map((f:string,i:number)=>(
-              <div key={i} style={{background:'#111318',borderRadius:12,padding:'14px 16px',display:'flex',alignItems:'flex-start',gap:10,
-                opacity:animated?1:0,transform:animated?'none':'translateY(12px)',
-                transition:`opacity .4s ease ${i*80}ms, transform .4s ease ${i*80}ms`}}>
-                <span style={{fontSize:20,flexShrink:0}}>{'💡⚡🎯🔥🛡️⚽'.split('')[i]||'💡'}</span>
-                <span style={{fontSize:13,color:'rgba(255,255,255,.85)',lineHeight:1.5,fontWeight:500}}>{f}</span>
-              </div>
-            ))}
-          </div>
-        </>}
-
-        {/* FORMA GRÁFICA */}
-        {d.cumPoints?.length>0&&<>
-          <Sec title="Forma gráfica · pontos acumulados"/>
-          <Card>
-            {(()=>{
-              const pts=d.cumPoints as {j:string;pts:number;res:string}[];
-              const maxPts=pts[pts.length-1]?.pts||1;
-              const W=580, H=140, PL=36, PR=16, PT=12, PB=28;
-              const iW=W-PL-PR, iH=H-PT-PB;
-              const xOf=(i:number)=>PL+i/(pts.length-1||1)*iW;
-              const yOf=(p:number)=>PT+iH-(p/maxPts)*iH;
-              const pathD=pts.map((p,i)=>`${i===0?'M':'L'}${xOf(i).toFixed(1)},${yOf(p.pts).toFixed(1)}`).join(' ');
-              const areaD=`${pathD} L${xOf(pts.length-1).toFixed(1)},${(PT+iH).toFixed(1)} L${PL},${(PT+iH).toFixed(1)} Z`;
-              const totalLen=pts.length*80;
-              return (
-                <div style={{overflowX:'auto'}}>
-                  <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
-                    {/* Y grid lines */}
-                    {[0,.25,.5,.75,1].map(p=>{
-                      const y=yOf(p*maxPts);
-                      return <g key={p}>
-                        <line x1={PL} y1={y} x2={W-PR} y2={y} stroke="#F0F2F5" strokeWidth="0.8"/>
-                        <text x={PL-4} y={y+4} textAnchor="end" fontSize="9" fill="#9CA3AF">{Math.round(p*maxPts)}</text>
-                      </g>;
-                    })}
-                    {/* Area fill */}
-                    <path d={areaD} fill="#006B3C" fillOpacity=".08"
-                      style={{opacity:animated?1:0,transition:'opacity .8s ease .3s'}}/>
-                    {/* Line */}
-                    <path d={pathD} fill="none" stroke="#006B3C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                      strokeDasharray={totalLen} strokeDashoffset={animated?0:totalLen}
-                      style={{transition:`stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1) .2s`}}/>
-                    {/* Dots */}
-                    {pts.map((p,i)=>(
-                      <circle key={i} cx={xOf(i)} cy={yOf(p.pts)} r="4"
-                        fill={p.res==='V'?'#006B3C':p.res==='E'?'#6B7280':'#DC2626'}
-                        stroke="#fff" strokeWidth="1.5"
-                        style={{opacity:animated?1:0,transition:`opacity .2s ease ${.4+i*.06}s`}}>
-                        <title>{p.j} · {p.pts} pts · {p.res==='V'?'Vitória':p.res==='E'?'Empate':'Derrota'}</title>
-                      </circle>
-                    ))}
-                    {/* X labels - every 5 jornadas */}
-                    {pts.filter((_,i)=>i%5===0||i===pts.length-1).map((p,_,arr)=>{
-                      const i=pts.indexOf(p);
-                      return <text key={i} x={xOf(i)} y={H-4} textAnchor="middle" fontSize="9" fill="#9CA3AF">J{p.j.replace(/[^0-9]/g,'')}</text>;
-                    })}
-                  </svg>
-                  <div style={{display:'flex',gap:12,marginTop:4,fontSize:11,color:'#9CA3AF'}}>
-                    {[['#006B3C','Vitória'],['#6B7280','Empate'],['#DC2626','Derrota']].map(([c,l])=>(
-                      <span key={l} style={{display:'flex',alignItems:'center',gap:4}}>
-                        <span style={{width:8,height:8,borderRadius:'50%',background:c,display:'inline-block'}}/>
-                        {l}
-                      </span>
-                    ))}
+        {/* MOMENTOS DE JOGO */}
+        <Sec title="Estatísticas da equipa em diferentes momentos de jogo"/>
+        <Card>
+          {(()=>{
+            const phases=["1'–30'","31'–60'","61'–90'"];
+            const gmp=d.gmPhase||[0,0,0], gsp=d.gsPhase||[0,0,0];
+            const maxG=Math.max(...gmp,...gsp,1);
+            return (
+              <div>
+                {/* Phase columns */}
+                <div style={{display:'grid',gridTemplateColumns:'100px repeat(3,1fr)',gap:0}}>
+                  <div/>
+                  {phases.map((p,i)=>(
+                    <div key={i} style={{textAlign:'center',padding:'8px 4px',borderBottom:'2px solid #F0F2F5',
+                      borderLeft:i>0?'1px solid #F0F2F5':'none'}}>
+                      <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',letterSpacing:'.06em'}}>{p}</div>
+                    </div>
+                  ))}
+                  {/* Golos marcados row */}
+                  <div style={{padding:'12px 0',borderBottom:'1px solid #F3F4F6',display:'flex',alignItems:'center',gap:6}}>
+                    <span style={{fontSize:11,color:'#374151',fontWeight:600}}>⚽ Marcados</span>
                   </div>
+                  {gmp.map((v:number,i:number)=>(
+                    <div key={i} style={{padding:'12px 8px',borderBottom:'1px solid #F3F4F6',borderLeft:i>0?'1px solid #F3F4F6':'none',
+                      display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+                      <div style={{fontSize:22,fontWeight:800,color:v>0?'#006B3C':'#D1D5DB',
+                        opacity:animated?1:0,transition:`opacity .4s ease ${.2+i*.1}s`}}>{v}</div>
+                      <div style={{width:'80%',height:4,background:'#F0F2F5',borderRadius:99,overflow:'hidden'}}>
+                        <div style={{height:'100%',background:'#006B3C',borderRadius:99,
+                          width:animated?`${Math.round(v/maxG*100)}%`:'0%',
+                          transition:`width .6s ease ${.3+i*.1}s`}}/>
+                      </div>
+                    </div>
+                  ))}
+                  {/* Golos sofridos row */}
+                  <div style={{padding:'12px 0',borderBottom:'1px solid #F3F4F6',display:'flex',alignItems:'center',gap:6}}>
+                    <span style={{fontSize:11,color:'#374151',fontWeight:600}}>🔴 Sofridos</span>
+                  </div>
+                  {gsp.map((v:number,i:number)=>(
+                    <div key={i} style={{padding:'12px 8px',borderBottom:'1px solid #F3F4F6',borderLeft:i>0?'1px solid #F3F4F6':'none',
+                      display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+                      <div style={{fontSize:22,fontWeight:800,color:v>0?'#DC2626':'#D1D5DB',
+                        opacity:animated?1:0,transition:`opacity .4s ease ${.4+i*.1}s`}}>{v}</div>
+                      <div style={{width:'80%',height:4,background:'#F0F2F5',borderRadius:99,overflow:'hidden'}}>
+                        <div style={{height:'100%',background:'#DC2626',borderRadius:99,
+                          width:animated?`${Math.round(v/maxG*100)}%`:'0%',
+                          transition:`width .6s ease ${.5+i*.1}s`}}/>
+                      </div>
+                    </div>
+                  ))}
+                  {/* Saldo row */}
+                  <div style={{padding:'12px 0',display:'flex',alignItems:'center'}}>
+                    <span style={{fontSize:11,color:'#374151',fontWeight:600}}>⚖️ Saldo</span>
+                  </div>
+                  {gmp.map((v:number,i:number)=>{
+                    const saldo=v-(d.gsPhase||[0,0,0])[i];
+                    return <div key={i} style={{padding:'12px 8px',borderLeft:i>0?'1px solid #F3F4F6':'none',
+                      display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      <span style={{fontSize:18,fontWeight:800,color:saldo>0?'#006B3C':saldo<0?'#DC2626':'#6B7280',
+                        opacity:animated?1:0,transition:`opacity .4s ease ${.6+i*.1}s`}}>
+                        {saldo>0?'+':''}{saldo}
+                      </span>
+                    </div>;
+                  })}
                 </div>
-              );
-            })()}
-          </Card>
-        </>}
-
-
-        {/* RADAR + MAPA DE CALOR */}
-        <Sec title="Perfil da equipa"/>
-        <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:12}}>
-
-          {/* RADAR */}
-          <Card>
-            <div style={{fontSize:11,fontWeight:600,color:'#9CA3AF',marginBottom:10}}>Radar da equipa</div>
-            {(()=>{
-              const R=62,CX=90,CY=90;
-              const axes=[
-                {label:'ATAQUE',  v:d.radarData?.ataque||0, a:-90},
-                {label:'EFICÁCIA',v:d.radarData?.eficacia||0,a:-18},
-                {label:'PRESENÇA',v:d.radarData?.presenca||0,a:54},
-                {label:'DEFESA',  v:d.radarData?.defesa||0, a:126},
-                {label:'DISCIPL.',v:d.radarData?.disciplina||0,a:198},
-              ];
-              const pt=(a:number,r:number)=>{const rad=a*Math.PI/180;return{x:CX+Math.cos(rad)*r,y:CY+Math.sin(rad)*r};};
-              const gridPts=(r:number)=>axes.map(ax=>pt(ax.a,r)).map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-              const playerPts=axes.map(ax=>{const p=pt(ax.a,ax.v*R);return`${p.x.toFixed(1)},${p.y.toFixed(1)}`;}).join(' ');
-              const zeroPts=axes.map(()=>`${CX},${CY}`).join(' ');
-              return (
-                <div style={{display:'flex',gap:16,alignItems:'center'}}>
-                  <svg width={180} height={180} viewBox="0 0 180 180">
-                    <g stroke="#F0F2F5" fill="none" strokeWidth="0.8">
-                      {[1,.67,.33].map((s,i)=><polygon key={i} points={gridPts(R*s)}/>)}
-                    </g>
-                    <g stroke="#E8EAF0" strokeWidth="0.5">
-                      {axes.map((ax,i)=>{const p=pt(ax.a,R);return<line key={i} x1={CX} y1={CY} x2={p.x} y2={p.y}/>;  })}
-                    </g>
-                    <polygon points={animated?playerPts:zeroPts}
-                      fill="#006B3C" fillOpacity=".18" stroke="#006B3C" strokeWidth="2" strokeLinejoin="round"
-                      style={{transition:'points 1s cubic-bezier(.4,0,.2,1) .3s'}}/>
-                    {axes.map((ax,i)=>{
-                      const p=pt(ax.a,ax.v*R);
-                      const lp=pt(ax.a,R+18);
-                      return <g key={i}>
-                        <circle cx={animated?p.x:CX} cy={animated?p.y:CY} r="3.5" fill="#006B3C"
-                          style={{transition:`cx 1s ease .3s, cy 1s ease .3s`}}/>
-                        <text x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle"
-                          fontSize="8" fill="#9CA3AF" fontWeight="600">{ax.label}</text>
-                      </g>;
-                    })}
-                  </svg>
-                  <div style={{display:'flex',flexDirection:'column',gap:6}}>
-                    {axes.map(ax=>(
-                      <div key={ax.label} style={{display:'flex',justifyContent:'space-between',gap:16,alignItems:'center'}}>
-                        <span style={{fontSize:10,color:'#9CA3AF'}}>{ax.label}</span>
-                        <span style={{fontSize:12,fontWeight:700,color:'#006B3C'}}>{Math.round(ax.v*100)}%</span>
+                {/* Facts strip */}
+                {d.facts?.length>0&&(
+                  <div style={{marginTop:16,paddingTop:16,borderTop:'1px solid #F3F4F6',display:'flex',flexDirection:'column',gap:6}}>
+                    {d.facts.slice(0,4).map((f:string,i:number)=>(
+                      <div key={i} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'6px 0',
+                        borderBottom:i<3?'1px solid #F9FAFB':'none',
+                        opacity:animated?1:0,transition:`opacity .3s ease ${.8+i*.08}s`}}>
+                        <span style={{fontSize:14,flexShrink:0}}>{'💡⚡🎯🔥'.split('')[i]}</span>
+                        <span style={{fontSize:12,color:'#374151',lineHeight:1.5}}>{f}</span>
                       </div>
                     ))}
                   </div>
-                </div>
-              );
-            })()}
-          </Card>
+                )}
+              </div>
+            );
+          })()}
+        </Card>
 
-          {/* MAPA DE CALOR */}
-          <Card>
-            <div style={{fontSize:11,fontWeight:600,color:'#9CA3AF',marginBottom:10}}>Mapa de calor de golos</div>
+        {/* FORMA GRÁFICA */}
+        {d.cumPoints?.length>0&&<>
+          <Sec title="Forma gráfica · pontos acumulados na época"/>
+          <Card style={{padding:'20px 20px 14px'}}>
             {(()=>{
-              const W=220,H=130,gms:number[]=d.gmMinutes||[],gss:number[]=d.gsMinutes||[];
-              const allMins=[...gms,...gss];
-              const xOf=(min:number)=>12+min/90*(W-24);
-              const yOf=(i:number,total:number,arr:number[])=>{
-                // spread dots vertically within bands to avoid overlap
-                const same=arr.filter(m=>Math.abs(m-arr[i])<3);
-                const idx=same.indexOf(arr[i]);
-                return H/2+(idx%2===0?1:-1)*(Math.floor(idx/2)+1)*9;
-              };
+              const pts=d.cumPoints as {j:string;pts:number;res:string}[];
+              const n=pts.length, maxPts=Math.max(pts[n-1]?.pts||1,1);
+              const W=560,H=160,PL=32,PR=12,PT=16,PB=32;
+              const iW=W-PL-PR, iH=H-PT-PB;
+              const xOf=(i:number)=>PL+i/Math.max(n-1,1)*iW;
+              const yOf=(p:number)=>PT+iH*(1-p/maxPts);
+              const linePath=pts.map((p,i)=>`${i===0?'M':'L'}${xOf(i).toFixed(1)},${yOf(p.pts).toFixed(1)}`).join(' ');
+              const areaPath=`${linePath} L${xOf(n-1).toFixed(1)},${(PT+iH).toFixed(1)} L${xOf(0).toFixed(1)},${(PT+iH).toFixed(1)} Z`;
+              const pathLen=n*70;
+              const yGrids=[0,Math.round(maxPts*.33),Math.round(maxPts*.67),maxPts];
               return (
                 <div>
-                  <svg width="100%" viewBox={`0 0 ${W+20} ${H+20}`}>
-                    {/* Pitch */}
-                    <rect x={10} y={5} width={W} height={H} rx="4" fill="#F9FFF9" stroke="#D1E8D1" strokeWidth="1"/>
-                    {/* Half line */}
-                    <line x1={10+W/2} y1={5} x2={10+W/2} y2={5+H} stroke="#D1E8D1" strokeWidth="0.8" strokeDasharray="3,3"/>
-                    {/* Minute axis */}
-                    {[0,15,30,45,60,75,90].map(m=>{
-                      const x=10+xOf(m);
-                      return <g key={m}>
-                        <line x1={x} y1={5+H} x2={x} y2={5+H+4} stroke="#C8D5C8" strokeWidth="0.6"/>
-                        <text x={x} y={5+H+12} textAnchor="middle" fontSize="7.5" fill="#9CA3AF">{m}&apos;</text>
+                  {/* Header row */}
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:12}}>
+                    <div style={{fontSize:13,fontWeight:700,color:'#111318'}}>{pts[n-1]?.pts} pts</div>
+                    <div style={{display:'flex',gap:10}}>
+                      {[['#006B3C','Vitória'],['#6B7280','Empate'],['#DC2626','Derrota']].map(([col,lbl])=>(
+                        <span key={lbl} style={{display:'flex',alignItems:'center',gap:4,fontSize:10,color:'#9CA3AF'}}>
+                          <span style={{width:8,height:8,borderRadius:'50%',background:col,display:'inline-block'}}/>
+                          {lbl}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" style={{overflow:'visible'}}>
+                    <defs>
+                      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#006B3C" stopOpacity="0.12"/>
+                        <stop offset="100%" stopColor="#006B3C" stopOpacity="0"/>
+                      </linearGradient>
+                    </defs>
+                    {/* Grid */}
+                    {yGrids.map(v=>(
+                      <g key={v}>
+                        <line x1={PL} y1={yOf(v)} x2={W-PR} y2={yOf(v)} stroke="#F3F4F6" strokeWidth="1"/>
+                        <text x={PL-5} y={yOf(v)+4} textAnchor="end" fontSize="9" fill="#C4C9D4">{v}</text>
+                      </g>
+                    ))}
+                    {/* Area */}
+                    <path d={areaPath} fill="url(#areaGrad)"
+                      style={{opacity:animated?1:0,transition:'opacity .6s ease .2s'}}/>
+                    {/* Line */}
+                    <path d={linePath} fill="none" stroke="#006B3C" strokeWidth="2.5"
+                      strokeLinecap="round" strokeLinejoin="round"
+                      strokeDasharray={pathLen} strokeDashoffset={animated?0:pathLen}
+                      style={{transition:`stroke-dashoffset 1.4s cubic-bezier(.22,1,.36,1) .1s`}}/>
+                    {/* Result dots */}
+                    {pts.map((p,i)=>{
+                      const col=p.res==='V'?'#006B3C':p.res==='E'?'#9CA3AF':'#DC2626';
+                      return <g key={i} style={{opacity:animated?1:0,transition:`opacity .15s ease ${.5+i*.04}s`}}>
+                        <circle cx={xOf(i)} cy={yOf(p.pts)} r="5" fill="#fff" stroke={col} strokeWidth="2"/>
+                        <circle cx={xOf(i)} cy={yOf(p.pts)} r="2.5" fill={col}/>
+                        <title>{p.j} · {p.pts}pts · {p.res==='V'?'Vitória':p.res==='E'?'Empate':'Derrota'}</title>
                       </g>;
                     })}
-                    {/* Conceded goals */}
-                    {gss.map((min,i)=>{
-                      const y=yOf(i,gss.length,gss);
-                      return <circle key={`gs${i}`} cx={10+xOf(min)} cy={H/2+5+(y-H/2)*0.4}
-                        r="5" fill="#DC2626" fillOpacity=".7" stroke="#fff" strokeWidth="0.8"
-                        style={{opacity:animated?1:0,transition:`opacity .3s ease ${.6+i*.12}s`}}>
-                        <title>Golo sofrido — {min}&apos;</title>
-                      </circle>;
-                    })}
-                    {/* Scored goals */}
-                    {gms.map((min,i)=>{
-                      const y=yOf(i,gms.length,gms);
-                      return <circle key={`gm${i}`} cx={10+xOf(min)} cy={H/2+5-(y-H/2)*0.4}
-                        r="5.5" fill="#006B3C" fillOpacity=".8" stroke="#fff" strokeWidth="0.8"
-                        style={{opacity:animated?1:0,transition:`opacity .3s ease ${.4+i*.1}s`}}>
-                        <title>Golo marcado — {min}&apos;</title>
-                      </circle>;
+                    {/* X axis labels every ~5 games */}
+                    {pts.map((p,i)=>{
+                      if(n<=10||(i%Math.ceil(n/8)===0||i===n-1))
+                        return <text key={i} x={xOf(i)} y={PT+iH+20} textAnchor="middle" fontSize="9" fill="#C4C9D4">J{p.j.replace(/[^0-9]/g,'')}</text>;
+                      return null;
                     })}
                   </svg>
-                  <div style={{display:'flex',gap:12,fontSize:11,color:'#9CA3AF',marginTop:2}}>
-                    <span><span style={{display:'inline-block',width:8,height:8,borderRadius:'50%',background:'#006B3C',marginRight:4}}/>Marcados ({gms.length})</span>
-                    <span><span style={{display:'inline-block',width:8,height:8,borderRadius:'50%',background:'#DC2626',marginRight:4}}/>Sofridos ({gss.length})</span>
-                  </div>
                 </div>
               );
             })()}
           </Card>
-        </div>
+        </>}
+
 
         {/* RESULTADOS + FORMA */}
         <Sec title="Resultados"/>
@@ -556,6 +523,110 @@ export default function EquipaPage() {
             <span><span style={{display:'inline-block',width:8,height:8,borderRadius:2,background:'#DC2626',marginRight:4}}/><strong style={{color:'#DC2626'}}>Vermelho</strong> = sofridos</span>
           </div>
         </Card>
+
+        {/* BLOCO DE ATAQUE */}
+        <Sec title="Estatísticas de ataque"/>
+        <div style={{display:'grid',gridTemplateColumns:isMobile?'repeat(2,1fr)':'repeat(4,1fr)',gap:8,marginBottom:12}}>
+          <Kpi label="Golos marcados" value={d.gm} color="#006B3C"/>
+          <Kpi label="Média por jogo" value={(d.gm/Math.max(d.total,1)).toFixed(2)} color="#006B3C"/>
+          <Kpi label="Em casa" value={d.homeGm} sub={`${d.home>0?(d.homeGm/d.home).toFixed(1):0} p/ jogo`} color="#006B3C"/>
+          <Kpi label="Fora" value={d.awayGm} sub={`${d.away>0?(d.awayGm/d.away).toFixed(1):0} p/ jogo`}/>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:12,marginBottom:12}}>
+          <Card>
+            <div style={{fontSize:11,fontWeight:600,color:'#9CA3AF',marginBottom:12}}>⚽ Top 5 marcadores</div>
+            {d.topScorers.length?d.topScorers.map(([nome,v]:any,i:number)=>(
+              <div key={i} style={{display:'grid',gridTemplateColumns:'20px 1fr auto',gap:8,alignItems:'center',padding:'5px 0',borderBottom:i<d.topScorers.length-1?'1px solid #F3F4F6':'none'}}>
+                <span style={{fontSize:11,fontWeight:700,color:'#D1D5DB'}}>{i+1}</span>
+                <div>
+                  <div style={{fontSize:12,fontWeight:600,color:'#111318'}}>{nome}</div>
+                  <div style={{height:3,background:'#F0F2F5',borderRadius:99,marginTop:3,overflow:'hidden'}}>
+                    <div style={{height:'100%',background:'#006B3C',borderRadius:99,width:animated?`${Math.round(v/Math.max(d.topScorers[0][1],1)*100)}%`:'0%',transition:`width .6s ease ${.2+i*.08}s`}}/>
+                  </div>
+                </div>
+                <span style={{fontSize:15,fontWeight:800,color:'#006B3C'}}>{v}</span>
+              </div>
+            )):<div style={{fontSize:11,color:'#9CA3AF'}}>Sem dados</div>}
+          </Card>
+          <Card>
+            <div style={{fontSize:11,fontWeight:600,color:'#9CA3AF',marginBottom:12}}>🅰 Top 5 assistências</div>
+            {d.topAssists.length?d.topAssists.map(([nome,v]:any,i:number)=>(
+              <div key={i} style={{display:'grid',gridTemplateColumns:'20px 1fr auto',gap:8,alignItems:'center',padding:'5px 0',borderBottom:i<d.topAssists.length-1?'1px solid #F3F4F6':'none'}}>
+                <span style={{fontSize:11,fontWeight:700,color:'#D1D5DB'}}>{i+1}</span>
+                <div>
+                  <div style={{fontSize:12,fontWeight:600,color:'#111318'}}>{nome}</div>
+                  <div style={{height:3,background:'#F0F2F5',borderRadius:99,marginTop:3,overflow:'hidden'}}>
+                    <div style={{height:'100%',background:'#1A5FA8',borderRadius:99,width:animated?`${Math.round(v/Math.max(d.topAssists[0][1],1)*100)}%`:'0%',transition:`width .6s ease ${.2+i*.08}s`}}/>
+                  </div>
+                </div>
+                <span style={{fontSize:15,fontWeight:800,color:'#1A5FA8'}}>{v}</span>
+              </div>
+            )):<div style={{fontSize:11,color:'#9CA3AF'}}>Sem dados</div>}
+          </Card>
+        </div>
+        <Card style={{marginBottom:0}}>
+          <div style={{fontSize:11,fontWeight:600,color:'#9CA3AF',marginBottom:12}}>🏅 Top contribuições (golos + assistências)</div>
+          <div style={{display:'grid',gridTemplateColumns:isMobile?'repeat(2,1fr)':'repeat(5,1fr)',gap:8}}>
+            {d.topContribs.slice(0,5).map(([nome,v]:any,i:number)=>(
+              <div key={i} style={{textAlign:'center',padding:'12px 8px',background:'#F9FAFB',borderRadius:10,
+                opacity:animated?1:0,transform:animated?'none':'translateY(8px)',
+                transition:`opacity .3s ease ${.2+i*.07}s, transform .3s ease ${.2+i*.07}s`}}>
+                <div style={{fontSize:11,fontWeight:700,color:'#D1D5DB',marginBottom:2}}>#{i+1}</div>
+                <div style={{fontSize:22,fontWeight:800,color:'#006B3C',lineHeight:1}}>{v}</div>
+                <div style={{fontSize:10,color:'#374151',marginTop:5,lineHeight:1.3}}>{nome}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* BLOCO DE DEFESA */}
+        <Sec title="Estatísticas de defesa"/>
+        <div style={{display:'grid',gridTemplateColumns:isMobile?'repeat(2,1fr)':'repeat(4,1fr)',gap:8,marginBottom:12}}>
+          <Kpi label="Golos sofridos" value={d.gs} color="#DC2626"/>
+          <Kpi label="Média por jogo" value={(d.gs/Math.max(d.total,1)).toFixed(2)} color={d.gs/Math.max(d.total,1)<1.5?'#006B3C':'#DC2626'}/>
+          <Kpi label="Clean sheets" value={d.cleanSheets} color="#006B3C" sub={`${d.total>0?Math.round(d.cleanSheets/d.total*100):0}% dos jogos`}/>
+          <Kpi label="Série sem sofrer" value={d.bestU} sub="jogos consecutivos"/>
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:12,marginBottom:12}}>
+          <Card>
+            <div style={{fontSize:11,fontWeight:600,color:'#9CA3AF',marginBottom:10}}>Golos sofridos — Casa vs Fora</div>
+            {[['🏠 Casa',d.homeGs,d.home],['✈️ Fora',d.awayGs,d.away]].map(([l,v,t])=>(
+              <div key={l as string} style={{marginBottom:10}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                  <span style={{fontSize:12,color:'#374151'}}>{l}</span>
+                  <span style={{fontSize:13,fontWeight:700,color:'#DC2626'}}>{v} <span style={{fontSize:10,color:'#9CA3AF',fontWeight:400}}>({t>0?(v/t).toFixed(1):0}/jogo)</span></span>
+                </div>
+                <div style={{height:5,background:'#F0F2F5',borderRadius:99,overflow:'hidden'}}>
+                  <div style={{height:'100%',background:'#DC2626',borderRadius:99,
+                    width:animated?`${Math.round((v as number)/Math.max(d.gs,1)*100)}%`:'0%',
+                    transition:'width .6s ease .3s'}}/>
+                </div>
+              </div>
+            ))}
+            <div style={{borderTop:'1px solid #F3F4F6',paddingTop:10,marginTop:4,display:'flex',gap:16}}>
+              <div style={{textAlign:'center'}}>
+                <div style={{fontSize:16,fontWeight:800,color:d.homeGs<=d.awayGs?'#006B3C':'#DC2626'}}>{d.homeGs}</div>
+                <div style={{fontSize:9,color:'#9CA3AF'}}>sofridos em casa</div>
+              </div>
+              <div style={{textAlign:'center'}}>
+                <div style={{fontSize:16,fontWeight:800,color:d.awayGs<=d.homeGs?'#006B3C':'#DC2626'}}>{d.awayGs}</div>
+                <div style={{fontSize:9,color:'#9CA3AF'}}>sofridos fora</div>
+              </div>
+            </div>
+          </Card>
+          <Card>
+            <div style={{fontSize:11,fontWeight:600,color:'#9CA3AF',marginBottom:10}}>Jogadores sem cartões</div>
+            {d.mostDisciplined.length?d.mostDisciplined.map((p:any,i:number)=>(
+              <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'6px 0',borderBottom:i<d.mostDisciplined.length-1?'1px solid #F3F4F6':'none'}}>
+                <div>
+                  <div style={{fontSize:12,fontWeight:600,color:'#111318'}}>{p.nome}</div>
+                  <div style={{fontSize:10,color:'#9CA3AF'}}>{p.jogos} jogos</div>
+                </div>
+                <span style={{fontSize:13,fontWeight:700,color:'#006B3C'}}>{p.mins}' <span style={{fontSize:9,fontWeight:400,color:'#9CA3AF'}}>sem cartão</span></span>
+              </div>
+            )):<div style={{fontSize:11,color:'#9CA3AF'}}>Sem dados suficientes</div>}
+          </Card>
+        </div>
 
         {/* TOP MARCADORES, ASSISTS, CONTRIB */}
         <div style={grid2}>
