@@ -44,6 +44,8 @@ export default function JogadorPage() {
   const nome = decodeURIComponent(params.jogador as string ?? '');
   const [loading, setLoading] = useState(true);
   const [s, setS] = useState<any>(null);
+  const [expandedGame, setExpandedGame] = useState<string|null>(null);
+  const [showDetalhes, setShowDetalhes] = useState(false);
 
   useEffect(() => {
     if (!nome) return;
@@ -181,6 +183,7 @@ export default function JogadorPage() {
       golosMarcados+=gm;assistencias+=ast;cartoesAmarelos+=yl+extraYl;cartoesVermelhos+=reds.length;
       golosSofridosEmCampo+=gc;golsEquipaEmCampo+=gea;if(gc===0)cleanSheets++;
 
+      const evJogoDisplay = evJogo.filter((e:any) => e.equipa === 'ra').sort((a:any,b:any)=>mne(a)-mne(b));
       partidas.push({
         gameId:jogoId,jornada:jogo.jornada,data:jogo.data,adversario:jogo.adversario,
         local:jogo.local,resultado:jogo.resultado,golos_ra:jogo.golos_ra,golos_adv:jogo.golos_adv,
@@ -188,6 +191,7 @@ export default function JogadorPage() {
         minEntrou: minEntrou, minSaiu: isTitular && minSaiu < Infinity ? minSaiu : null,
         golosMarcados:gm,assistencias:ast,cartoesAmarelos:yl+extraYl,cartoesVermelhos:reds.length,
         golosSofridosEmCampo:gc,
+        eventos: evJogoDisplay,
       });
     }
 
@@ -382,6 +386,14 @@ export default function JogadorPage() {
           </div>
         )}
 
+        {/* DETALHES EXPANDÍVEIS */}
+        <div>
+          <button onClick={()=>setShowDetalhes(v=>!v)} style={{width:'100%',padding:'12px 18px',background:'#fff',border:'1.5px solid #E4E7EC',borderRadius:12,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between',fontSize:13,fontWeight:600,color:'#006B3C'}}>
+            <span>{showDetalhes?'−':'+' } Detalhes sobre {s.nome}</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#006B3C" strokeWidth="1.8" strokeLinecap="round" style={{transform:showDetalhes?'rotate(180deg)':'none',transition:'transform .2s'}}><path d="M3 5l5 5 5-5"/></svg>
+          </button>
+          {showDetalhes && <div style={{display:'flex',flexDirection:'column',gap:12,marginTop:12}}>
+
         {/* RADAR + FASE DO JOGO */}
         {(() => {
           // Radar values 0–1
@@ -499,6 +511,9 @@ export default function JogadorPage() {
           </div>
         )}
 
+          </div>}
+        </div>
+
         {/* DETALHE POR FICHA */}
         {s.partidas.length>0&&(
           <div>
@@ -511,7 +526,9 @@ export default function JogadorPage() {
                 <div style={{textAlign:'center'}}>GS</div>
               </div>
               {s.partidas.map((p:any,i:number)=>(
-                <div key={p.gameId} style={{display:'grid',gridTemplateColumns:'52px 1fr 86px 60px 44px 32px 32px 32px 44px',gap:4,padding:'10px 14px',borderBottom:i<s.partidas.length-1?'1px solid #F3F4F6':'none',alignItems:'center'}}
+                <div key={p.gameId} style={{borderBottom:i<s.partidas.length-1?'1px solid #F3F4F6':'none'}}>
+                <div style={{display:'grid',gridTemplateColumns:'52px 1fr 86px 60px 44px 32px 32px 32px 44px',gap:4,padding:'10px 14px',alignItems:'center',cursor:'pointer'}}
+                  onClick={()=>setExpandedGame(g=>g===p.gameId?null:p.gameId)}
                   onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='#F9FAFB'}
                   onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='transparent'}
                 >
@@ -533,6 +550,32 @@ export default function JogadorPage() {
                   <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:p.assistencias>0?'#1A5FA8':'#D1D5DB'}}>{p.assistencias||'—'}</div>
                   <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:p.cartoesAmarelos>0?'#EF9F27':'#D1D5DB'}}>{p.cartoesAmarelos||'—'}</div>
                   <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:p.golosSofridosEmCampo>0?'#DC2626':'#D1D5DB'}}>{s.isGR?p.golosSofridosEmCampo:(p.golosSofridosEmCampo>0?p.golosSofridosEmCampo:'—')}</div>
+                </div>
+                {expandedGame===p.gameId && (
+                  <div style={{padding:'10px 14px 14px',background:'#F9FAFB',borderTop:'1px solid #F3F4F6'}}>
+                    <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:8}}>Eventos neste jogo</div>
+                    {(p.eventos||[]).length===0 ? (
+                      <div style={{fontSize:11,color:'#9CA3AF'}}>Sem eventos registados.</div>
+                    ) : (
+                      <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                        {(p.eventos||[]).map((ev:any,ei:number)=>{
+                          const isSub=ev.tipo==='substituicao';
+                          const isGolo=['golo','golo_penalidade','auto_golo'].includes(ev.tipo);
+                          const isYellow=ev.tipo==='cartao_amarelo';
+                          const isRed=ev.tipo==='cartao_vermelho';
+                          const icon=isGolo?'⚽':isSub?'🔄':isYellow?'🟨':isRed?'🟥':'•';
+                          const desc=isSub?(ev.jogador2?`${ev.jogador} ↔ ${ev.jogador2}`:ev.jogador):ev.jogador+(ev.jogador2?` (assist. ${ev.jogador2})`:'');
+                          const mins=ev.minuto+(ev.minuto_extra?`+${ev.minuto_extra}`:'');
+                          return <div key={ei} style={{display:'flex',alignItems:'center',gap:8,fontSize:12}}>
+                            <span style={{fontSize:11,fontWeight:700,color:'#9CA3AF',minWidth:32}}>{mins}&apos;</span>
+                            <span>{icon}</span>
+                            <span style={{color:'#374151'}}>{desc}</span>
+                          </div>;
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
                 </div>
               ))}
             </div>
