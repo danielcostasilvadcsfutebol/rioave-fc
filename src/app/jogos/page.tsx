@@ -1,5 +1,6 @@
 'use client';
 import { useState, useMemo, useEffect } from 'react';
+import { useIsMobile } from '@/lib/useIsMobile';
 import Link from 'next/link';
 import { filtrarJogos, calcularStatsEpoca, type PartidaEquipa, type EventoJogo, type EstatisticasJogo, type JogadorTitular } from '@/lib/mock-jogos-equipa';
 import { getJogosDB, getEventosDB, getEstatisticasDB, getFichasDB, type FichasJogo } from '@/lib/db';
@@ -138,7 +139,7 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
     return <>{rows}</>;
   }
 
-  const detailTab=(d:'eventos'|'stats'|'formacao'):React.CSSProperties=>({flex:1,padding:'9px 8px',fontSize:11,fontWeight:600,textAlign:'center' as const,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',border:'0.5px solid',borderColor:detalhe===d?'#006B3C':'#E4E7EC',background:detalhe===d?'#006B3C':'#fff',color:detalhe===d?'#fff':'#7B8089',borderRadius:8,margin:'0 3px'});
+  const detailTab=(d:'eventos'|'stats'|'formacao'):React.CSSProperties=>({flex:1,padding:isMobile?'7px 4px':'9px 8px',fontSize:isMobile?10:11,fontWeight:600,textAlign:'center' as const,cursor:'pointer',fontFamily:'inherit',transition:'all .15s',border:'0.5px solid',borderColor:detalhe===d?'#006B3C':'#E4E7EC',background:detalhe===d?'#006B3C':'#fff',color:detalhe===d?'#fff':'#7B8089',borderRadius:8,margin:'0 3px'});
 
   // ann: robusto a subs com jogador/jogador2 trocados
   // Usa o contexto titular=true/false para determinar direcção
@@ -162,16 +163,16 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
         onMouseLeave={e=>{if(!expanded)(e.currentTarget as HTMLElement).style.background='transparent'}}
       >
         <div style={{display:'flex',flexDirection:'column',gap:3}}>
-          <span style={{fontSize:15,fontWeight:700,color:isHome?'#006B3C':'#111318'}}>{teamL}</span>
+          <span style={{fontSize:isMobile?12:15,fontWeight:700,color:isHome?'#006B3C':'#111318'}}>{teamL}</span>
           <span style={{fontSize:9,fontWeight:700,padding:'1px 6px',borderRadius:3,textTransform:'uppercase' as const,alignSelf:'flex-start',background:'#EEF7F2',color:'#006B3C',letterSpacing:'.04em'}}>CASA</span>
         </div>
         <div style={{textAlign:'center'}}>
-          <div style={{fontSize:26,fontWeight:800,color:'#111318',letterSpacing:-2,lineHeight:1}}>{scoreL} – {scoreR}</div>
+          <div style={{fontSize:isMobile?20:26,fontWeight:800,color:'#111318',letterSpacing:-2,lineHeight:1}}>{scoreL} – {scoreR}</div>
           <div style={{marginTop:4}}><span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:99,display:'inline-block',background:badgeBg,color:'#fff'}}>{res}</span></div>
           <div style={{fontSize:10,color:'#9CA3AF',marginTop:5}}>Clica para mais dados</div>
         </div>
         <div style={{display:'flex',flexDirection:'column',gap:3,alignItems:'flex-end'}}>
-          <span style={{fontSize:15,fontWeight:700,color:!isHome?'#006B3C':'#111318'}}>{teamR}</span>
+          <span style={{fontSize:isMobile?12:15,fontWeight:700,color:!isHome?'#006B3C':'#111318'}}>{teamR}</span>
           <span style={{fontSize:9,fontWeight:700,padding:'1px 6px',borderRadius:3,textTransform:'uppercase' as const,background:'#F1F3F5',color:'#6B7280',letterSpacing:'.04em'}}>FORA</span>
         </div>
       </div>
@@ -222,7 +223,7 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
                     const colorL=isHome?'#006B3C':'#DC2626';
                     const colorR=isHome?'#DC2626':'#006B3C';
                     return <div key={key} style={{display:'grid',gridTemplateColumns:'44px 1fr 44px',gap:8,alignItems:'center',padding:'7px 6px',background:idx%2===0?'#fff':'#F9FAFB',borderRadius:6}}>
-                      <div style={{fontSize:13,fontWeight:700,color:'#111318'}}>{key==='posse_bola'?`${vl}%`:vl}</div>
+                      <div style={{fontSize:isMobile?11:13,fontWeight:700,color:'#111318'}}>{key==='posse_bola'?`${vl}%`:vl}</div>
                       <div>
                         <div style={{fontSize:10,color:'#9CA3AF',textAlign:'center',marginBottom:4}}>{label}</div>
                         <div style={{height:5,background:'#E4E7EC',borderRadius:99,overflow:'hidden',display:'flex'}}>
@@ -240,7 +241,7 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
           {!loadingDetail && detalhe==='formacao' && (
             <div style={{padding:'6px 14px 12px'}}>
               {titRA.length>0 ? (
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+                <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:10}}>
                   {([{title:'Rio Ave FC',scheme:partida.formacao_ra,tits:titRA,sups:supRA,color:'#006B3C',eq:'ra' as const},{title:partida.adversario,scheme:partida.formacao_adv,tits:titAdv,sups:supAdv,color:'#1A5FA8',eq:'adv' as const}]).map(({title,scheme,tits,sups,color,eq})=>(
                     <div key={title} style={{background:'#fff',border:'1px solid #E4E7EC',borderRadius:10,overflow:'hidden'}}>
                       <div style={{padding:'8px 10px',borderBottom:'1px solid #E4E7EC',display:'flex',justifyContent:'space-between',alignItems:'center',background:'#F9FAFB'}}>
@@ -272,6 +273,7 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
 
 // ── Main page ─────────────────────────────────────────────────
 export default function JogosPage() {
+  const isMobile = useIsMobile();
   const [jogos, setJogos]       = useState<PartidaEquipa[]>([]);
   const [loadingJogos, setLoadingJogos] = useState(true);
   const [comp, setComp]         = useState('todas');
@@ -324,11 +326,11 @@ export default function JogosPage() {
           <div><div style={{fontSize:13,fontWeight:700,color:'#111318'}}>Jogos da Equipa</div><div style={{fontSize:9,fontWeight:600,color:'#B0B5BE',letterSpacing:'.08em',textTransform:'uppercase'}}>Rio Ave FC · 2025/26</div></div>
         </div>
       </header>
-      <main style={{maxWidth:760,margin:'0 auto',padding:'16px',display:'flex',flexDirection:'column',gap:12}}>
+      <main style={{maxWidth:760,margin:'0 auto',padding:isMobile?'10px':'16px',display:'flex',flexDirection:'column',gap:12}}>
         {/* Banner */}
         <div style={{background:'linear-gradient(135deg,#003D20,#005A30)',borderRadius:14,padding:20,color:'#fff'}}>
           <div style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,.4)',letterSpacing:'.06em',textTransform:'uppercase',marginBottom:10}}>Época 2025/26 · {comp==='todas'?'Todas as competições':COMP_OPTS.find(o=>o.value===comp)?.label} · {local==='todos'?'Casa + Fora':local==='casa'?'Casa':'Fora'}</div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,marginBottom:showBreak?12:0}}>
+          <div style={{display:'grid',gridTemplateColumns:isMobile?'repeat(2,1fr)':'repeat(4,1fr)',gap:6,marginBottom:showBreak?12:0}}>
             {[{l:'Jogos',v:stats.total,s:`${stats.v}V · ${stats.e}E · ${stats.d}D`},{l:'Vitórias',v:stats.v,s:`${stats.total>0?Math.round(stats.v/stats.total*100):0}%`},{l:'Golos',v:stats.gm,s:`sofridos: ${stats.gs}`},{l:'Pts Liga',v:stats.ligaPts,s:'pontos'}].map(s=>(
               <div key={s.l} style={{background:'rgba(0,0,0,.2)',borderRadius:9,padding:'9px 8px',textAlign:'center'}}>
                 <div style={{fontSize:8,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.05em',marginBottom:2}}>{s.l}</div>
@@ -337,13 +339,13 @@ export default function JogosPage() {
               </div>
             ))}
           </div>
-          {showBreak&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>{[{label:'🏠 Casa',s:casaStats},{label:'✈️ Fora',s:foraStats}].map(({label,s})=>(<div key={label} style={{background:'rgba(255,255,255,.08)',borderRadius:9,padding:'10px 12px'}}><div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,.6)',marginBottom:6}}>{label}</div><div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:4}}>{[{l:'Jogos',v:s.total},{l:'V-E-D',v:`${s.v}-${s.e}-${s.d}`},{l:'Golos',v:s.gm},{l:'Sofrid',v:s.gs}].map(k=>(<div key={k.l} style={{textAlign:'center'}}><div style={{fontSize:14,fontWeight:700,color:'#fff',lineHeight:1}}>{k.v}</div><div style={{fontSize:8,color:'rgba(255,255,255,.35)',marginTop:1}}>{k.l}</div></div>))}</div></div>))}</div>}
+          {showBreak&&!isMobile&&<div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>{[{label:'🏠 Casa',s:casaStats},{label:'✈️ Fora',s:foraStats}].map(({label,s})=>(<div key={label} style={{background:'rgba(255,255,255,.08)',borderRadius:9,padding:'10px 12px'}}><div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,.6)',marginBottom:6}}>{label}</div><div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:4}}>{[{l:'Jogos',v:s.total},{l:'V-E-D',v:`${s.v}-${s.e}-${s.d}`},{l:'Golos',v:s.gm},{l:'Sofrid',v:s.gs}].map(k=>(<div key={k.l} style={{textAlign:'center'}}><div style={{fontSize:14,fontWeight:700,color:'#fff',lineHeight:1}}>{k.v}</div><div style={{fontSize:8,color:'rgba(255,255,255,.35)',marginTop:1}}>{k.l}</div></div>))}</div></div>))}</div>}
         </div>
         {/* Filters */}
         <div style={{background:'#fff',border:'1.5px solid #E4E7EC',borderRadius:14,padding:'14px 16px'}}>
           <div style={{marginBottom:10}}>
             <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Competição</div>
-            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>{COMP_OPTS.map(o=><button key={o.value} onClick={()=>setComp(o.value)} style={pill(comp===o.value)}>{o.label}</button>)}</div>
+            <div style={{display:'flex',gap:isMobile?4:6,flexWrap:'wrap'}}>{COMP_OPTS.map(o=><button key={o.value} onClick={()=>setComp(o.value)} style={pill(comp===o.value)}>{o.label}</button>)}</div>
           </div>
           <div style={{borderTop:'1px solid #F3F4F6',paddingTop:10,display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}>
             <div><div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Local</div><div style={{display:'flex',gap:6}}>{LOCAL_OPTS.map(o=><button key={o.value} onClick={()=>setLocal(o.value)} style={pill(local===o.value)}>{o.label}</button>)}</div></div>
