@@ -178,7 +178,7 @@ export async function upsertEstatisticas(stats: Record<string,unknown> & { jogo_
 // ── Fichas completas de uma época (para stats de jogadores) ──
 export async function getFichasEpocaDB(epoca: string): Promise<import('./mock-jogos-equipa').FichaData[]> {
   const { data: jogos } = await supabase
-    .from('jogos').select('*').eq('epoca', epoca).eq('has_detail', true);
+    .from('jogos').select('*').eq('epoca', epoca);
   if (!jogos?.length) return [];
 
   const results = await Promise.all(jogos.map(async jogo => {
