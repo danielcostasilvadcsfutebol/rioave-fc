@@ -221,7 +221,7 @@ export interface JogadorDB {
 export async function getJogadoresEpoca(epoca: string): Promise<JogadorDB[]> {
   const { data, error } = await supabase
     .from('jogadores_epoca')
-    .select('epoca, numero, ativo, jogadores(id, nome_display, posicao)')
+    .select('epoca, numero, ativo, emprestado, data_saida, jogadores(id, nome_display, posicao)')
     .eq('epoca', epoca)
     .order('numero');
   if (error || !data) return [];
@@ -231,6 +231,8 @@ export async function getJogadoresEpoca(epoca: string): Promise<JogadorDB[]> {
     posicao: row.jogadores.posicao,
     numero: row.numero,
     ativo: row.ativo,
+    emprestado: row.emprestado ?? false,
+    data_saida: row.data_saida ?? null,
   }));
 }
 
