@@ -4,8 +4,9 @@ import { useIsMobile } from '@/lib/useIsMobile';
 
 const CARDS = [
   { href: '/jogos',        emoji: '⚽', title: 'Jogos da Equipa',          desc: 'Resultados, eventos e estatísticas de cada jogo.' },
+  { href: '/equipa',       emoji: '📊', title: 'Estatísticas da Equipa',   desc: 'Resultados, golos, disciplina e recordes da época.' },
   { href: '/assistencias', emoji: '🏟️', title: 'Assistências nos Arcos',  desc: 'Espectadores e ocupação do estádio por jogo.' },
-  { href: '/plantel',      emoji: '👥', title: 'Estatísticas jogadores',     desc: 'Estatísticas individuais de cada jogador.' },
+  { href: '/plantel',      emoji: '👥', title: 'Estatísticas jogadores',   desc: 'Estatísticas individuais de cada jogador.' },
 ];
 
 export default function Home() {
@@ -32,7 +33,7 @@ export default function Home() {
 
         {/* DESKTOP: 3 columns grid */}
         {!isMobile && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16 }}>
             {CARDS.map(card => (
               <Link key={card.href} href={card.href} style={{ textDecoration: 'none' }}>
                 <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 16, padding: '28px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 12, cursor: 'pointer', height: '100%', boxSizing: 'border-box', transition: 'box-shadow .15s, border-color .15s' }}
