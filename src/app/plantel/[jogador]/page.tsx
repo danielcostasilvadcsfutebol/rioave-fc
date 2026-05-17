@@ -50,6 +50,30 @@ export default function JogadorPage() {
     loadStats(nome).then(result => { setS(result); setLoading(false); });
   }, [nome]);
 
+  function computeEventosFase(
+    playerName: string,
+    jogoIds: string[],
+    evPorJogo: Map<string, any[]>
+  ) {
+    const fases = [
+      { label:"1'–30'", min:1,  max:30  },
+      { label:"31'–60'",min:31, max:60  },
+      { label:"61'–90'",min:61, max:90  },
+    ];
+    return fases.map(f => {
+      let golos=0, assists=0, amarelos=0;
+      for (const id of jogoIds) {
+        const evs = evPorJogo.get(id) ?? [];
+        evs.filter((e:any) => mne(e) >= f.min && mne(e) <= f.max).forEach((e:any) => {
+          if (['golo','golo_penalidade'].includes(e.tipo) && e.equipa==='ra' && nameMatch(e.jogador, playerName)) golos++;
+          if (['golo','golo_penalidade'].includes(e.tipo) && e.equipa==='ra' && nameMatch(e.jogador2, playerName)) assists++;
+          if (e.tipo==='cartao_amarelo' && e.equipa==='ra' && nameMatch(e.jogador, playerName)) amarelos++;
+        });
+      }
+      return { label:f.label, golos, assists, amarelos, total:golos+assists+amarelos };
+    });
+  }
+
   async function loadStats(playerName: string) {
     // 1. Todos os jogos da época
     const { data: jogos, error: e1 } = await supabase
@@ -230,6 +254,7 @@ export default function JogadorPage() {
       golosSofridosEmCampo,golsEquipaEmCampo,
       diferencaEmCampo:golsEquipaEmCampo-golosSofridosEmCampo,
       cleanSheets,vitorias,empates,derrotas,vitoriasTitular,partidas,top5,
+      eventosFase: computeEventosFase(playerName, jogoIds, evPorJogo),
     };
   }
 
@@ -356,6 +381,96 @@ export default function JogadorPage() {
             </div>
           </div>
         )}
+
+        {/* RADAR + FASE DO JOGO */}
+        {(() => {
+          // Radar values 0–1
+          const pMin  = s.minutosDisponiveis>0 ? s.minutosJogados/s.minutosDisponiveis : 0;
+          const pGolo = s.minutosJogados>0 ? Math.min(1,(s.golosMarcados/s.minutosJogados*90)/3) : 0;
+          const pAst  = s.minutosJogados>0 ? Math.min(1,(s.assistencias/s.minutosJogados*90)/3) : 0;
+          const pDisc = Math.max(0,1-(s.cartoesAmarelos*0.12+s.cartoesVermelhos*0.35));
+          const pVit  = s.jogosTotal>0 ? s.vitorias/s.jogosTotal : 0;
+          const pGS   = s.minutosJogados>0 ? Math.max(0,1-(s.golosSofridosEmCampo/s.minutosJogados*90)/4) : 1;
+          const R=62;
+          function pt(angleDeg:number, val:number){ const a=angleDeg*Math.PI/180; return {x:Math.cos(a)*val*R,y:Math.sin(a)*val*R}; }
+          const axes=[
+            {label:'PRESENÇA',  v:pMin,  a:-90},
+            {label:'GOLOS',     v:pGolo, a:-30},
+            {label:'ASSIST.',   v:pAst,  a:30},
+            {label:'DISCIPL.',  v:pDisc, a:90},
+            {label:'VITÓRIAS',  v:pVit,  a:150},
+            {label:'GS',        v:pGS,   a:210},
+          ];
+          const pts = axes.map(ax=>pt(ax.a,ax.v));
+          const polyPts = pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+          const faseData = s.eventosFase ?? [];
+          const maxFase = Math.max(...faseData.map((f:any)=>f.total), 1);
+          return (
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+              {/* RADAR */}
+              <div style={{background:'#fff',border:'1.5px solid #E4E7EC',borderRadius:14,padding:'18px 20px'}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:14}}>Radar de perfil</div>
+                <div style={{display:'flex',alignItems:'center',gap:16}}>
+                  <svg width="160" height="160" viewBox="-90 -90 180 180">
+                    <g stroke="#F0F2F5" fill="none" strokeWidth="1">
+                      {[1,.67,.33].map((s,i)=><polygon key={i} points={[[-90],[30],[150],[90],[210],[270]].map(a=>{const r=62*s;const rad=a*Math.PI/180;return `${(Math.cos(rad)*r).toFixed(1)},${(Math.sin(rad)*r).toFixed(1)}`;}).join(' ')} opacity={0.8}/>)}
+                    </g>
+                    <g stroke="#EBEBEB" strokeWidth="0.5">
+                      {axes.map((ax,i)=>{const p=pt(ax.a,1);return<line key={i} x1={0} y1={0} x2={p.x.toFixed(1)} y2={p.y.toFixed(1)}/>;  })}
+                    </g>
+                    <polygon points={polyPts} fill="#006B3C" fillOpacity=".15" stroke="#006B3C" strokeWidth="2" strokeLinejoin="round"/>
+                    {pts.map((p,i)=><circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r="3.5" fill="#006B3C"/>)}
+                    {axes.map((ax,i)=>{
+                      const lp=pt(ax.a,1.28);
+                      return <text key={i} x={lp.x.toFixed(1)} y={lp.y.toFixed(1)} textAnchor="middle" dominantBaseline="middle" fontSize="7.5" fill="#9CA3AF" fontWeight="600">{ax.label}</text>;
+                    })}
+                  </svg>
+                  <div style={{display:'flex',flexDirection:'column',gap:5}}>
+                    {[['Presença',`${Math.round(pMin*100)}%`],['Golos/90',(s.minutosJogados>0?s.golosMarcados/s.minutosJogados*90:0).toFixed(2)],['Ast./90',(s.minutosJogados>0?s.assistencias/s.minutosJogados*90:0).toFixed(2)],['Disciplina',`${Math.round(pDisc*100)}%`],['Vitórias',`${Math.round(pVit*100)}%`],['GS/90',(s.minutosJogados>0?s.golosSofridosEmCampo/s.minutosJogados*90:0).toFixed(2)]].map(([l,v])=>(
+                      <div key={l} style={{display:'flex',justifyContent:'space-between',gap:12,alignItems:'center'}}>
+                        <span style={{fontSize:10,color:'#9CA3AF'}}>{l}</span>
+                        <span style={{fontSize:11,fontWeight:700,color:'#006B3C'}}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* FASE DO JOGO */}
+              <div style={{background:'#fff',border:'1.5px solid #E4E7EC',borderRadius:14,padding:'18px 20px'}}>
+                <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:14}}>Quando acontece?</div>
+                {/* Counter pills */}
+                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4,marginBottom:14}}>
+                  {faseData.map((f:any,i:number)=>(
+                    <div key={i} style={{textAlign:'center',padding:'8px 4px',background:'#F9FAFB',borderRadius:8}}>
+                      <div style={{fontSize:8,color:'#9CA3AF',marginBottom:2}}>{f.label}</div>
+                      <div style={{fontSize:20,fontWeight:800,color:f.total>0?'#006B3C':'#D1D5DB'}}>{f.total}</div>
+                    </div>
+                  ))}
+                </div>
+                {/* Mini bar chart per type */}
+                {[{key:'golos',label:'⚽ Golos',color:'#006B3C'},{key:'assists',label:'🅰 Assist.',color:'#1A5FA8'},{key:'amarelos',label:'🟨 Amarelos',color:'#EF9F27'}].map(({key,label,color})=>(
+                  <div key={key} style={{marginBottom:8}}>
+                    <div style={{display:'grid',gridTemplateColumns:'64px repeat(3,1fr)',gap:4,alignItems:'end'}}>
+                      <span style={{fontSize:10,color:'#374151'}}>{label}</span>
+                      {faseData.map((f:any,i:number)=>{
+                        const v=(f as any)[key] as number;
+                        const mx=Math.max(...faseData.map((x:any)=>(x as any)[key] as number),1);
+                        return <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+                          <div style={{width:'100%',height:`${Math.max(v/mx*36,0)}px`,background:v>0?color:'#F0F2F5',borderRadius:'3px 3px 0 0',minHeight:v>0?4:0,transition:'height .4s'}}/>
+                          <span style={{fontSize:10,fontWeight:600,color:v>0?color:'#D1D5DB'}}>{v}</span>
+                        </div>;
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:'#D1D5DB',marginTop:4,paddingLeft:68}}>
+                  {faseData.map((f:any,i:number)=><span key={i}>{f.label}</span>)}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* TOP 5 COMPANHEIROS */}
         {s.partidas.length >= 2 && s.top5 && s.top5.length > 0 && (
