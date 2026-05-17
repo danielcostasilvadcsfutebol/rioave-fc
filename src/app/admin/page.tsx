@@ -94,6 +94,7 @@ export default function AdminPage() {
 
   // Plantel edit state
   const [editingJogador, setEditingJogador] = useState<string|null>(null); // jogador_id being edited
+  const [playerAllEpocas, setPlayerAllEpocas] = useState<any[]>([]); // all epochs for current player
   const [editForm, setEditForm] = useState({ nome: '', posicao: 'DEF', numero: '', ativo: true, emprestado: false, data_nascimento: '', contrato_ate: '', nacionalidade: '', mes_chegada: '', epoca_chegada: '', data_saida: '' });
   const [addEpocaFor, setAddEpocaFor] = useState<string|null>(null); // jogador_id to add epoch
   const [addEpocaForm, setAddEpocaForm] = useState({ epoca: '25/26', numero: '' });
@@ -219,6 +220,7 @@ export default function AdminPage() {
 
     toast('Jogador actualizado');
     setEditingJogador(null);
+    setPlayerAllEpocas([]);
 
     // Reload both lists — include all columns in the mapping
     const { data } = await supabase.from('jogadores_epoca')
@@ -647,9 +649,26 @@ export default function AdminPage() {
                                 style={{ width: '100%', padding: '5px 7px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 11, boxSizing: 'border-box' as const }} />
                             </div>
                           </div>
+                          {/* Épocas no clube */}
+                          {playerAllEpocas.length > 0 && (
+                            <div style={{ marginBottom: 10 }}>
+                              <div style={{ fontSize: 9, fontWeight: 700, color: '#9CA3AF', letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 6 }}>Temporadas no Rio Ave</div>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                {playerAllEpocas.map((ep: any) => (
+                                  <div key={ep.epoca} style={{ padding: '3px 9px', borderRadius: 99, fontSize: 10, fontWeight: 600,
+                                    background: ep.epoca === epocaPlantel ? '#006B3C' : '#F0F2F5',
+                                    color: ep.epoca === epocaPlantel ? '#fff' : '#374151',
+                                    border: '1px solid', borderColor: ep.epoca === epocaPlantel ? '#006B3C' : '#E4E7EC' }}>
+                                    {ep.epoca}
+                                    {ep.data_saida && <span style={{ marginLeft: 4, opacity: .7 }}>↗</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           <div style={{ display: 'flex', gap: 6 }}>
                             <button onClick={updateJogador} style={{ padding: '5px 12px', background: '#006B3C', color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Guardar</button>
-                            <button onClick={() => setEditingJogador(null)} style={{ padding: '5px 10px', background: '#F3F4F6', color: '#6B7280', border: 'none', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>Cancelar</button>
+                            <button onClick={() => { setEditingJogador(null); setPlayerAllEpocas([]); }} style={{ padding: '5px 10px', background: '#F3F4F6', color: '#6B7280', border: 'none', borderRadius: 6, fontSize: 11, cursor: 'pointer' }}>Cancelar</button>
                             <button onClick={() => deleteJogadorCompletely(j.id as string, j.nome_display as string)}
                               style={{ marginLeft: 'auto', padding: '5px 10px', background: '#FCEBEB', color: '#DC2626', border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
                               🗑 Apagar de tudo
@@ -686,7 +705,7 @@ export default function AdminPage() {
                           <span style={{ fontSize: 13, fontWeight: 600, color: '#111318' }}>{j.nome_display as string}</span>
                           <span style={{ fontSize: 10, padding: '2px 5px', borderRadius: 4, background: '#EEF7F2', color: '#006B3C', fontWeight: 600 }}>{j.posicao as string}</span>
                           <div style={{ display: 'flex', gap: 4 }}>
-                            <button onClick={() => { setEditingJogador(j.id as string); setEditForm({ nome: j.nome_display as string, posicao: j.posicao as string, numero: String(j.numero), ativo: j.ativo as boolean, data_nascimento: (j as any).data_nascimento||'', contrato_ate: (j as any).contrato_ate||'', nacionalidade: (j as any).nacionalidade||'', emprestado: (j as any).emprestado||false, mes_chegada: (j as any).mes_chegada||'', epoca_chegada: (j as any).epoca_chegada||'', data_saida: (j as any).data_saida||'' }); setAddEpocaFor(null); }}
+                            <button onClick={() => { setEditingJogador(j.id as string); setEditForm({ nome: j.nome_display as string, posicao: j.posicao as string, numero: String(j.numero), ativo: j.ativo as boolean, data_nascimento: (j as any).data_nascimento||'', contrato_ate: (j as any).contrato_ate||'', nacionalidade: (j as any).nacionalidade||'', emprestado: (j as any).emprestado||false, mes_chegada: (j as any).mes_chegada||'', epoca_chegada: (j as any).epoca_chegada||'', data_saida: (j as any).data_saida||'' }); setAddEpocaFor(null); supabase.from('jogadores_epoca').select('epoca, numero, ativo, mes_chegada, epoca_chegada, data_saida').eq('jogador_id', j.id as string).order('epoca', { ascending: false }).then(({ data: ep }) => setPlayerAllEpocas(ep ?? [])); }}
                               style={{ padding: '3px 7px', fontSize: 10, fontWeight: 600, background: '#F0F2F5', color: '#374151', border: '1px solid #E4E7EC', borderRadius: 5, cursor: 'pointer' }}>✏️</button>
                             <button onClick={() => { setAddEpocaFor(j.id as string); setEditingJogador(null); setAddEpocaForm({ epoca: '25/26', numero: String(j.numero) }); }}
                               style={{ padding: '3px 7px', fontSize: 10, fontWeight: 600, background: '#EBF4FF', color: '#1A5FA8', border: '1px solid #BFDBFE', borderRadius: 5, cursor: 'pointer' }}>+época</button>
