@@ -161,11 +161,18 @@ export default function JogadorPage() {
         gameId:jogoId,jornada:jogo.jornada,data:jogo.data,adversario:jogo.adversario,
         local:jogo.local,resultado:jogo.resultado,golos_ra:jogo.golos_ra,golos_adv:jogo.golos_adv,
         foiTitular:isTitular,minutosJogados:mins,
+        minEntrou: minEntrou, minSaiu: isTitular && minSaiu < Infinity ? minSaiu : null,
         golosMarcados:gm,assistencias:ast,cartoesAmarelos:yl+extraYl,cartoesVermelhos:reds.length,
         golosSofridosEmCampo:gc,
       });
     }
 
+    // Ordenar por jornada decrescente
+    partidas.sort((a: any, b: any) => {
+      const na = parseInt((a.jornada||'').replace(/[^0-9]/g,'')) || 0;
+      const nb = parseInt((b.jornada||'').replace(/[^0-9]/g,'')) || 0;
+      return nb - na;
+    });
     const jogosTotal=partidas.length;
     const minutosDisponiveis=(jogosTotal+jogosBanco)*90;
     return {
@@ -307,7 +314,7 @@ export default function JogadorPage() {
         {/* DETALHE POR FICHA */}
         {s.partidas.length>0&&(
           <div>
-            <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Detalhe por ficha</div>
+            <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Detalhe por jogo</div>
             <div style={{background:'#fff',border:'1.5px solid #E4E7EC',borderRadius:12,overflow:'hidden'}}>
               <div style={{display:'grid',gridTemplateColumns:'52px 1fr 86px 60px 44px 32px 32px 32px 44px',gap:4,padding:'7px 14px',background:'#F9FAFB',borderBottom:'1px solid #E4E7EC',fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.07em'}}>
                 <div>Data</div><div>Adversário</div><div>Result.</div><div>Particip.</div>
@@ -322,13 +329,17 @@ export default function JogadorPage() {
                 >
                   <div style={{fontSize:11,color:'#9CA3AF'}}>{fmtDate(p.data)}</div>
                   <div><div style={{fontSize:13,fontWeight:600,color:'#111318'}}>{p.adversario}</div>
-                    <div style={{fontSize:10,color:'#9CA3AF'}}>{p.local==='casa'?'Casa':'Fora'} · {p.jornada}</div>
+                    <div style={{fontSize:10,color:'#9CA3AF'}}>{p.local==='casa'?'Casa':'Fora'} · Jornada {p.jornada.replace(/[^0-9]/g,'')}</div>
                   </div>
                   <div style={{display:'flex',alignItems:'center',gap:5}}>
                     <span style={{fontSize:11,fontWeight:700,padding:'2px 7px',borderRadius:6,background:RES_BG[p.resultado as keyof typeof RES_BG],color:RES_COLOR[p.resultado as keyof typeof RES_COLOR]}}>{p.resultado}</span>
                     <span style={{fontSize:12,fontWeight:600,color:'#374151'}}>{p.golos_ra}-{p.golos_adv}</span>
                   </div>
-                  <span style={{fontSize:11,fontWeight:600,padding:'2px 7px',borderRadius:6,background:p.foiTitular?'#EEF7F2':'#F3F4F6',color:p.foiTitular?'#006B3C':'#6B7280'}}>{p.foiTitular?'Titular':'Sub'}</span>
+                  <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start',gap:1}}>
+                    <span style={{fontSize:11,fontWeight:600,padding:'2px 7px',borderRadius:6,background:p.foiTitular?'#EEF7F2':'#F3F4F6',color:p.foiTitular?'#006B3C':'#6B7280'}}>{p.foiTitular?'Titular':'Saiu do banco'}</span>
+                    {!p.foiTitular && p.minEntrou !== null && <span style={{fontSize:9,color:'#006B3C',paddingLeft:2,fontWeight:600}}>↑ {p.minEntrou}&apos;</span>}
+                    {p.foiTitular && p.minSaiu !== null && <span style={{fontSize:9,color:'#DC2626',paddingLeft:2,fontWeight:600}}>↓ {p.minSaiu}&apos;</span>}
+                  </div>
                   <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#374151'}}>{p.minutosJogados}&apos;</div>
                   <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:p.golosMarcados>0?'#006B3C':'#D1D5DB'}}>{p.golosMarcados||'—'}</div>
                   <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:p.assistencias>0?'#1A5FA8':'#D1D5DB'}}>{p.assistencias||'—'}</div>
