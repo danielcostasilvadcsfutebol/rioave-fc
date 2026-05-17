@@ -5,7 +5,7 @@ import { useIsMobile } from '@/lib/useIsMobile';
 const CARDS = [
   { href: '/jogos',        emoji: '⚽', title: 'Jogos da Equipa',          desc: 'Resultados, eventos e estatísticas de cada jogo.' },
   { href: '/assistencias', emoji: '🏟️', title: 'Assistências nos Arcos',  desc: 'Espectadores e ocupação do estádio por jogo.' },
-  { href: '/plantel',      emoji: '👥', title: 'Plantel',                   desc: 'Estatísticas individuais de cada jogador.' },
+  { href: '/plantel',      emoji: '👥', title: 'Estatísticas jogadores',     desc: 'Estatísticas individuais de cada jogador.' },
 ];
 
 export default function Home() {
