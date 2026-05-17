@@ -94,7 +94,7 @@ export default function AdminPage() {
 
   // Plantel edit state
   const [editingJogador, setEditingJogador] = useState<string|null>(null); // jogador_id being edited
-  const [editForm, setEditForm] = useState({ nome: '', posicao: 'DEF', numero: '', ativo: true, data_nascimento: '', contrato_ate: '', nacionalidade: '', mercado: '', epoca_chegada: '', data_saida: '' });
+  const [editForm, setEditForm] = useState({ nome: '', posicao: 'DEF', numero: '', ativo: true, emprestado: false, data_nascimento: '', contrato_ate: '', nacionalidade: '', mercado: '', epoca_chegada: '', data_saida: '' });
   const [addEpocaFor, setAddEpocaFor] = useState<string|null>(null); // jogador_id to add epoch
   const [addEpocaForm, setAddEpocaForm] = useState({ epoca: '25/26', numero: '' });
 
@@ -167,7 +167,7 @@ export default function AdminPage() {
   const [jogadoresEpoca, setJogadoresEpoca] = useState<Record<string,unknown>[]>([]);
   useEffect(() => {
     if (!auth) return;
-    supabase.from('jogadores_epoca').select('numero, ativo, data_saida, mercado, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero')
+    supabase.from('jogadores_epoca').select('numero, ativo, emprestado, data_saida, mercado, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero')
       .then(({ data }) => setJogadoresEpoca((data ?? []).map((r: any) => ({ ...r.jogadores, numero: r.numero, ativo: r.ativo }))));
   }, [auth, epocaPlantel]);
 
@@ -210,6 +210,7 @@ export default function AdminPage() {
     const { error: e2 } = await supabase.from('jogadores_epoca').update({
       numero: Number(editForm.numero),
       ativo: editForm.ativo,
+      emprestado: editForm.emprestado || false,
       mercado: editForm.mercado || null,
       epoca_chegada: editForm.epoca_chegada || null,
       data_saida: editForm.data_saida || null,
@@ -227,6 +228,7 @@ export default function AdminPage() {
       ...(r.jogadores ?? {}),
       numero: r.numero,
       ativo: r.ativo,
+      emprestado: r.emprestado || false,
       mercado: r.mercado,
       epoca_chegada: r.epoca_chegada,
       data_saida: r.data_saida,
@@ -263,7 +265,7 @@ export default function AdminPage() {
     setAddEpocaFor(null);
     setAddEpocaForm({ epoca: '25/26', numero: '' });
     if (addEpocaForm.epoca === epocaPlantel) {
-      const { data } = await supabase.from('jogadores_epoca').select('numero, ativo, data_saida, mercado, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero');
+      const { data } = await supabase.from('jogadores_epoca').select('numero, ativo, emprestado, data_saida, mercado, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero');
       setJogadoresEpoca((data ?? []).map((r: any) => ({ ...(r.jogadores ?? {}), numero: r.numero, ativo: r.ativo, mercado: r.mercado, epoca_chegada: r.epoca_chegada, data_saida: r.data_saida })));
     }
   }
@@ -442,7 +444,7 @@ export default function AdminPage() {
     toast('Jogador adicionado ao plantel');
     setNewJogador({ nome: '', posicao: 'DEF', numero: '', epoca: newJogador.epoca });
     // Refresh
-    const { data } = await supabase.from('jogadores_epoca').select('numero, ativo, data_saida, mercado, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero');
+    const { data } = await supabase.from('jogadores_epoca').select('numero, ativo, emprestado, data_saida, mercado, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero');
     setJogadoresEpoca((data ?? []).map((r: any) => ({ ...(r.jogadores ?? {}), numero: r.numero, ativo: r.ativo, mercado: r.mercado, epoca_chegada: r.epoca_chegada, data_saida: r.data_saida })));
     const { data: all } = await supabase.from('jogadores').select('id,nome_display,posicao,data_nascimento,contrato_ate,nacionalidade').order('nome_display');
     setAllJogadores(all ?? []);
@@ -578,10 +580,16 @@ export default function AdminPage() {
                                 style={{ width: '100%', padding: '5px 7px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 12, boxSizing: 'border-box' as const }} />
                             </div>
                           </div>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, cursor: 'pointer', marginBottom: 10 }}>
-                            <input type="checkbox" checked={editForm.ativo} onChange={e => setEditForm(p => ({ ...p, ativo: e.target.checked }))} />
-                            Activo nesta época
-                          </label>
+                          <div style={{ display: 'flex', gap: 16, marginBottom: 10 }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, cursor: 'pointer' }}>
+                              <input type="checkbox" checked={editForm.ativo} onChange={e => setEditForm(p => ({ ...p, ativo: e.target.checked }))} />
+                              Activo nesta época
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, cursor: 'pointer' }}>
+                              <input type="checkbox" checked={editForm.emprestado||false} onChange={e => setEditForm(p => ({ ...p, emprestado: e.target.checked }))} />
+                              <span>Emprestado ao Rio Ave <span style={{ fontSize: 9, color: '#1A5FA8', fontWeight: 700 }}>(EMP.)</span></span>
+                            </label>
+                          </div>
                           <div style={{ fontSize: 9, fontWeight: 700, color: '#9CA3AF', letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 6 }}>Dados pessoais</div>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
                             <div>
@@ -666,7 +674,7 @@ export default function AdminPage() {
                           <span style={{ fontSize: 13, fontWeight: 600, color: '#111318' }}>{j.nome_display as string}</span>
                           <span style={{ fontSize: 10, padding: '2px 5px', borderRadius: 4, background: '#EEF7F2', color: '#006B3C', fontWeight: 600 }}>{j.posicao as string}</span>
                           <div style={{ display: 'flex', gap: 4 }}>
-                            <button onClick={() => { setEditingJogador(j.id as string); setEditForm({ nome: j.nome_display as string, posicao: j.posicao as string, numero: String(j.numero), ativo: j.ativo as boolean, data_nascimento: (j as any).data_nascimento||'', contrato_ate: (j as any).contrato_ate||'', nacionalidade: (j as any).nacionalidade||'', mercado: (j as any).mercado||'', epoca_chegada: (j as any).epoca_chegada||'', data_saida: (j as any).data_saida||'' }); setAddEpocaFor(null); }}
+                            <button onClick={() => { setEditingJogador(j.id as string); setEditForm({ nome: j.nome_display as string, posicao: j.posicao as string, numero: String(j.numero), ativo: j.ativo as boolean, data_nascimento: (j as any).data_nascimento||'', contrato_ate: (j as any).contrato_ate||'', nacionalidade: (j as any).nacionalidade||'', emprestado: (j as any).emprestado||false, mercado: (j as any).mercado||'', epoca_chegada: (j as any).epoca_chegada||'', data_saida: (j as any).data_saida||'' }); setAddEpocaFor(null); }}
                               style={{ padding: '3px 7px', fontSize: 10, fontWeight: 600, background: '#F0F2F5', color: '#374151', border: '1px solid #E4E7EC', borderRadius: 5, cursor: 'pointer' }}>✏️</button>
                             <button onClick={() => { setAddEpocaFor(j.id as string); setEditingJogador(null); setAddEpocaForm({ epoca: '25/26', numero: String(j.numero) }); }}
                               style={{ padding: '3px 7px', fontSize: 10, fontWeight: 600, background: '#EBF4FF', color: '#1A5FA8', border: '1px solid #BFDBFE', borderRadius: 5, cursor: 'pointer' }}>+época</button>
