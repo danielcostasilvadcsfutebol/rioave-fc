@@ -195,25 +195,44 @@ export default function AdminPage() {
   // ── CRUD helpers ─────────────────────────────────────────────
   async function updateJogador() {
     if (!editingJogador || !editForm.nome) return;
+
     // Update jogadores table
-    await supabase.from('jogadores').update({
-      nome_display: editForm.nome, posicao: editForm.posicao,
-      data_nascimento: editForm.data_nascimento||null,
-      contrato_ate: editForm.contrato_ate||null,
-      nacionalidade: editForm.nacionalidade||null,
+    const { error: e1 } = await supabase.from('jogadores').update({
+      nome_display: editForm.nome,
+      posicao: editForm.posicao,
+      data_nascimento: editForm.data_nascimento || null,
+      contrato_ate: editForm.contrato_ate || null,
+      nacionalidade: editForm.nacionalidade || null,
     }).eq('id', editingJogador);
-    await supabase.from('jogadores_epoca').update({
-      mercado: editForm.mercado||null,
-      epoca_chegada: editForm.epoca_chegada||null,
-      data_saida: editForm.data_saida||null,
+    if (e1) { toast('Erro ao guardar jogador: ' + e1.message, false); return; }
+
+    // Update jogadores_epoca — one single call with all fields
+    const { error: e2 } = await supabase.from('jogadores_epoca').update({
+      numero: Number(editForm.numero),
+      ativo: editForm.ativo,
+      mercado: editForm.mercado || null,
+      epoca_chegada: editForm.epoca_chegada || null,
+      data_saida: editForm.data_saida || null,
     }).eq('jogador_id', editingJogador).eq('epoca', epocaPlantel);
-    // Update jogadores_epoca for current epoch
-    await supabase.from('jogadores_epoca').update({ numero: Number(editForm.numero), ativo: editForm.ativo }).eq('jogador_id', editingJogador).eq('epoca', epocaPlantel);
+    if (e2) { toast('Erro ao guardar época: ' + e2.message, false); return; }
+
     toast('Jogador actualizado');
     setEditingJogador(null);
-    const { data } = await supabase.from('jogadores_epoca').select('numero, ativo, data_saida, mercado, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero');
-    setJogadoresEpoca((data ?? []).map((r: any) => ({ ...r.jogadores, numero: r.numero, ativo: r.ativo })));
-    const { data: all } = await supabase.from('jogadores').select('id,nome_display,posicao,data_nascimento,contrato_ate,nacionalidade').order('nome_display');
+
+    // Reload both lists — include all columns in the mapping
+    const { data } = await supabase.from('jogadores_epoca')
+      .select('numero, ativo, data_saida, mercado, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)')
+      .eq('epoca', epocaPlantel).order('numero');
+    setJogadoresEpoca((data ?? []).map((r: any) => ({
+      ...(r.jogadores ?? {}),
+      numero: r.numero,
+      ativo: r.ativo,
+      mercado: r.mercado,
+      epoca_chegada: r.epoca_chegada,
+      data_saida: r.data_saida,
+    })));
+    const { data: all } = await supabase.from('jogadores')
+      .select('id,nome_display,posicao,data_nascimento,contrato_ate,nacionalidade').order('nome_display');
     setAllJogadores(all ?? []);
   }
 
@@ -245,7 +264,7 @@ export default function AdminPage() {
     setAddEpocaForm({ epoca: '25/26', numero: '' });
     if (addEpocaForm.epoca === epocaPlantel) {
       const { data } = await supabase.from('jogadores_epoca').select('numero, ativo, data_saida, mercado, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero');
-      setJogadoresEpoca((data ?? []).map((r: any) => ({ ...r.jogadores, numero: r.numero, ativo: r.ativo })));
+      setJogadoresEpoca((data ?? []).map((r: any) => ({ ...(r.jogadores ?? {}), numero: r.numero, ativo: r.ativo, mercado: r.mercado, epoca_chegada: r.epoca_chegada, data_saida: r.data_saida })));
     }
   }
 
@@ -424,7 +443,7 @@ export default function AdminPage() {
     setNewJogador({ nome: '', posicao: 'DEF', numero: '', epoca: newJogador.epoca });
     // Refresh
     const { data } = await supabase.from('jogadores_epoca').select('numero, ativo, data_saida, mercado, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero');
-    setJogadoresEpoca((data ?? []).map((r: any) => ({ ...r.jogadores, numero: r.numero, ativo: r.ativo })));
+    setJogadoresEpoca((data ?? []).map((r: any) => ({ ...(r.jogadores ?? {}), numero: r.numero, ativo: r.ativo, mercado: r.mercado, epoca_chegada: r.epoca_chegada, data_saida: r.data_saida })));
     const { data: all } = await supabase.from('jogadores').select('id,nome_display,posicao,data_nascimento,contrato_ate,nacionalidade').order('nome_display');
     setAllJogadores(all ?? []);
   }
@@ -648,7 +667,7 @@ export default function AdminPage() {
                           <span style={{ fontSize: 13, fontWeight: 600, color: '#111318' }}>{j.nome_display as string}</span>
                           <span style={{ fontSize: 10, padding: '2px 5px', borderRadius: 4, background: '#EEF7F2', color: '#006B3C', fontWeight: 600 }}>{j.posicao as string}</span>
                           <div style={{ display: 'flex', gap: 4 }}>
-                            <button onClick={() => { setEditingJogador(j.id as string); setEditForm({ nome: j.nome_display as string, posicao: j.posicao as string, numero: String(j.numero), ativo: j.ativo as boolean, data_nascimento: (j.jogadores as any)?.data_nascimento||'', contrato_ate: (j.jogadores as any)?.contrato_ate||'', nacionalidade: (j.jogadores as any)?.nacionalidade||'', mercado: j.mercado as string||'', epoca_chegada: j.epoca_chegada as string||'', data_saida: j.data_saida as string||'' }); setAddEpocaFor(null); }}
+                            <button onClick={() => { setEditingJogador(j.id as string); setEditForm({ nome: j.nome_display as string, posicao: j.posicao as string, numero: String(j.numero), ativo: j.ativo as boolean, data_nascimento: (j as any).data_nascimento||'', contrato_ate: (j as any).contrato_ate||'', nacionalidade: (j as any).nacionalidade||'', mercado: (j as any).mercado||'', epoca_chegada: (j as any).epoca_chegada||'', data_saida: (j as any).data_saida||'' }); setAddEpocaFor(null); }}
                               style={{ padding: '3px 7px', fontSize: 10, fontWeight: 600, background: '#F0F2F5', color: '#374151', border: '1px solid #E4E7EC', borderRadius: 5, cursor: 'pointer' }}>✏️</button>
                             <button onClick={() => { setAddEpocaFor(j.id as string); setEditingJogador(null); setAddEpocaForm({ epoca: '25/26', numero: String(j.numero) }); }}
                               style={{ padding: '3px 7px', fontSize: 10, fontWeight: 600, background: '#EBF4FF', color: '#1A5FA8', border: '1px solid #BFDBFE', borderRadius: 5, cursor: 'pointer' }}>+época</button>
