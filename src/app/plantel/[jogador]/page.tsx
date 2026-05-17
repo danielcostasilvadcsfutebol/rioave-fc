@@ -2,6 +2,7 @@
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useIsMobile } from '@/lib/useIsMobile';
 import { supabase } from '@/lib/supabase-client';
 
 function nameMatch(a: string | undefined, b: string): boolean {
@@ -42,6 +43,7 @@ const RES_COLOR={V:'#006B3C',E:'#6B7280',D:'#DC2626'};
 export default function JogadorPage() {
   const params = useParams();
   const nome = decodeURIComponent(params.jogador as string ?? '');
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [s, setS] = useState<any>(null);
   const [expandedGame, setExpandedGame] = useState<string|null>(null);
@@ -291,19 +293,19 @@ export default function JogadorPage() {
           {s.posicao&&<span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:99,background:'#EEF7F2',color:'#006B3C'}}>{normPos(s.posicao)}</span>}
         </div>
       </header>
-      <main style={{maxWidth:860,margin:'0 auto',padding:'16px',display:'flex',flexDirection:'column',gap:14}}>
+      <main style={{maxWidth:860,margin:'0 auto',padding:isMobile?'10px':'16px',display:'flex',flexDirection:'column',gap:isMobile?10:14}}>
 
         {/* HERO */}
-        <div style={{background:'#111318',borderRadius:16,overflow:'hidden',position:'relative',padding:'28px 28px 24px'}}>
+        <div style={{background:'#111318',borderRadius:16,overflow:'hidden',position:'relative',padding:isMobile?'20px 16px 18px':'28px 28px 24px'}}>
           <div style={{position:'absolute',right:20,top:'50%',transform:'translateY(-50%)',fontSize:140,fontWeight:900,color:'rgba(255,255,255,.04)',lineHeight:1,userSelect:'none',letterSpacing:-8}}>{s.numero}</div>
-          <div style={{display:'flex',alignItems:'flex-start',gap:20,position:'relative'}}>
+          <div style={{display:'flex',alignItems:'flex-start',gap:isMobile?12:20,position:'relative'}}>
             <div style={{width:64,height:64,borderRadius:14,background:'#006B3C',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,fontWeight:900,color:'#fff',flexShrink:0}}>{s.numero}</div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.35)',letterSpacing:'.12em',textTransform:'uppercase',marginBottom:4}}>{normPos(s.posicao)} · Rio Ave FC · 2025/26</div>
-              <div style={{fontSize:30,fontWeight:900,color:'#fff',letterSpacing:-1,lineHeight:1,marginBottom:10}}>{s.nome}</div>
+              <div style={{fontSize:isMobile?20:30,fontWeight:900,color:'#fff',letterSpacing:-1,lineHeight:1,marginBottom:10}}>{s.nome}</div>
               <div style={{fontSize:11,color:'rgba(255,255,255,.4)'}}>{s.jogosTotal} ficha{s.jogosTotal!==1?'s':''} · {s.minutosJogados}' jogados · {pctMin}% dos min. disponíveis</div>
             </div>
-            <div style={{display:'flex',gap:16,flexShrink:0}}>
+            <div style={{display:'flex',gap:isMobile?10:16,flexShrink:0}}>
               {([['V',s.vitorias,'#5CFF9D'],['E',s.empates,'rgba(255,255,255,.5)'],['D',s.derrotas,'#FF6B6B']] as [string,number,string][]).map(([l,n,c])=>(
                 <div key={l} style={{textAlign:'center'}}>
                   <div style={{fontSize:28,fontWeight:900,color:c,lineHeight:1}}>{n}</div>
@@ -317,7 +319,7 @@ export default function JogadorPage() {
         {/* PARTICIPAÇÃO */}
         <div>
           <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Participação</div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:8}}>
+          <div style={{display:'grid',gridTemplateColumns:isMobile?'repeat(3,1fr)':'repeat(6,1fr)',gap:8}}>
             <KpiCard label="Fichas" value={s.jogosTotal} sub="na ficha de jogo" color="#006B3C"/>
             <KpiCard label="Titular" value={s.jogosTitular} sub={`${pctVT}% vitórias`}/>
             <KpiCard label="Suplente" value={s.jogosSuplente} sub="entrou em jogo"/>
@@ -330,7 +332,7 @@ export default function JogadorPage() {
         {/* RENDIMENTO */}
         <div>
           <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Rendimento colectivo</div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:10}}>
             <div style={{background:'#fff',border:'1.5px solid #E4E7EC',borderRadius:12,padding:'14px 16px'}}>
               <div style={{fontSize:11,fontWeight:600,color:'#9CA3AF',marginBottom:10}}>Resultados · {s.jogosTotal} jogos</div>
               <BarStat label="Vitórias" value={s.vitorias} max={s.jogosTotal} color="#006B3C"/>
@@ -357,14 +359,14 @@ export default function JogadorPage() {
         <div>
           <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>{s.isGR?'Estatísticas de guarda-redes':'Contribuição individual'}</div>
           {s.isGR ? (
-            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
+            <div style={{display:'grid',gridTemplateColumns:isMobile?'repeat(2,1fr)':'repeat(4,1fr)',gap:8}}>
               <KpiCard label="Golos sofridos" value={s.golosSofridosEmCampo} color="#DC2626"/>
               <KpiCard label="Clean sheets" value={s.cleanSheets} color="#006B3C" sub={`${pctCS}% dos jogos`}/>
               <KpiCard label="Sofridos/90'" value={concP90} sub="média"/>
               <KpiCard label="Min. p/ golo sofrido" value={minPC?`${minPC}'`:'—'} sub={minPC?'minutos':'sem golos'}/>
             </div>
           ) : (
-            <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:8}}>
+            <div style={{display:'grid',gridTemplateColumns:isMobile?'repeat(3,1fr)':'repeat(5,1fr)',gap:8}}>
               <KpiCard label="Golos" value={s.golosMarcados} color="#006B3C"/>
               <KpiCard label="Assistências" value={s.assistencias} color="#1A5FA8"/>
               <KpiCard label="Contribuições" value={s.contribuicoes} sub="golos + assist"/>
@@ -378,7 +380,7 @@ export default function JogadorPage() {
         {(s.cartoesAmarelos>0||s.cartoesVermelhos>0)&&(
           <div>
             <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Disciplina</div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+            <div style={{display:'grid',gridTemplateColumns:isMobile?'repeat(3,1fr)':'repeat(3,1fr)',gap:8}}>
               <KpiCard label="Amarelos" value={s.cartoesAmarelos} color={s.cartoesAmarelos>0?'#EF9F27':'#9CA3AF'}/>
               <KpiCard label="Vermelhos" value={s.cartoesVermelhos} color={s.cartoesVermelhos>0?'#DC2626':'#9CA3AF'}/>
               <KpiCard label="Min. p/ amarelo" value={minPA?`${minPA}'`:'—'} sub={minPA?'média':'sem amarelos'}/>
@@ -417,7 +419,7 @@ export default function JogadorPage() {
           const faseData = s.eventosFase ?? [];
           const maxFase = Math.max(...faseData.map((f:any)=>f.total), 1);
           return (
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+            <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:12}}>
               {/* RADAR */}
               <div style={{background:'#fff',border:'1.5px solid #E4E7EC',borderRadius:14,padding:'18px 20px'}}>
                 <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:14}}>Radar de perfil</div>
@@ -515,15 +517,15 @@ export default function JogadorPage() {
           <div>
             <div style={{fontSize:10,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Detalhe por jogo</div>
             <div style={{background:'#fff',border:'1.5px solid #E4E7EC',borderRadius:12,overflow:'hidden'}}>
-              <div style={{display:'grid',gridTemplateColumns:'52px 1fr 86px 60px 44px 32px 32px 32px 44px',gap:4,padding:'7px 14px',background:'#F9FAFB',borderBottom:'1px solid #E4E7EC',fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.07em'}}>
+              <div style={{display:'grid',gridTemplateColumns:isMobile?'40px 1fr 70px 44px 28px 28px':'52px 1fr 86px 60px 44px 32px 32px 32px 44px',gap:isMobile?3:4,padding:isMobile?'6px 10px':'7px 14px',background:'#F9FAFB',borderBottom:'1px solid #E4E7EC',fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.07em'}}>
                 <div>Data</div><div>Adversário</div><div>Result.</div><div>Particip.</div>
                 <div style={{textAlign:'center'}}>Min</div><div style={{textAlign:'center'}}>⚽</div>
-                <div style={{textAlign:'center'}}>🅰</div><div style={{textAlign:'center'}}>🟨</div>
+                {!isMobile && <div style={{textAlign:'center'}}>🅰</div>}{!isMobile && <div style={{textAlign:'center'}}>🟨</div>}
                 <div style={{textAlign:'center'}}>GS</div>
               </div>
               {s.partidas.map((p:any,i:number)=>(
                 <div key={p.gameId} style={{borderBottom:i<s.partidas.length-1?'1px solid #F3F4F6':'none'}}>
-                <div style={{display:'grid',gridTemplateColumns:'52px 1fr 86px 60px 44px 32px 32px 32px 44px',gap:4,padding:'10px 14px',alignItems:'center',cursor:'pointer'}}
+                <div style={{display:'grid',gridTemplateColumns:isMobile?'40px 1fr 70px 44px 28px 28px':'52px 1fr 86px 60px 44px 32px 32px 32px 44px',gap:isMobile?3:4,padding:isMobile?'8px 10px':'10px 14px',alignItems:'center',cursor:'pointer'}}
                   onClick={()=>setExpandedGame(g=>g===p.gameId?null:p.gameId)}
                   onMouseEnter={e=>(e.currentTarget as HTMLElement).style.background='#F9FAFB'}
                   onMouseLeave={e=>(e.currentTarget as HTMLElement).style.background='transparent'}
@@ -542,9 +544,9 @@ export default function JogadorPage() {
                     {p.foiTitular && p.minSaiu !== null && <span style={{fontSize:9,color:'#DC2626',paddingLeft:2,fontWeight:600}}>↓ {p.minSaiu}&apos;</span>}
                   </div>
                   <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#374151'}}>{p.minutosJogados}&apos;</div>
-                  <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:p.golosMarcados>0?'#006B3C':'#D1D5DB'}}>{p.golosMarcados||'—'}</div>
-                  <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:p.assistencias>0?'#1A5FA8':'#D1D5DB'}}>{p.assistencias||'—'}</div>
-                  <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:p.cartoesAmarelos>0?'#EF9F27':'#D1D5DB'}}>{p.cartoesAmarelos||'—'}</div>
+                  <div style={{textAlign:'center',fontSize:isMobile?11:13,fontWeight:700,color:p.golosMarcados>0?'#006B3C':'#D1D5DB'}}>{p.golosMarcados||'—'}</div>
+                  {!isMobile && <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:p.assistencias>0?'#1A5FA8':'#D1D5DB'}}>{p.assistencias||'—'}</div>}
+                  {!isMobile && <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:p.cartoesAmarelos>0?'#EF9F27':'#D1D5DB'}}>{p.cartoesAmarelos||'—'}</div>}
                   <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:p.golosSofridosEmCampo>0?'#DC2626':'#D1D5DB'}}>{s.isGR?p.golosSofridosEmCampo:(p.golosSofridosEmCampo>0?p.golosSofridosEmCampo:'—')}</div>
                 </div>
                 {expandedGame===p.gameId && (
