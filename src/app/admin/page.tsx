@@ -595,11 +595,10 @@ export default function AdminPage() {
                                 style={{ width: '100%', padding: '5px 7px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 11, boxSizing: 'border-box' as const }} />
                             </div>
                           </div>
-                            <div>
+                          <div style={{ marginBottom: 10 }}>
                               <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 2 }}>Nacionalidade</div>
                               <input value={editForm.nacionalidade||''} onChange={e => setEditForm(p => ({ ...p, nacionalidade: e.target.value }))} placeholder="ex: Português, Alemão…"
                                 style={{ width: '100%', padding: '5px 7px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 11, boxSizing: 'border-box' as const }} />
-                            </div>
                           </div>
                           <div style={{ fontSize: 9, fontWeight: 700, color: '#9CA3AF', letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 6 }}>Chegada / Saída</div>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
