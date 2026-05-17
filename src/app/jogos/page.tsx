@@ -63,6 +63,7 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
   partida: PartidaEquipa; expanded: boolean; detalhe: 'eventos'|'stats'|'formacao';
   onToggle:()=>void; onDetalhe:(d:'eventos'|'stats'|'formacao')=>void; cardBg?: string;
 }) {
+  const isMobile = useIsMobile();
   const [detail, setDetail] = useState<{eventos:EventoJogo[];stats:EstatisticasJogo|null;fichas:FichasJogo|null}|null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
