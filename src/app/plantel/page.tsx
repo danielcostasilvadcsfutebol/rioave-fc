@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
+import { useIsMobile } from '@/lib/useIsMobile';
 import Link from 'next/link';
 import { getFichasEpocaDB } from '@/lib/db';
 import { getRosterRA, getPlayerStats, TOTAL_JOGOS_EPOCA, type JogadorPlantel, type FichaData } from '@/lib/mock-jogos-equipa';
@@ -26,6 +27,7 @@ function StatPill({v,label,color='#111318'}:{v:number|string;label:string;color?
 }
 
 export default function PlantelPage() {
+  const isMobile = useIsMobile();
   const [epoca] = useState('25/26');
   const [search, setSearch] = useState('');
   const [fichas, setFichas] = useState<FichaData[]>([]);
@@ -96,6 +98,11 @@ export default function PlantelPage() {
   }, [filtered]);
 
   const GRID = '44px 1fr 52px 44px 44px 44px 36px 36px 36px 36px 36px';
+  const GRID_M = '36px 1fr 48px 36px 32px 32px';
+  const COLS_M = [
+    {key:'Nº',tip:'Número'},{key:'Jogador',tip:'Nome'},{key:'Min',tip:'Minutos'},
+    {key:'⚽',tip:'Golos'},{key:'🟨',tip:'Amarelos'},{key:'GS',tip:'GS em campo'}
+  ];
   const COLS: {key:string; tip:string}[] = [
     {key:'Nº',    tip:'Número de camisola'},
     {key:'Jogador',tip:'Nome do jogador'},
@@ -121,10 +128,10 @@ export default function PlantelPage() {
           <div><div style={{fontSize:13,fontWeight:700,color:'#111318'}}>Plantel</div><div style={{fontSize:9,fontWeight:600,color:'#B0B5BE',letterSpacing:'.08em',textTransform:'uppercase'}}>Rio Ave FC · {epoca}</div></div>
         </div>
       </header>
-      <main style={{maxWidth:860,margin:'0 auto',padding:'16px',display:'flex',flexDirection:'column',gap:12}}>
+      <main style={{maxWidth:860,margin:'0 auto',padding:isMobile?'10px':'16px',display:'flex',flexDirection:'column',gap:12}}>
         <div style={{background:'linear-gradient(135deg,#003D20,#005A30)',borderRadius:14,padding:'18px 22px',color:'#fff'}}>
           <div style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,.4)',letterSpacing:'.06em',textTransform:'uppercase',marginBottom:10}}>Plantel · Fichas de jogo · {fichas.length} de {totalJogos}</div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:8}}>
+          <div style={{display:'grid',gridTemplateColumns:isMobile?'repeat(3,1fr)':'repeat(6,1fr)',gap:8}}>
             {[{l:'Jogadores',v:roster.length},{l:'Fichas disp.',v:`${fichas.length}/${totalJogos}`},{l:'Golos',v:totalGolos,color:'#5CFF9D'},{l:'Assist.',v:totalAssists,color:'#7CD4FD'},{l:'Amarelos',v:totalAmarelos,color:'#FDE68A'},{l:'Época',v:epoca}].map((s:any) => (
               <div key={s.l} style={{background:'rgba(0,0,0,.2)',borderRadius:8,padding:'8px 6px',textAlign:'center'}}>
                 <div style={{fontSize:18,fontWeight:800,color:s.color??'#fff',lineHeight:1}}>{s.v}</div>
@@ -157,7 +164,7 @@ export default function PlantelPage() {
                   <span style={{fontSize:13,fontWeight:700,color:'#111318'}}>{group}</span>
                   <span style={{fontSize:11,color:'#9CA3AF'}}>{players.length} jogadores</span>
                 </div>
-                <div style={{display:'grid',gridTemplateColumns:GRID,gap:6,padding:'5px 14px',borderBottom:'1px solid #F3F4F6',background:'#FAFAFA'}}>
+                <div style={{display:'grid',gridTemplateColumns:isMobile?GRID_M:GRID,gap:isMobile?4:6,padding:isMobile?'5px 10px':'5px 14px',borderBottom:'1px solid #F3F4F6',background:'#FAFAFA'}}>
                   {COLS.map(h=><div key={h.key} title={h.tip} style={{fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.07em',textAlign:h.key==='Jogador'?'left':'center',cursor:'default'}}>{h.key}</div>)}
                 </div>
                 {players.map((p,i) => {
@@ -179,9 +186,9 @@ export default function PlantelPage() {
                         <div style={{fontSize:12,fontWeight:700,color:'#374151',lineHeight:1}}>{s?`${s.minutosJogados}'`:'—'}</div>
                         {s&&<div style={{height:3,background:'#F0F2F5',borderRadius:99,marginTop:3,overflow:'hidden'}}><div style={{height:'100%',width:`${pctMin}%`,background:'#006B3C',borderRadius:99}}/></div>}
                       </div>
-                      <StatPill v={s?.jogosTotal ?? 0} label="jogos" color="#006B3C"/>
-                      <StatPill v={s?.jogosTitular ?? 0} label="tit"/>
-                      <StatPill v={s?.jogosSuplente ?? 0} label="sub" color="#6B7280"/>
+                      {!isMobile && <StatPill v={s?.jogosTotal ?? 0} label="jogos" color="#006B3C"/>}
+                      {!isMobile && <StatPill v={s?.jogosTitular ?? 0} label="tit"/>}
+                      {!isMobile && <StatPill v={s?.jogosSuplente ?? 0} label="sub" color="#6B7280"/>}
                       <div title="Golos marcados" style={{textAlign:'center',fontSize:13,fontWeight:700,color:s&&s.golosMarcados>0?'#006B3C':'#9CA3AF',cursor:'default'}}>{s?s.golosMarcados:'—'}</div>
                       <div title="Assistências" style={{textAlign:'center',fontSize:13,fontWeight:700,color:s&&s.assistencias>0?'#1A5FA8':'#9CA3AF',cursor:'default'}}>{s?s.assistencias:'—'}</div>
                       <div title="Cartões amarelos" style={{textAlign:'center',fontSize:13,fontWeight:700,color:s&&s.cartoesAmarelos>0?'#EF9F27':'#9CA3AF',cursor:'default'}}>{s?s.cartoesAmarelos:'—'}</div>
