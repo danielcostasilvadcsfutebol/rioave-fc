@@ -93,7 +93,7 @@ export default function JogadorPage() {
     let epocaMeta: {mercado?:string|null;data_saida?:string|null} = {};
     if (jogadorMeta?.id) {
       const { data: em } = await supabase
-        .from('jogadores_epoca').select('mercado,data_saida')
+        .from('jogadores_epoca').select('mercado,epoca_chegada,data_saida')
         .eq('jogador_id', jogadorMeta.id).eq('epoca','25/26').maybeSingle();
       if (em) epocaMeta = em;
     }
@@ -271,6 +271,7 @@ export default function JogadorPage() {
       contratoAte:jogadorMeta?.contrato_ate||null,
       nacionalidade:jogadorMeta?.nacionalidade||null,
       mercado:epocaMeta?.mercado||null,
+      epocaChegada:(epocaMeta as any)?.epoca_chegada||null,
       dataSaida:epocaMeta?.data_saida||null,
       jogosTotal,jogosTitular,jogosSuplente,jogosBanco,
       minutosJogados,minutosDisponiveis,
@@ -351,7 +352,7 @@ export default function JogadorPage() {
             const expired=new Date(s.contratoAte)<new Date();
             infoItems.push(['Contrato até',fmtD(s.contratoAte),expired?'#DC2626':'#006B3C']);
           }
-          if(s.mercado) infoItems.push(['Chegada',s.mercado==='verao'?'🌞 Mercado de Verão':'❄️ Mercado de Inverno','#374151']);
+          if(s.mercado){ const mktLabel=s.mercado==='verao'?'🌞 Verão':'❄️ Inverno'; const epLabel=s.epocaChegada?` ${s.epocaChegada}`:''; infoItems.push(['Chegada',mktLabel+epLabel,'#374151']); }
           if(s.dataSaida) infoItems.push(['Saída',fmtD(s.dataSaida),'#DC2626']);
           return (
             <div style={{background:'#fff',border:'1.5px solid #E4E7EC',borderRadius:12,padding:'12px 16px',display:'flex',flexWrap:'wrap',gap:'0px'}}>
