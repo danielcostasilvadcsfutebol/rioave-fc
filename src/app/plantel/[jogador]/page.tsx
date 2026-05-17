@@ -84,6 +84,20 @@ export default function JogadorPage() {
       .from('jogos').select('*').eq('epoca', '25/26').order('data');
     if (e1 || !jogos?.length) return null;
 
+    // Fetch player metadata
+    const { data: jogadorMeta } = await supabase
+      .from('jogadores')
+      .select('id,data_nascimento,contrato_ate,nacionalidade')
+      .ilike('nome_display', playerName)
+      .maybeSingle();
+    let epocaMeta: {mercado?:string|null;data_saida?:string|null} = {};
+    if (jogadorMeta?.id) {
+      const { data: em } = await supabase
+        .from('jogadores_epoca').select('mercado,data_saida')
+        .eq('jogador_id', jogadorMeta.id).eq('epoca','25/26').maybeSingle();
+      if (em) epocaMeta = em;
+    }
+
     // 2. Todas as fichas RA onde o jogador aparece
     const { data: minhasFichas, error: e2 } = await supabase
       .from('fichas_jogo').select('*')
@@ -253,6 +267,11 @@ export default function JogadorPage() {
     const minutosDisponiveis=(jogosTotal+jogosBanco)*90;
     return {
       nome:playerName,numero,posicao,isGR:posicao==='GR',
+      dataNascimento:jogadorMeta?.data_nascimento||null,
+      contratoAte:jogadorMeta?.contrato_ate||null,
+      nacionalidade:jogadorMeta?.nacionalidade||null,
+      mercado:epocaMeta?.mercado||null,
+      dataSaida:epocaMeta?.data_saida||null,
       jogosTotal,jogosTitular,jogosSuplente,jogosBanco,
       minutosJogados,minutosDisponiveis,
       golosMarcados,assistencias,contribuicoes:golosMarcados+assistencias,
@@ -315,6 +334,36 @@ export default function JogadorPage() {
             </div>
           </div>
         </div>
+
+        {/* INFORMAÇÃO PESSOAL */}
+        {(s.dataNascimento||s.contratoAte||s.nacionalidade||s.mercado||s.dataSaida)&&(()=>{
+          const calcAge=(dob:string)=>{
+            const b=new Date(dob),today=new Date();
+            let age=today.getFullYear()-b.getFullYear();
+            if(today<new Date(today.getFullYear(),b.getMonth(),b.getDate()))age--;
+            return age;
+          };
+          const fmtD=(d:string)=>new Date(d+'T00:00:00').toLocaleDateString('pt-PT',{day:'2-digit',month:'2-digit',year:'numeric'});
+          const infoItems:[string,string,string][]=[]; // [label, value, color]
+          if(s.nacionalidade) infoItems.push(['Nacionalidade',s.nacionalidade,'#374151']);
+          if(s.dataNascimento) infoItems.push(['Data nasc.',`${fmtD(s.dataNascimento)} (${calcAge(s.dataNascimento)} anos)`,'#374151']);
+          if(s.contratoAte){
+            const expired=new Date(s.contratoAte)<new Date();
+            infoItems.push(['Contrato até',fmtD(s.contratoAte),expired?'#DC2626':'#006B3C']);
+          }
+          if(s.mercado) infoItems.push(['Chegada',s.mercado==='verao'?'🌞 Mercado de Verão':'❄️ Mercado de Inverno','#374151']);
+          if(s.dataSaida) infoItems.push(['Saída',fmtD(s.dataSaida),'#DC2626']);
+          return (
+            <div style={{background:'#fff',border:'1.5px solid #E4E7EC',borderRadius:12,padding:'12px 16px',display:'flex',flexWrap:'wrap',gap:'0px'}}>
+              {infoItems.map(([l,v,col],i)=>(
+                <div key={i} style={{padding:'6px 16px 6px 0',borderRight:i<infoItems.length-1?'1px solid #F3F4F6':'none',marginRight:i<infoItems.length-1?16:0}}>
+                  <div style={{fontSize:9,fontWeight:700,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'.07em',marginBottom:2}}>{l}</div>
+                  <div style={{fontSize:13,fontWeight:600,color:col}}>{v}</div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* PARTICIPAÇÃO */}
         <div>
