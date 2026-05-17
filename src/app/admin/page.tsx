@@ -94,7 +94,7 @@ export default function AdminPage() {
 
   // Plantel edit state
   const [editingJogador, setEditingJogador] = useState<string|null>(null); // jogador_id being edited
-  const [editForm, setEditForm] = useState({ nome: '', posicao: 'DEF', numero: '', ativo: true, emprestado: false, data_nascimento: '', contrato_ate: '', nacionalidade: '', mercado: '', epoca_chegada: '', data_saida: '' });
+  const [editForm, setEditForm] = useState({ nome: '', posicao: 'DEF', numero: '', ativo: true, emprestado: false, data_nascimento: '', contrato_ate: '', nacionalidade: '', mes_chegada: '', epoca_chegada: '', data_saida: '' });
   const [addEpocaFor, setAddEpocaFor] = useState<string|null>(null); // jogador_id to add epoch
   const [addEpocaForm, setAddEpocaForm] = useState({ epoca: '25/26', numero: '' });
 
@@ -167,7 +167,7 @@ export default function AdminPage() {
   const [jogadoresEpoca, setJogadoresEpoca] = useState<Record<string,unknown>[]>([]);
   useEffect(() => {
     if (!auth) return;
-    supabase.from('jogadores_epoca').select('numero, ativo, emprestado, data_saida, mercado, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero')
+    supabase.from('jogadores_epoca').select('numero, ativo, emprestado, data_saida, mes_chegada, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero')
       .then(({ data }) => setJogadoresEpoca((data ?? []).map((r: any) => ({ ...r.jogadores, numero: r.numero, ativo: r.ativo }))));
   }, [auth, epocaPlantel]);
 
@@ -211,7 +211,7 @@ export default function AdminPage() {
       numero: Number(editForm.numero),
       ativo: editForm.ativo,
       emprestado: editForm.emprestado || false,
-      mercado: editForm.mercado || null,
+      mes_chegada: editForm.mes_chegada || null,
       epoca_chegada: editForm.epoca_chegada || null,
       data_saida: editForm.data_saida || null,
     }).eq('jogador_id', editingJogador).eq('epoca', epocaPlantel);
@@ -229,7 +229,7 @@ export default function AdminPage() {
       numero: r.numero,
       ativo: r.ativo,
       emprestado: r.emprestado || false,
-      mercado: r.mercado,
+      mes_chegada: r.mes_chegada,
       epoca_chegada: r.epoca_chegada,
       data_saida: r.data_saida,
     })));
@@ -265,7 +265,7 @@ export default function AdminPage() {
     setAddEpocaFor(null);
     setAddEpocaForm({ epoca: '25/26', numero: '' });
     if (addEpocaForm.epoca === epocaPlantel) {
-      const { data } = await supabase.from('jogadores_epoca').select('numero, ativo, emprestado, data_saida, mercado, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero');
+      const { data } = await supabase.from('jogadores_epoca').select('numero, ativo, emprestado, data_saida, mes_chegada, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero');
       setJogadoresEpoca((data ?? []).map((r: any) => ({ ...(r.jogadores ?? {}), numero: r.numero, ativo: r.ativo, mercado: r.mercado, epoca_chegada: r.epoca_chegada, data_saida: r.data_saida })));
     }
   }
@@ -444,7 +444,7 @@ export default function AdminPage() {
     toast('Jogador adicionado ao plantel');
     setNewJogador({ nome: '', posicao: 'DEF', numero: '', epoca: newJogador.epoca });
     // Refresh
-    const { data } = await supabase.from('jogadores_epoca').select('numero, ativo, emprestado, data_saida, mercado, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero');
+    const { data } = await supabase.from('jogadores_epoca').select('numero, ativo, emprestado, data_saida, mes_chegada, epoca_chegada, jogadores(id, nome_display, posicao, data_nascimento, contrato_ate, nacionalidade)').eq('epoca', epocaPlantel).order('numero');
     setJogadoresEpoca((data ?? []).map((r: any) => ({ ...(r.jogadores ?? {}), numero: r.numero, ativo: r.ativo, mercado: r.mercado, epoca_chegada: r.epoca_chegada, data_saida: r.data_saida })));
     const { data: all } = await supabase.from('jogadores').select('id,nome_display,posicao,data_nascimento,contrato_ate,nacionalidade').order('nome_display');
     setAllJogadores(all ?? []);
@@ -492,6 +492,21 @@ export default function AdminPage() {
       {/* ══ PLANTEL TAB ══════════════════════════════════════════ */}
       {mainTab === 'plantel' && (
         <div style={{ maxWidth: 800, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+          {/* Selector de época */}
+          <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', marginRight: 4 }}>ÉPOCA:</span>
+            {['25/26','24/25','23/24','22/23','21/22','20/21'].map(ep => (
+              <button key={ep} onClick={() => setEpocaPlantel(ep)}
+                style={{ padding: '4px 12px', borderRadius: 99, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1.5px solid', transition: 'all .12s',
+                  borderColor: epocaPlantel === ep ? '#006B3C' : '#E4E7EC',
+                  background: epocaPlantel === ep ? '#006B3C' : '#fff',
+                  color: epocaPlantel === ep ? '#fff' : '#6B7280' }}>
+                {ep}
+              </button>
+            ))}
+            <span style={{ marginLeft: 'auto', fontSize: 11, color: '#9CA3AF' }}>{jogadoresEpoca.length} jogadores</span>
+          </div>, gap: 12 }}>
           <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 12, padding: 16 }}>
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -609,28 +624,25 @@ export default function AdminPage() {
                                 style={{ width: '100%', padding: '5px 7px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 11, boxSizing: 'border-box' as const }} />
                           </div>
                           <div style={{ fontSize: 9, fontWeight: 700, color: '#9CA3AF', letterSpacing: '.07em', textTransform: 'uppercase', marginBottom: 6 }}>Chegada / Saída</div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 10 }}>
                             <div>
-                              <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 2 }}>Mercado de chegada</div>
-                              <select value={editForm.mercado||''} onChange={e => setEditForm(p => ({ ...p, mercado: e.target.value }))}
+                              <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 2 }}>Mês de chegada</div>
+                              <select value={editForm.mes_chegada||''} onChange={e => setEditForm(p => ({ ...p, mes_chegada: e.target.value }))}
                                 style={{ width: '100%', padding: '5px 6px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 11 }}>
-                                <option value="">— não definido —</option>
-                                <option value="verao">🌞 Verão</option>
-                                <option value="inverno">❄️ Inverno</option>
+                                <option value="">— mês —</option>
+                                {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map(m => <option key={m} value={m}>{m}</option>)}
                               </select>
                             </div>
                             <div>
                               <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 2 }}>Temporada de chegada</div>
                               <select value={editForm.epoca_chegada||''} onChange={e => setEditForm(p => ({ ...p, epoca_chegada: e.target.value }))}
                                 style={{ width: '100%', padding: '5px 6px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 11 }}>
-                                <option value="">— não definido —</option>
+                                <option value="">— época —</option>
                                 {['25/26','24/25','23/24','22/23','21/22','20/21'].map(e => <option key={e} value={e}>{e}</option>)}
                               </select>
                             </div>
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
                             <div>
-                              <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 2 }}>Data de saída (vazio = ainda no plantel)</div>
+                              <div style={{ fontSize: 9, color: '#9CA3AF', marginBottom: 2 }}>Data de saída (vazio = no plantel)</div>
                               <input type="date" value={editForm.data_saida||''} onChange={e => setEditForm(p => ({ ...p, data_saida: e.target.value }))}
                                 style={{ width: '100%', padding: '5px 7px', border: '1px solid #E4E7EC', borderRadius: 5, fontSize: 11, boxSizing: 'border-box' as const }} />
                             </div>
@@ -674,7 +686,7 @@ export default function AdminPage() {
                           <span style={{ fontSize: 13, fontWeight: 600, color: '#111318' }}>{j.nome_display as string}</span>
                           <span style={{ fontSize: 10, padding: '2px 5px', borderRadius: 4, background: '#EEF7F2', color: '#006B3C', fontWeight: 600 }}>{j.posicao as string}</span>
                           <div style={{ display: 'flex', gap: 4 }}>
-                            <button onClick={() => { setEditingJogador(j.id as string); setEditForm({ nome: j.nome_display as string, posicao: j.posicao as string, numero: String(j.numero), ativo: j.ativo as boolean, data_nascimento: (j as any).data_nascimento||'', contrato_ate: (j as any).contrato_ate||'', nacionalidade: (j as any).nacionalidade||'', emprestado: (j as any).emprestado||false, mercado: (j as any).mercado||'', epoca_chegada: (j as any).epoca_chegada||'', data_saida: (j as any).data_saida||'' }); setAddEpocaFor(null); }}
+                            <button onClick={() => { setEditingJogador(j.id as string); setEditForm({ nome: j.nome_display as string, posicao: j.posicao as string, numero: String(j.numero), ativo: j.ativo as boolean, data_nascimento: (j as any).data_nascimento||'', contrato_ate: (j as any).contrato_ate||'', nacionalidade: (j as any).nacionalidade||'', emprestado: (j as any).emprestado||false, mes_chegada: (j as any).mes_chegada||'', epoca_chegada: (j as any).epoca_chegada||'', data_saida: (j as any).data_saida||'' }); setAddEpocaFor(null); }}
                               style={{ padding: '3px 7px', fontSize: 10, fontWeight: 600, background: '#F0F2F5', color: '#374151', border: '1px solid #E4E7EC', borderRadius: 5, cursor: 'pointer' }}>✏️</button>
                             <button onClick={() => { setAddEpocaFor(j.id as string); setEditingJogador(null); setAddEpocaForm({ epoca: '25/26', numero: String(j.numero) }); }}
                               style={{ padding: '3px 7px', fontSize: 10, fontWeight: 600, background: '#EBF4FF', color: '#1A5FA8', border: '1px solid #BFDBFE', borderRadius: 5, cursor: 'pointer' }}>+época</button>
