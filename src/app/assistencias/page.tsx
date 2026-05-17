@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
+import { useIsMobile } from '@/lib/useIsMobile';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase-client';
 
@@ -41,6 +42,7 @@ function OccupancyBar({ value, max, color = '#006B3C' }: { value: number; max: n
 }
 
 export default function AssistenciasPage() {
+  const isMobile = useIsMobile();
   const [epoca, setEpoca] = useState('25/26');
   const [tab, setTab] = useState<'jogo' | 'adversarios' | 'epoca'>('jogo');
   const [jogos, setJogos] = useState<JogoEspectadores[]>([]);
@@ -109,7 +111,7 @@ export default function AssistenciasPage() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 760, margin: '0 auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <main style={{ maxWidth: 760, margin: '0 auto', padding: isMobile ? '10px' : '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {/* Banner */}
         <div style={{ background: 'linear-gradient(135deg,#003D20,#005A30)', borderRadius: 14, padding: 20, color: '#fff' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -121,7 +123,7 @@ export default function AssistenciasPage() {
               {['25/26', '24/25', '23/24'].map(e => <option key={e} value={e} style={{ color: '#111' }}>{e}</option>)}
             </select>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap: 8 }}>
             {[
               { l: 'Total', v: fmt(totalEspectadores), s: `${comEspectadores.length} jogos` },
               { l: 'Média', v: fmt(mediaEspectadores), s: `${pct(mediaEspectadores, CAPACIDADE)}% lotação` },
@@ -150,7 +152,7 @@ export default function AssistenciasPage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <button onClick={() => setTab('jogo')} style={tabStyle('jogo')}>Por Jogo</button>
           <button onClick={() => setTab('adversarios')} style={tabStyle('adversarios')}>Por Adversário</button>
           <button onClick={() => setTab('epoca')} style={tabStyle('epoca')}>Por Época</button>
@@ -178,7 +180,7 @@ export default function AssistenciasPage() {
                   const p = pct(j.espectadores!, CAPACIDADE);
                   const barColor = p >= 80 ? '#006B3C' : p >= 50 ? '#EF9F27' : '#9CA3AF';
                   return (
-                    <div key={j.id} style={{ padding: '12px 16px', borderBottom: i < comEspectadores.length - 1 ? '1px solid #F3F4F6' : 'none', display: 'grid', gridTemplateColumns: '1fr 90px 90px 60px', gap: 8, alignItems: 'center' }}>
+                    <div key={j.id} style={{ padding: isMobile ? '10px' : '12px 16px', borderBottom: i < comEspectadores.length - 1 ? '1px solid #F3F4F6' : 'none', display: 'grid', gridTemplateColumns: isMobile ? '1fr 80px 50px' : '1fr 90px 90px 60px', gap: 8, alignItems: 'center' }}>
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 600, color: '#111318' }}>{j.adversario}</div>
                         <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>{fmtDate(j.data)} · {j.jornada}</div>
