@@ -60,6 +60,8 @@ export default function PlantelPage() {
     return jogadoresEpoca.map(j => ({
       nome: j.nome_display, numero: j.numero, posicao: j.posicao,
       jogosTitular:0, jogosSuplente:0, jogosTotal:0,
+      data_saida: (j as any).data_saida ?? null,
+      emprestado: (j as any).emprestado ?? false,
     })).sort((a,b) => {
       const pa=POS_ORDER[a.posicao??'']??0, pb=POS_ORDER[b.posicao??'']??0;
       return pb!==pa ? pb-pa : (a.numero??99)-(b.numero??99);
