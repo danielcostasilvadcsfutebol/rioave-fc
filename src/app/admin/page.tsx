@@ -757,24 +757,24 @@ export default function AdminPage() {
                         <div>{sel2(newEv.equipa, ['ra', 'adv'], v => setNewEv(p => ({ ...p, equipa: v, jogador: '', jogador2: '' })))}</div>
                         <div>
                           <div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>
-                            {newEv.tipo==='substituicao' ? '↑ Entra' : 'Jogador'}
+                            {newEv.tipo==='substituicao' ? '↓ Sai (quem saiu)' : 'Jogador'}
                           </div>
                           <PlayerAC
                             value={newEv.jogador}
                             onChange={v => setNewEv(p => ({ ...p, jogador: v }))}
                             players={newEv.equipa === 'ra' ? raNames : advNames}
-                            placeholder={newEv.equipa === 'ra' ? 'Jogador RA' : 'Jogador ADV'}
+                            placeholder={newEv.tipo==='substituicao' ? 'Quem saiu do campo' : (newEv.equipa === 'ra' ? 'Jogador RA' : 'Jogador ADV')}
                           />
                         </div>
                         <div>
                           <div style={{ fontSize:9, color:'#9CA3AF', marginBottom:2 }}>
-                            {newEv.tipo==='substituicao' ? '↓ Sai' : 'Assist./Info'}
+                            {newEv.tipo==='substituicao' ? '↑ Entra (quem entrou)' : 'Assist./Info'}
                           </div>
                           <PlayerAC
                             value={newEv.jogador2}
                             onChange={v => setNewEv(p => ({ ...p, jogador2: v }))}
                             players={newEv.equipa === 'ra' ? raNames : advNames}
-                            placeholder={newEv.tipo === 'substituicao' ? '↓ Quem sai' : 'Assist.'}
+                            placeholder={newEv.tipo === 'substituicao' ? 'Quem entrou em campo' : 'Assist.'}
                           />
                         </div>
                         <div>{inp(newEv.score_ra, v => setNewEv(p => ({ ...p, score_ra: v })), 'RA')}</div>
