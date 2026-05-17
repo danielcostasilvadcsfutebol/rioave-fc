@@ -36,7 +36,15 @@ const STATS_LABELS: [string,string][] = [
   ['foras_jogo','Foras de jogo'],['faltas','Faltas'],['amarelos','Amarelos'],['vermelhos','Vermelhos'],
 ];
 
-function calcHalfScores(eventos: EventoJogo[]) {
+
+  // Correspondência parcial de nomes (ex: "Spikic" == "Dario Spikic")
+  const nameMatch = (a: string | undefined, b: string): boolean => {
+    if (!a) return false;
+    const ta = a.trim().toLowerCase(), tb = b.trim().toLowerCase();
+    return ta === tb || ta.endsWith(' '+tb) || tb.endsWith(' '+ta) || ta.startsWith(tb+' ') || tb.startsWith(ta+' ');
+  };
+
+  function calcHalfScores(eventos: EventoJogo[]) {
   let ra1=0,adv1=0,ra2=0,adv2=0;
   for (const ev of eventos) {
     const first = ev.minuto <= 45;
@@ -137,10 +145,9 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
   const ann=(pNome:string,evs:EventoJogo[],eq:'ra'|'adv',titular=true)=>{
     const e=evs.filter(x=>x.equipa===eq);
     const p=pNome.trim();
-    const y=e.filter(x=>x.tipo==='cartao_amarelo'&&x.jogador?.trim()===p).length;
-    const r=e.filter(x=>x.tipo==='cartao_vermelho'&&x.jogador?.trim()===p).length;
-    // Encontra a sub onde este jogador aparece (em qualquer campo)
-    const sub=e.find(x=>x.tipo==='substituicao'&&(x.jogador?.trim()===p||x.jogador2?.trim()===p));
+    const y=e.filter(x=>x.tipo==='cartao_amarelo'&&nameMatch(x.jogador,p)).length;
+    const r=e.filter(x=>x.tipo==='cartao_vermelho'&&nameMatch(x.jogador,p)).length;
+    const sub=e.find(x=>x.tipo==='substituicao'&&(nameMatch(x.jogador,p)||nameMatch(x.jogador2,p)));
     return{y,r,dbl:r>0&&y>0, out:titular?sub:undefined, inn:!titular?sub:undefined};
   };
 
