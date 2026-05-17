@@ -93,7 +93,7 @@ export default function JogadorPage() {
     let epocaMeta: {mercado?:string|null;data_saida?:string|null} = {};
     if (jogadorMeta?.id) {
       const { data: em } = await supabase
-        .from('jogadores_epoca').select('mercado,epoca_chegada,data_saida,emprestado')
+        .from('jogadores_epoca').select('mes_chegada,epoca_chegada,data_saida,emprestado')
         .eq('jogador_id', jogadorMeta.id).eq('epoca','25/26').maybeSingle();
       if (em) epocaMeta = em;
     }
@@ -270,7 +270,7 @@ export default function JogadorPage() {
       dataNascimento:jogadorMeta?.data_nascimento||null,
       contratoAte:jogadorMeta?.contrato_ate||null,
       nacionalidade:jogadorMeta?.nacionalidade||null,
-      mercado:epocaMeta?.mercado||null,
+      mesChegada:(epocaMeta as any)?.mes_chegada||null,
       epocaChegada:(epocaMeta as any)?.epoca_chegada||null,
       emprestado:(epocaMeta as any)?.emprestado||false,
       dataSaida:epocaMeta?.data_saida||null,
@@ -338,7 +338,7 @@ export default function JogadorPage() {
         </div>
 
         {/* INFORMAÇÃO PESSOAL */}
-        {(s.dataNascimento||s.contratoAte||s.nacionalidade||s.mercado||s.dataSaida)&&(()=>{
+        {(s.dataNascimento||s.contratoAte||s.nacionalidade||s.mesChegada||s.epocaChegada||s.dataSaida||s.emprestado)&&(()=>{
           const calcAge=(dob:string)=>{
             const b=new Date(dob),today=new Date();
             let age=today.getFullYear()-b.getFullYear();
@@ -350,7 +350,7 @@ export default function JogadorPage() {
           if(s.nacionalidade) infoItems.push(['Nacionalidade',s.nacionalidade,'#374151']);
           if(s.dataNascimento) infoItems.push(['Data nasc.',`${fmtD(s.dataNascimento)} (${calcAge(s.dataNascimento)} anos)`,'#374151']);
 
-          if(s.mercado){ const mktLabel=s.mercado==='verao'?'🌞 Verão':'❄️ Inverno'; const epLabel=s.epocaChegada?` ${s.epocaChegada}`:''; infoItems.push(['Chegada',mktLabel+epLabel,'#374151']); }
+          if(s.mesChegada||s.epocaChegada){ const chegada=[s.mesChegada,s.epocaChegada].filter(Boolean).join(' '); infoItems.push(['Chegada',chegada,'#374151']); }
           if(s.emprestado) infoItems.push(['Condição','Empréstimo','#1A5FA8']);
           else if(s.contratoAte){ const expired=new Date(s.contratoAte)<new Date(); infoItems.push(['Condição',`Contrato até ${fmtD(s.contratoAte)}`,expired?'#DC2626':'#374151']); }
           if(s.dataSaida) infoItems.push(['Saída',fmtD(s.dataSaida),'#DC2626']);
