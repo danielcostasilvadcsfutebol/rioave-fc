@@ -243,7 +243,10 @@ function PartidaRow({ partida, expanded, detalhe, onToggle, onDetalhe, cardBg }:
             <div style={{padding:'6px 14px 12px'}}>
               {titRA.length>0 ? (
                 <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:10}}>
-                  {([{title:'Rio Ave FC',scheme:partida.formacao_ra,tits:titRA,sups:supRA,color:'#006B3C',eq:'ra' as const},{title:partida.adversario,scheme:partida.formacao_adv,tits:titAdv,sups:supAdv,color:'#1A5FA8',eq:'adv' as const}]).map(({title,scheme,tits,sups,color,eq})=>(
+                  {(isHome
+                    ? [{title:'Rio Ave FC',scheme:partida.formacao_ra,tits:titRA,sups:supRA,color:'#006B3C',eq:'ra' as const},{title:partida.adversario,scheme:partida.formacao_adv,tits:titAdv,sups:supAdv,color:'#1A5FA8',eq:'adv' as const}]
+                    : [{title:partida.adversario,scheme:partida.formacao_adv,tits:titAdv,sups:supAdv,color:'#1A5FA8',eq:'adv' as const},{title:'Rio Ave FC',scheme:partida.formacao_ra,tits:titRA,sups:supRA,color:'#006B3C',eq:'ra' as const}]
+                  ).map(({title,scheme,tits,sups,color,eq})=>(
                     <div key={title} style={{background:'#fff',border:'1px solid #E4E7EC',borderRadius:10,overflow:'hidden'}}>
                       <div style={{padding:'8px 10px',borderBottom:'1px solid #E4E7EC',display:'flex',justifyContent:'space-between',alignItems:'center',background:'#F9FAFB'}}>
                         <span style={{fontSize:12,fontWeight:700,color}}>{title}</span>
