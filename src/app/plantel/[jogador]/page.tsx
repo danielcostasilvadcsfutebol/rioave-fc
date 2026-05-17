@@ -21,11 +21,23 @@ function isDoubleYellow(red: EventoJogo, evts: EventoJogo[]): boolean {
   );
 }
 
+
+// Correspondência de nomes: aceita match parcial (ex: "Spikic" == "Dario Spikic")
+const nameMatch = (a: string | undefined, b: string): boolean => {
+  if (!a) return false;
+  const ta = a.trim().toLowerCase();
+  const tb = b.trim().toLowerCase();
+  if (ta === tb) return true;
+  // Match se um contém o outro como palavra separada
+  return ta.endsWith(' ' + tb) || tb.endsWith(' ' + ta) ||
+         ta.startsWith(tb + ' ') || tb.startsWith(ta + ' ');
+};
+
 function computeStats(nome: string, fichas: FichaData[]) {
   const k = nome.trim();
   let numero = 0; let posicao: string | undefined;
   for (const f of fichas) {
-    const p = [...f.titulares, ...f.suplentes].find(p => p.nome.trim() === k);
+    const p = [...f.titulares, ...f.suplentes].find(p => nameMatch(p.nome, k));
     if (p) { numero = p.numero; posicao = p.posicao; break; }
   }
   if (!numero && !posicao) return null;
@@ -37,8 +49,8 @@ function computeStats(nome: string, fichas: FichaData[]) {
   let vitorias=0, empates=0, derrotas=0, vitoriasTitular=0, cleanSheets=0;
 
   for (const f of fichas) {
-    const isTitular = f.titulares.some(p => p.nome.trim() === k);
-    const isSuplente = f.suplentes.some(p => p.nome.trim() === k);
+    const isTitular = f.titulares.some(p => nameMatch(p.nome, k));
+    const isSuplente = f.suplentes.some(p => nameMatch(p.nome, k));
     if (!isTitular && !isSuplente) continue;
 
     const redCard = f.eventos.find(e =>
@@ -59,12 +71,12 @@ function computeStats(nome: string, fichas: FichaData[]) {
     // Is player on field at given minute? (arrow fn to avoid hoisting issues)
     // Robusto a subs com jogador/jogador2 trocados
     const saiuEvt = isTitular ? (
-      f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador.trim() === k) ||
-      f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k)
+      f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && nameMatch(e.jogador, k)) ||
+      f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && nameMatch(e.jogador2, k))
     ) : null;
     const entrouEvt = isSuplente ? (
-      f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador2?.trim() === k) ||
-      f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && e.jogador?.trim() === k)
+      f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && nameMatch(e.jogador2, k)) ||
+      f.eventos.find(e => e.tipo === 'substituicao' && e.equipa === 'ra' && nameMatch(e.jogador, k))
     ) : null;
     const minSaiu   = saiuEvt   ? mn(saiuEvt)   : Infinity;
     const minEntrou = entrouEvt ? mn(entrouEvt)  : null;
