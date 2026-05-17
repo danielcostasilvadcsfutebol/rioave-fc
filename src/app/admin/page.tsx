@@ -239,6 +239,21 @@ export default function AdminPage() {
     }
   }
 
+  async function deleteJogo() {
+    if (!sel || !selJogo) return;
+    if (!confirm(`Apagar "${selJogo.jornada} · ${selJogo.adversario}"? Esta acção apaga também todos os eventos, fichas e estatísticas.`)) return;
+    await supabase.from('eventos_jogo').delete().eq('jogo_id', sel);
+    await supabase.from('fichas_jogo').delete().eq('jogo_id', sel);
+    await supabase.from('estatisticas_jogo').delete().eq('jogo_id', sel);
+    const { error } = await supabase.from('jogos').delete().eq('id', sel);
+    if (error) { toast('Erro ao apagar: ' + error.message, false); return; }
+    toast('Jogo apagado');
+    setSel('');
+    const { data } = await supabase.from('jogos').select('id,jornada,data,adversario,local,golos_ra,golos_adv,resultado,has_detail,espectadores,formacao_ra,formacao_adv,arbitro,hora,estadio,epoca').order('data', { ascending: false });
+    const sorted = (data ?? []).sort((a: any, b: any) => jornadaNum(b.jornada) - jornadaNum(a.jornada));
+    setJogos(sorted);
+  }
+
   async function createJogo() {
     if (!newJogo.jornada || !newJogo.adversario || !newJogo.data) {
       toast('Preenche jornada, adversário e data', false); return;
@@ -371,7 +386,7 @@ export default function AdminPage() {
 
   async function saveJogo() {
     const { error } = await supabase.from('jogos').update({
-      hora: jogoEdit.hora, adversario: jogoEdit.adversario,
+      data: jogoEdit.data, hora: jogoEdit.hora, adversario: jogoEdit.adversario,
       golos_ra: Number(jogoEdit.golos_ra), golos_adv: Number(jogoEdit.golos_adv),
       resultado: jogoEdit.resultado, espectadores: jogoEdit.espectadores ? Number(jogoEdit.espectadores) : null,
       estadio: jogoEdit.estadio || null, formacao_ra: jogoEdit.formacao_ra || null,
@@ -701,8 +716,9 @@ export default function AdminPage() {
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#111318' }}>{selJogo?.jornada as string} · {selJogo?.adversario as string}</div>
                     <div style={{ fontSize: 12, color: '#9CA3AF' }}>{selJogo?.data as string} · {selJogo?.local as string} · {selJogo?.golos_ra as number}-{selJogo?.golos_adv as number} · época {jogoEpoca}</div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                     {(['info', 'eventos', 'fichas', 'stats'] as GameTab[]).map(t => tabBtn(t, gameTab, () => setGameTab(t)))}
+                    <button onClick={deleteJogo} title="Apagar jogo" style={{ padding: '6px 10px', background: '#FCEBEB', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>🗑</button>
                   </div>
                 </div>
 
@@ -712,7 +728,7 @@ export default function AdminPage() {
                 {!loading && gameTab === 'info' && (
                   <div style={{ background: '#fff', border: '1.5px solid #E4E7EC', borderRadius: 12, padding: 16 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
-                      {[['adversario', 'Adversário'], ['hora', 'Hora'], ['estadio', 'Estádio'], ['formacao_ra', 'Formação RA'], ['formacao_adv', 'Formação ADV'], ['arbitro', 'Árbitro']].map(([k, l]) => (
+                      {[['adversario', 'Adversário'], ['data', 'Data (AAAA-MM-DD)'], ['hora', 'Hora'], ['estadio', 'Estádio'], ['formacao_ra', 'Formação RA'], ['formacao_adv', 'Formação ADV'], ['arbitro', 'Árbitro']].map(([k, l]) => (
                         <div key={k}>
                           <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 3 }}>{l}</div>
                           {inp(String(jogoEdit[k] ?? ''), v => setJogoEdit(p => ({ ...p, [k]: v })))}
